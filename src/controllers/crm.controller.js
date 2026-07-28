@@ -4,10 +4,13 @@ export async function lookupClient(request, reply) {
   const result = lookupClientSchema.safeParse(request.body);
 
   if (!result.success) {
-    return reply.status(400).send({
-      success: false,
-      errors: result.error.issues,
-    });
+    const error = new Error("Validation failed");
+    
+    error.statusCode = 400;
+    
+    error.details = result.error.issues;
+    
+    throw error;
   }
 
   const { email } = result.data;
