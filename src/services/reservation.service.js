@@ -1,4 +1,5 @@
 import reservationRepository from "../repositories/reservation.repository.js";
+import NotFoundError from "../errors/NotFoundError.js";
 
 class ReservationService {
   async checkAvailability({
@@ -11,7 +12,7 @@ class ReservationService {
       await reservationRepository.findByRestaurantId(restaurantId);
 
     if (!restaurant) {
-      throw new Error("Restaurant not found");
+      throw new NotFoundError("Restaurant not found");
     }
 
     const reservations =
