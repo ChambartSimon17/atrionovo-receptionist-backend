@@ -30,9 +30,7 @@ class ReservationService {
     const available =
       occupiedSeats + guestCount <= restaurant.maxCapacity;
 
-    return {
-      available,
-    };
+    return available;
   }
 }
 

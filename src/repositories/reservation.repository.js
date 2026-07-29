@@ -33,6 +33,12 @@ class ReservationRepository {
       },
     });
   }
+  
+  async create(data) {
+    return prisma.reservation.create({
+        data,
+    });
+  }
 }
 
 export default new ReservationRepository();
