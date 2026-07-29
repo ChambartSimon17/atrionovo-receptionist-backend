@@ -7,15 +7,54 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
 model Restaurant {
   id        String   @id @default(cuid())
 
   name      String
+  maxCapacity Int @default(50)
   slug      String   @unique
 
   timezone  String   @default("Europe/Brussels")
-  language  String   @default("nl") //misschien moet dit "flemish" zijn?...
+  language  String   @default("nl")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  reservations Reservation[]
+}
+
+model Reservation {
+  id            String   @id @default(cuid())
+
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  firstName     String
+  lastName      String
+  phoneNumber   String
+  email         String?
+
+  guestCount    Int
+
+  startTime     DateTime
+  endTime       DateTime
+
+  status        ReservationStatus @default(CONFIRMED)
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([startTime])
+  @@index([endTime])
+  @@index([restaurantId, startTime])
 }
