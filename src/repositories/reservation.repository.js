@@ -1,6 +1,14 @@
 import prisma from "../database/prisma.js";
 
 class ReservationRepository {
+  async findByRestaurantId(restaurantId) {
+    return prisma.restaurant.findUnique({
+      where: {
+        id: restaurantId,
+      },
+    });
+  }
+
   async findOverlappingReservations(
     restaurantId,
     startTime,
