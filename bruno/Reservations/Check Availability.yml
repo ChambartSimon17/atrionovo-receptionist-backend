@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "restaurantId": "test",
+        "restaurantId": "cms6ftdc70000s0kx0pdyvhtb",
         "guestCount": 4,
         "startTime": "2026-08-01T19:00:00.000Z",
         "endTime": "2026-08-01T21:00:00.000Z"

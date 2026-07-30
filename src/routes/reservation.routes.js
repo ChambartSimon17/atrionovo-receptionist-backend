@@ -5,4 +5,9 @@ export default async function reservationRoutes(fastify) {
     "/check-availability",
     reservationController.checkAvailability
   );
+
+  fastify.post(
+    "/",
+    reservationController.createReservation
+  );
 }

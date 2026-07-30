@@ -1,11 +1,11 @@
 info:
-  name: Untitled
+  name: Create Reservation
   type: http
-  seq: 1
+  seq: 2
 
 http:
-  method: GET
-  url: ""
+  method: POST
+  url: http://localhost:3000/reservations
   auth: inherit
 
 settings:

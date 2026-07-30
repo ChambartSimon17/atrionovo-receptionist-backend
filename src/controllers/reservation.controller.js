@@ -10,6 +10,17 @@ class ReservationController {
       available,
     });
   }
+
+  async createReservation(request, reply) {
+    const reservation = await reservationService.createReservation(
+        request.body
+    );
+
+    return reply.status(201).send({
+        success: true,
+        data: reservation,
+    });
+  }
 }
 
 export default new ReservationController();

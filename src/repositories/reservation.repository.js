@@ -1,7 +1,7 @@
 import prisma from "../database/prisma.js";
 
 class ReservationRepository {
-  async findByRestaurantId(restaurantId) {
+  async findRestaurantById(restaurantId) {
     return prisma.restaurant.findUnique({
       where: {
         id: restaurantId,

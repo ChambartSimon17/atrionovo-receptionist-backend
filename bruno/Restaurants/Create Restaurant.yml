@@ -1,0 +1,25 @@
+info:
+  name: Create Restaurant
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/restaurants
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Kin Khao",
+        "slug": "kin-khao",
+        "maxCapacity": 50,
+        "timezone": "Europe/Brussels",
+        "language": "nl"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
