@@ -1,11 +1,34 @@
+// ======================================================
+// GENERATOR
+// ======================================================
+
 generator client {
   provider = "prisma-client-js"
 }
+
+// ======================================================
+// DATASOURCE
+// ======================================================
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+// ------------------------------------------------------
+// Reservation lifecycle
+// ------------------------------------------------------
+// Defines the current state of a reservation.
+//
+// CONFIRMED - Reservation is accepted.
+// CANCELLED - Reservation was cancelled.
+// COMPLETED - Guests have finished dining.
+// NO_SHOW   - Guests never arrived.
+// ------------------------------------------------------
 
 enum ReservationStatus {
   CONFIRMED
@@ -14,47 +37,215 @@ enum ReservationStatus {
   NO_SHOW
 }
 
+// ------------------------------------------------------
+// Days of the week
+// ------------------------------------------------------
+// Used for recurring weekly opening hours.
+//
+// Example:
+// MONDAY
+// 17:00 → 22:00
+// ------------------------------------------------------
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// ======================================================
+// RESTAURANT DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// Restaurant
+// ------------------------------------------------------
+// Represents a restaurant using the AtrioNovo platform.
+//
+// Responsibilities
+// - Store restaurant information
+// - Define restaurant configuration
+// - Own opening hours
+// - Own reservations
+//
+// Future
+// - Tables
+// - Arrival slot limits
+// - Staff
+// - AI assistant configuration
+// - Subscription
+// ------------------------------------------------------
+
 model Restaurant {
-  id        String   @id @default(cuid())
+  // -------------------------
+  // Primary Key
+  // -------------------------
 
-  name      String
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Basic Information
+  // -------------------------
+
+  name String
+  slug String @unique
+
+  // -------------------------
+  // Restaurant Configuration
+  // -------------------------
+
   maxCapacity Int @default(50)
-  slug      String   @unique
 
-  timezone  String   @default("Europe/Brussels")
-  language  String   @default("nl")
+  timezone String @default("Europe/Brussels")
+  language String @default("nl")
+
+  // -------------------------
+  // Relationships
+  // -------------------------
+
+  openingHours OpeningHour[]
+  reservations Reservation[]
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// OpeningHour
+// ------------------------------------------------------
+// Represents one opening period for a restaurant.
+//
+// Examples
+//
+// Monday
+// 17:00 → 22:00
+//
+// Sunday
+// 12:00 → 15:00
+// 17:00 → 22:00
+//
+// A restaurant may have multiple opening
+// periods on the same day.
+// ------------------------------------------------------
+
+model OpeningHour {
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Restaurant Relationship
+  // -------------------------
+
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Opening Period
+  // -------------------------
+
+  dayOfWeek DayOfWeek
+
+  // Minutes after midnight.
+  //
+  // Examples
+  // 17:00 → 1020
+  // 22:00 → 1320
+
+  opensAtMinutes  Int
+  closesAtMinutes Int
+
+  // -------------------------
+  // Metadata
+  // -------------------------
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reservations Reservation[]
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([restaurantId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
 }
 
+// ======================================================
+// RESERVATION DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// Reservation
+// ------------------------------------------------------
+// Represents one reservation made by a customer.
+//
+// Business Rules
+// - Always belongs to one restaurant
+// - Has a fixed start and end time
+// - Status defaults to CONFIRMED
+// ------------------------------------------------------
+
 model Reservation {
-  id            String   @id @default(cuid())
+  // -------------------------
+  // Primary Key
+  // -------------------------
 
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
 
-  firstName     String
-  lastName      String
-  phoneNumber   String
-  email         String?
+  // -------------------------
+  // Restaurant Relationship
+  // -------------------------
 
-  guestCount    Int
+  restaurantId String
 
-  startTime     DateTime
-  endTime       DateTime
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  status        ReservationStatus @default(CONFIRMED)
+  // -------------------------
+  // Customer Information
+  // -------------------------
 
-  notes         String?
+  firstName String
+  lastName  String
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  phoneNumber String
+  email       String?
 
-  @@index([restaurantId])
-  @@index([startTime])
-  @@index([endTime])
-  @@index([restaurantId, startTime])
+  // -------------------------
+  // Reservation Details
+  // -------------------------
+
+  guestCount Int
+
+  startTime DateTime
+  endTime   DateTime
+
+  status ReservationStatus @default(CONFIRMED)
+
+  notes String?
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([restaurantId], map: "idx_reservation_restaurant")
+  @@index([startTime], map: "idx_reservation_start_time")
+  @@index([endTime], map: "idx_reservation_end_time")
+  @@index([restaurantId, startTime], map: "idx_reservation_restaurant_start")
 }

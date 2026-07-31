@@ -1,9 +1,14 @@
 export default async function errorHandler(error, request, reply) {
   request.log.error(error);
 
-  return reply.status(error.statusCode || 500).send({
+  const statusCode = error.statusCode || 500;
+
+  return reply.status(statusCode).send({
     success: false,
-    message: error.message || "Internal server error",
+    message:
+      statusCode === 500
+        ? "Internal server error"
+        : error.message,
     errors: error.details || [],
   });
 }

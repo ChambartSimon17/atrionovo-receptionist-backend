@@ -1,0 +1,37 @@
+info:
+  name: Replace Schedule - Success
+  type: http
+  seq: 1
+
+http:
+  method: PUT
+  url: http://localhost:3000/restaurants/cms6ftdc70000s0kx0pdyvhtb/opening-hours
+  body:
+    type: json
+    data: |-
+      {
+        "openingHours": [
+          {
+            "dayOfWeek": "MONDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 840
+          },
+          {
+            "dayOfWeek": "MONDAY",
+            "opensAtMinutes": 1020,
+            "closesAtMinutes": 1320
+          },
+          {
+            "dayOfWeek": "TUESDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 1320
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

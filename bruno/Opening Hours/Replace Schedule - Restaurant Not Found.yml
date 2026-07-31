@@ -1,0 +1,27 @@
+info:
+  name: Replace Schedule - Restaurant Not Found
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: http://localhost:3000/restaurants/ThisIsAFakeID/opening-hours
+  body:
+    type: json
+    data: |-
+      {
+        "openingHours": [
+          {
+            "dayOfWeek": "MONDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 1320
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

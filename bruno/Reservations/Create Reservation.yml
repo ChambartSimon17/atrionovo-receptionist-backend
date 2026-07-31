@@ -6,6 +6,20 @@ info:
 http:
   method: POST
   url: http://localhost:3000/reservations
+  body:
+    type: json
+    data: |-
+      {
+        "restaurantId": "cms6ftdc70000s0kx0pdyvhtb",
+        "firstName": "Simon",
+        "lastName": "Chambart",
+        "phoneNumber": "+32470123456",
+        "email": "simon@example.com",
+        "guestCount": 4,
+        "startTime": "2026-08-01T19:00:00.000Z",
+        "endTime": "2026-08-01T21:00:00.000Z",
+        "notes": "Window seat"
+      }
   auth: inherit
 
 settings:

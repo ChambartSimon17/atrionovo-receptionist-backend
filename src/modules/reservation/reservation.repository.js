@@ -1,4 +1,4 @@
-import prisma from "../database/prisma.js";
+import prisma from "../../db/prisma.js";
 
 class ReservationRepository {
   async findRestaurantById(restaurantId) {

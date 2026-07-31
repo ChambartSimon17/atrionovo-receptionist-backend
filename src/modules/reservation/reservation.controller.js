@@ -1,4 +1,4 @@
-import reservationService from "../services/reservation.service.js";
+import reservationService from "./reservation.service.js";
 
 class ReservationController {
   async checkAvailability(request, reply) {

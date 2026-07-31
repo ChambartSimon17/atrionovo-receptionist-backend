@@ -1,0 +1,27 @@
+info:
+  name: Invalid Opening Period
+  type: http
+  seq: 3
+
+http:
+  method: PUT
+  url: http://localhost:3000/restaurants/cms6ftdc70000s0kx0pdyvhtb/opening-hours
+  body:
+    type: json
+    data: |-
+      {
+        "openingHours": [
+          {
+            "dayOfWeek": "MONDAY",
+            "opensAtMinutes": 1200,
+            "closesAtMinutes": 900
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

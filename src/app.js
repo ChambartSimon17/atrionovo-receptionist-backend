@@ -1,9 +1,10 @@
 import Fastify from "fastify";
-import healthRoutes from "./routes/health.routes.js";
-import crmRoutes from "./routes/crm.routes.js";
-import reservationRoutes from "./routes/reservation.routes.js";
+import healthRoutes from "./system/health.routes.js";
+import crmRoutes from "./modules/crm/crm.routes.js";
+import reservationRoutes from "./modules/reservation/reservation.routes.js";
+import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
+import openingHourRoutes from "./modules/restaurant/opening-hours/opening-hour.routes.js";
 import errorHandler from "./middleware/error.middleware.js";
-import restaurantRoutes from "./routes/restaurant.routes.js";
 
 const app = Fastify({
   logger: true,
@@ -22,6 +23,9 @@ app.register(reservationRoutes, {
   prefix: "/reservations",
 });
 app.register(restaurantRoutes, {
+  prefix: "/restaurants",
+});
+app.register(openingHourRoutes, {
   prefix: "/restaurants",
 });
 

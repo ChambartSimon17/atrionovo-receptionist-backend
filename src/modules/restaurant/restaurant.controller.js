@@ -1,4 +1,4 @@
-import restaurantService from "../services/restaurant.service.js";
+import restaurantService from "../restaurant/restaurant.service.js";
 
 class RestaurantController {
   async createRestaurant(request, reply) {

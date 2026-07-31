@@ -1,5 +1,5 @@
-import { lookupClientSchema } from "../validators/crm.validator.js";
-import { lookupClientByEmail } from "../services/crm.service.js";
+import { lookupClientSchema } from "./crm.validator.js";
+import { lookupClientByEmail } from "./crm.service.js";
 
 export async function lookupClient(request) {
   const result = lookupClientSchema.safeParse(request.body);

@@ -1,5 +1,5 @@
-import restaurantRepository from "../repositories/restaurant.repository.js";
-import ConflictError from "../errors/ConflictError.js";
+import restaurantRepository from "../restaurant/restaurant.repository.js";
+import ConflictError from "../../errors/ConflictError.js";
 
 class RestaurantService {
   async createRestaurant({

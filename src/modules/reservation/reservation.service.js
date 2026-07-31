@@ -1,6 +1,6 @@
-import reservationRepository from "../repositories/reservation.repository.js";
-import NotFoundError from "../errors/NotFoundError.js";
-import ConflictError from "../errors/ConflictError.js";
+import reservationRepository from "./reservation.repository.js";
+import NotFoundError from "../../errors/NotFoundError.js";
+import ConflictError from "../../errors/ConflictError.js";
 
 class ReservationService {
   async checkAvailability({
