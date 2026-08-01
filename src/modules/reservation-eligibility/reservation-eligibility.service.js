@@ -48,6 +48,11 @@ class ReservationEligibilityService {
       endTime,
     });
 
+    this.#validatePartySize({
+      restaurant,
+      guestCount,
+    });
+
     await this.#validateCapacity({
       restaurant,
       guestCount,
@@ -128,6 +133,23 @@ class ReservationEligibilityService {
       );
     }
   }
+
+    /**
+   * Ensures the reservation does not exceed
+   * the restaurant's maximum party size.
+   */
+  #validatePartySize({
+    restaurant,
+    guestCount,
+  }) {
+    if (guestCount > restaurant.maxPartySize) {
+      throw new ValidationError(
+        `For groups larger than ${restaurant.maxPartySize} people, please contact the restaurant's email.`
+      );
+    }
+  }
+
+
 
   /**
    * Ensures the restaurant has enough
