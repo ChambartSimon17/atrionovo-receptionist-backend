@@ -3,29 +3,68 @@
 // ======================================================
 //
 // Responsibility
-// Helper functions for converting and formatting time.
+// Shared helper functions for converting between
+// dates, times and "minutes since midnight".
 //
-// Time is represented internally as the number of minutes
-// after midnight.
-//
-// Examples
-// 0    -> 00:00
-// 570  -> 09:30
-// 720  -> 12:00
-// 1020 -> 17:00
+// All business logic should use these helpers instead
+// of performing manual time calculations.
 // ======================================================
 
 /**
- * Converts minutes after midnight to a HH:MM time string.
+ * Converts minutes since midnight into HH:mm.
  *
- * @param {number} minutes
- * @returns {string}
+ * Example:
+ * 780 -> "13:00"
  */
 export function minutesToTime(minutes) {
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const mins = minutes % 60;
 
-  return `${String(hours).padStart(2, "0")}:${String(
-    remainingMinutes
-  ).padStart(2, "0")}`;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+/**
+ * Converts a Date into minutes since midnight
+ * in the specified IANA timezone.
+ *
+ * Example:
+ * Europe/Brussels
+ * 2026-08-03T14:00:00.000Z
+ *
+ * =>
+ *
+ * 960 (16:00)
+ */
+export function dateToMinutes(date, timezone) {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+
+  const hour = Number(
+    parts.find((part) => part.type === "hour").value
+  );
+
+  const minute = Number(
+    parts.find((part) => part.type === "minute").value
+  );
+
+  return hour * 60 + minute;
+}
+
+/**
+ * Returns the weekday in the specified
+ * IANA timezone.
+ */
+export function dateToDayOfWeek(date, timezone) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "long",
+  })
+    .format(date)
+    .toUpperCase();
 }

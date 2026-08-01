@@ -122,6 +122,21 @@ Never validate inside repositories.
 
 ---
 
+# Time handling
+
+## Reservations
+
+- Stored as UTC DateTime values.
+- Converted to the restaurant's timezone before applying business rules.
+
+## Opening hours
+
+- Stored as minutes since midnight.
+- Represent local restaurant time.
+- Never converted to UTC.
+
+---
+
 # Error Handling
 
 Throw typed errors.

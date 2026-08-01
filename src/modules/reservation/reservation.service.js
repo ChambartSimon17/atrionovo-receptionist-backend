@@ -1,75 +1,48 @@
+import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
-import NotFoundError from "../../errors/NotFoundError.js";
-import ConflictError from "../../errors/ConflictError.js";
+
+// ======================================================
+// Reservation Service
+// ======================================================
+//
+// Responsibility
+// Manage restaurant reservations.
+//
+// This service orchestrates reservation-related business
+// operations and delegates eligibility checks to the
+// Reservation Eligibility Service.
+// ======================================================
 
 class ReservationService {
+  /**
+   * Checks whether a reservation can be accepted.
+   */
   async checkAvailability({
     restaurantId,
     guestCount,
     startTime,
-    endTime
+    endTime,
   }) {
-    const restaurant =
-      await reservationRepository.findRestaurantById(restaurantId);
-
-    if (!restaurant) {
-      throw new NotFoundError("Restaurant not found");
-    }
-
-    const reservations =
-      await reservationRepository.findOverlappingReservations(
-        restaurantId,
-        startTime,
-        endTime
-      );
-
-    const occupiedSeats = reservations.reduce(
-      (total, reservation) => total + reservation.guestCount,
-      0
-    );
-
-    const available =
-      occupiedSeats + guestCount <= restaurant.maxCapacity;
-
-    return available;
+    return reservationEligibilityService.checkEligibility({
+      restaurantId,
+      guestCount,
+      startTime,
+      endTime,
+    });
   }
 
-  async createReservation({
-    restaurantId,
-    firstName,
-    lastName,
-    phoneNumber,
-    email,
-    guestCount,
-    startTime,
-    endTime,
-    notes,
-  }) {
-    const available = await this.checkAvailability({
-        restaurantId,
-        guestCount,
-        startTime,
-        endTime,
+  /**
+   * Creates a new reservation.
+   */
+  async createReservation(reservationData) {
+    await reservationEligibilityService.checkEligibility({
+      restaurantId: reservationData.restaurantId,
+      guestCount: reservationData.guestCount,
+      startTime: reservationData.startTime,
+      endTime: reservationData.endTime,
     });
 
-    if (!available) {
-        throw new ConflictError(
-        "Not enough capacity for this reservation."
-        );
-    }
-
-    return reservationRepository.create({
-        restaurantId,
-        firstName,
-        lastName,
-        phoneNumber,
-        email,
-        guestCount,
-        startTime,
-        endTime,
-        notes,
-        status: "CONFIRMED",
-    });
+    return reservationRepository.create(reservationData);
   }
 }
 

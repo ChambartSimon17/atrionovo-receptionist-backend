@@ -42,6 +42,25 @@ class OpeningHourRepository {
     });
   }
 
+    /**
+   * Retrieves all opening periods for one restaurant
+   * on a specific weekday.
+   */
+  async findByRestaurantAndDay(
+    restaurantId,
+    dayOfWeek
+  ) {
+    return prisma.openingHour.findMany({
+      where: {
+        restaurantId,
+        dayOfWeek,
+      },
+      orderBy: {
+        opensAtMinutes: "asc",
+      },
+    });
+  }
+
   /**
    * Retrieves the restaurant's complete weekly opening schedule.
    *
