@@ -100,6 +100,8 @@ model Restaurant {
 
   maxCapacity Int @default(50)
 
+  defaultReservationDurationMinutes Int @default(120)
+
   timezone String @default("Europe/Brussels")
   language String @default("nl")
 

@@ -1,0 +1,29 @@
+import { z } from "zod";
+
+export const createReservationSchema = z.object({
+  restaurantId: z.string().min(1),
+
+  firstName: z.string().min(1),
+
+  lastName: z.string().min(1),
+
+  phoneNumber: z.string().min(1),
+
+  email: z.email().optional(),
+
+  guestCount: z.number().int().positive(),
+
+  startTime: z.iso.datetime(),
+
+  notes: z.string().optional(),
+});
+
+export const checkAvailabilitySchema = z.object({
+  restaurantId: z.string().min(1),
+
+  guestCount: z.number().int().positive(),
+
+  startTime: z.iso.datetime(),
+
+  endTime: z.iso.datetime(),
+});

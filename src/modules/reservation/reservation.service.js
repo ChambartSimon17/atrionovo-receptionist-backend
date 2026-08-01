@@ -1,5 +1,7 @@
+import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
+import { addMinutes } from "../../utils/time.utils.js";
 
 // ======================================================
 // Reservation Service
@@ -33,16 +35,35 @@ class ReservationService {
 
   /**
    * Creates a new reservation.
+   *
+   * The reservation end time is automatically calculated
+   * using the restaurant's default reservation duration.
    */
   async createReservation(reservationData) {
+    const restaurant = await restaurantRepository.findById(
+      reservationData.restaurantId
+    );
+
+    const endTime = addMinutes(
+      new Date(reservationData.startTime),
+      restaurant.defaultReservationDurationMinutes
+    );
+
+    const completeReservation = {
+      ...reservationData,
+      endTime,
+    };
+
     await reservationEligibilityService.checkEligibility({
-      restaurantId: reservationData.restaurantId,
-      guestCount: reservationData.guestCount,
-      startTime: reservationData.startTime,
-      endTime: reservationData.endTime,
+      restaurantId: completeReservation.restaurantId,
+      guestCount: completeReservation.guestCount,
+      startTime: completeReservation.startTime,
+      endTime: completeReservation.endTime,
     });
 
-    return reservationRepository.create(reservationData);
+    return reservationRepository.create(
+      completeReservation
+    );
   }
 }
 

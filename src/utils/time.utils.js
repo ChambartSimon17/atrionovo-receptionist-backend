@@ -68,3 +68,11 @@ export function dateToDayOfWeek(date, timezone) {
     .format(date)
     .toUpperCase();
 }
+
+/**
+ * Returns a new Date after adding the specified
+ * number of minutes.
+ */
+export function addMinutes(date, minutes) {
+  return new Date(date.getTime() + minutes * 60_000);
+}
