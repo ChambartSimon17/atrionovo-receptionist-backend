@@ -5,23 +5,14 @@ info:
 
 http:
   method: PUT
-  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/special-opening-days/{{specialOpeningDayId}}
+  url: "{{baseUrl}}/restaurants/{{restaurantId}}/special-opening-days/{{specialOpeningDayId}}"
   body:
     type: json
     data: |-
       {
-        "date": "2026-12-24",
-        "isClosed": false,
-        "openingPeriods": [
-          {
-            "opensAtMinutes": 660,
-            "closesAtMinutes": 900
-          },
-          {
-            "opensAtMinutes": 1080,
-            "closesAtMinutes": 1380
-          }
-        ]
+        "date": "2026-12-25",
+        "isClosed": true,
+        "openingPeriods": []
       }
   auth: inherit
 

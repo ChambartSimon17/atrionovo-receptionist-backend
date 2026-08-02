@@ -5,7 +5,20 @@ info:
 
 http:
   method: PUT
-  url: "{{baseUrl}}/reservations/{{reservationId}}"
+  url: "{{baseUrl}}/reservations/{{reservationid}}"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurantId": "{{restaurantId}}",
+        "firstName": "Simon",
+        "lastName": "Chambart",
+        "phoneNumber": "+32470123456",
+        "email": "simon@example.com",
+        "guestCount": 4,
+        "startTime": "2026-08-03T15:30:00.000Z",
+        "notes": "Window seat"
+      }
   auth: inherit
 
 settings:

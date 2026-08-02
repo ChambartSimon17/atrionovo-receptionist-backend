@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/reservations/{{reservationId}}"
+  url: "{{baseUrl}}/reservations/{{reservationid}}"
   auth: inherit
 
 settings:

@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/special-opening-days
+  url: "{{baseUrl}}/restaurants/{{restaurantId}}/special-opening-days"
   body:
     type: json
     data: ""

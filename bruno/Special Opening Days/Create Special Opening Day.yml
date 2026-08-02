@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/special-opening-days
+  url: "{{baseUrl}}/restaurants/{{restaurantId}}/special-opening-days"
   body:
     type: json
     data: |-
@@ -16,14 +16,21 @@ http:
           {
             "opensAtMinutes": 720,
             "closesAtMinutes": 900
-          },
-          {
-            "opensAtMinutes": 1080,
-            "closesAtMinutes": 1320
           }
         ]
       }
   auth: inherit
+
+runtime:
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: specialOpeningDayId
+        scope: runtime
 
 settings:
   encodeUrl: true

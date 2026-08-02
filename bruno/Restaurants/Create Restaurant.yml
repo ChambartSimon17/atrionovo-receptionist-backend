@@ -5,18 +5,29 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/restaurants
+  url: "{{baseUrl}}/restaurants"
   body:
     type: json
     data: |-
       {
-        "name": "Kin Khao-2",
-        "slug": "kin-khao-2",
+        "name": "Kin Khao-test",
+        "slug": "kin-khao-test",
         "maxCapacity": 50,
         "timezone": "Europe/Brussels",
         "language": "nl"
       }
   auth: inherit
+
+runtime:
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.data.id
+        method: jsonq
+      variable:
+        name: restaurantId
+        scope: runtime
 
 settings:
   encodeUrl: true
