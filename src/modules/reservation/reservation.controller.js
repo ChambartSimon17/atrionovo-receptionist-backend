@@ -1,5 +1,8 @@
 import reservationService from "./reservation.service.js";
-import { createReservationSchema, checkAvailabilitySchema } from "./reservation.validator.js";
+import {
+  createReservationSchema,
+  checkAvailabilitySchema,
+} from "./reservation.validator.js";
 
 // ======================================================
 // Reservation Controller
@@ -50,6 +53,38 @@ class ReservationController {
       success: true,
       data: createdReservation,
     });
+  }
+
+  /**
+   * Updates an existing reservation.
+   */
+  async updateReservation(request, reply) {
+    const { id } = request.params;
+
+    const reservation =
+      createReservationSchema.parse(request.body);
+
+    const updatedReservation =
+      await reservationService.updateReservation(
+        id,
+        reservation
+      );
+
+    return reply.send({
+      success: true,
+      data: updatedReservation,
+    });
+  }
+
+  /**
+   * Deletes an existing reservation.
+   */
+  async deleteReservation(request, reply) {
+    const { id } = request.params;
+
+    await reservationService.deleteReservation(id);
+
+    return reply.status(204).send();
   }
 }
 

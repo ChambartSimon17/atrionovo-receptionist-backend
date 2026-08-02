@@ -1,6 +1,7 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
+import NotFoundError from "../../errors/NotFoundError.js";
 import { addMinutes } from "../../utils/time.utils.js";
 
 // ======================================================
@@ -64,6 +65,66 @@ class ReservationService {
     return reservationRepository.create(
       completeReservation
     );
+  }
+
+  /**
+   * Updates an existing reservation.
+   *
+   * The reservation end time is automatically recalculated
+   * using the restaurant's default reservation duration.
+   */
+  async updateReservation(id, reservationData) {
+    const existingReservation =
+      await reservationRepository.findById(id);
+
+    if (!existingReservation) {
+      throw new NotFoundError(
+        "Reservation not found."
+      );
+    }
+
+    const restaurant = await restaurantRepository.findById(
+      reservationData.restaurantId
+    );
+
+    const endTime = addMinutes(
+      new Date(reservationData.startTime),
+      restaurant.defaultReservationDurationMinutes
+    );
+
+    const completeReservation = {
+      ...reservationData,
+      endTime,
+    };
+
+    await reservationEligibilityService.checkEligibility({
+      restaurantId: completeReservation.restaurantId,
+      guestCount: completeReservation.guestCount,
+      startTime: completeReservation.startTime,
+      endTime: completeReservation.endTime,
+      ignoreReservationId: id,
+    });
+
+    return reservationRepository.update(
+      id,
+      completeReservation
+    );
+  }
+
+  /**
+   * Deletes an existing reservation.
+   */
+  async deleteReservation(id) {
+    const reservation =
+      await reservationRepository.findById(id);
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found."
+      );
+    }
+
+    await reservationRepository.delete(id);
   }
 }
 

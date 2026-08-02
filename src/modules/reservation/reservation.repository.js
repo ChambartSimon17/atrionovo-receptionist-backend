@@ -9,6 +9,14 @@ class ReservationRepository {
     });
   }
 
+  async findById(id) {
+    return prisma.reservation.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   async findOverlappingReservations(
     restaurantId,
     startTime,
@@ -33,10 +41,27 @@ class ReservationRepository {
       },
     });
   }
-  
+
   async create(data) {
     return prisma.reservation.create({
-        data,
+      data,
+    });
+  }
+
+  async update(id, reservationData) {
+    return prisma.reservation.update({
+      where: {
+        id,
+      },
+      data: reservationData,
+    });
+  }
+
+  async delete(id) {
+    return prisma.reservation.delete({
+      where: {
+        id,
+      },
     });
   }
 }

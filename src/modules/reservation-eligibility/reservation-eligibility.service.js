@@ -35,8 +35,11 @@ class ReservationEligibilityService {
     guestCount,
     startTime,
     endTime,
+    ignoreReservationId,
   }) {
-    const restaurant = await this.#getRestaurant(restaurantId);
+    const restaurant = await this.#getRestaurant(
+      restaurantId
+    );
 
     await this.#validateOpeningHours({
       restaurant,
@@ -59,6 +62,7 @@ class ReservationEligibilityService {
       guestCount,
       startTime,
       endTime,
+      ignoreReservationId,
     });
 
     return {
@@ -74,10 +78,14 @@ class ReservationEligibilityService {
    */
   async #getRestaurant(restaurantId) {
     const restaurant =
-      await restaurantRepository.findById(restaurantId);
+      await restaurantRepository.findById(
+        restaurantId
+      );
 
     if (!restaurant) {
-      throw new NotFoundError("Restaurant not found.");
+      throw new NotFoundError(
+        "Restaurant not found."
+      );
     }
 
     return restaurant;
@@ -119,8 +127,10 @@ class ReservationEligibilityService {
 
     const fitsOpeningPeriod = openingHours.some(
       (openingHour) =>
-        startMinutes >= openingHour.opensAtMinutes &&
-        endMinutes <= openingHour.closesAtMinutes
+        startMinutes >=
+          openingHour.opensAtMinutes &&
+        endMinutes <=
+          openingHour.closesAtMinutes
     );
 
     if (!fitsOpeningPeriod) {
@@ -147,7 +157,7 @@ class ReservationEligibilityService {
 
     if (
       startMinutes %
-      restaurant.arrivalIntervalMinutes !==
+        restaurant.arrivalIntervalMinutes !==
       0
     ) {
       throw new ValidationError(
@@ -156,7 +166,7 @@ class ReservationEligibilityService {
     }
   }
 
-   /**
+  /**
    * Ensures the reservation does not exceed
    * the restaurant's maximum reservation size.
    */
@@ -164,7 +174,10 @@ class ReservationEligibilityService {
     restaurant,
     guestCount,
   }) {
-    if (guestCount > restaurant.maxReservationSize) {
+    if (
+      guestCount >
+      restaurant.maxReservationSize
+    ) {
       throw new ValidationError(
         `Maximum reservation size is ${restaurant.maxReservationSize}.`
       );
@@ -180,16 +193,26 @@ class ReservationEligibilityService {
     guestCount,
     startTime,
     endTime,
+    ignoreReservationId,
   }) {
-    const reservations =
+    let reservations =
       await reservationRepository.findOverlappingReservations(
         restaurant.id,
         startTime,
         endTime
       );
 
+    if (ignoreReservationId) {
+      reservations = reservations.filter(
+        (reservation) =>
+          reservation.id !== ignoreReservationId
+      );
+    }
+
     const occupiedSeats =
-      this.#calculateOccupiedSeats(reservations);
+      this.#calculateOccupiedSeats(
+        reservations
+      );
 
     if (
       occupiedSeats + guestCount >
