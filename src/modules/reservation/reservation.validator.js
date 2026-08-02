@@ -27,3 +27,24 @@ export const checkAvailabilitySchema = z.object({
 
   endTime: z.iso.datetime(),
 });
+
+export const findUpcomingReservationsSchema = z
+  .object({
+    restaurantId: z.string().min(1),
+
+    phoneNumber: z.string().optional(),
+
+    email: z.email().optional(),
+
+    lastName: z.string().optional(),
+  })
+  .refine(
+    (data) =>
+      data.phoneNumber ||
+      data.email ||
+      data.lastName,
+    {
+      message:
+        "Provide at least one search parameter.",
+    }
+  );

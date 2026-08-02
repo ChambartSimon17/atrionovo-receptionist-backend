@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
 import NotFoundError from "../../errors/NotFoundError.js";
+import ValidationError from "../../errors/ValidationError.js";
 import { addMinutes } from "../../utils/time.utils.js";
 
 // ======================================================
@@ -125,6 +126,34 @@ class ReservationService {
     }
 
     await reservationRepository.delete(id);
+  }
+
+  /**
+   * Finds upcoming reservations.
+   */
+  async findUpcoming(search) {
+    const restaurant =
+      await restaurantRepository.findById(
+        search.restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found."
+      );
+    }
+
+    if (
+      !search.phoneNumber &&
+      !search.email &&
+      !search.lastName
+    ) {
+      throw new ValidationError(
+        "Provide at least one search parameter."
+      );
+    }
+
+    return reservationRepository.findUpcoming(search);
   }
 }
 

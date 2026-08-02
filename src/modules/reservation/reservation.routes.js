@@ -20,4 +20,9 @@ export default async function reservationRoutes(fastify) {
     "/:id",
     reservationController.deleteReservation
   );
+
+  fastify.get(
+    "/upcoming",
+    reservationController.findUpcoming
+  );
 }

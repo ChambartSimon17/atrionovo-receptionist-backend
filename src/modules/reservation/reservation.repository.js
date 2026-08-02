@@ -64,6 +64,40 @@ class ReservationRepository {
       },
     });
   }
+
+  async findUpcoming({
+    restaurantId,
+    phoneNumber,
+    email,
+    lastName,
+  }) {
+    const where = {
+      restaurantId,
+      status: "CONFIRMED",
+      startTime: {
+        gte: new Date(),
+      },
+    };
+
+    if (phoneNumber) {
+      where.phoneNumber = phoneNumber;
+    }
+
+    if (email) {
+      where.email = email;
+    }
+
+    if (lastName) {
+      where.lastName = lastName;
+    }
+
+    return prisma.reservation.findMany({
+      where,
+      orderBy: {
+        startTime: "asc",
+      },
+    });
+  }
 }
 
 export default new ReservationRepository();

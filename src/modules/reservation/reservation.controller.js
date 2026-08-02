@@ -2,6 +2,7 @@ import reservationService from "./reservation.service.js";
 import {
   createReservationSchema,
   checkAvailabilitySchema,
+  findUpcomingReservationsSchema,
 } from "./reservation.validator.js";
 
 // ======================================================
@@ -85,6 +86,26 @@ class ReservationController {
     await reservationService.deleteReservation(id);
 
     return reply.status(204).send();
+  }
+
+  /**
+   * Finds upcoming reservations.
+   */
+  async findUpcoming(request, reply) {
+    const search =
+      findUpcomingReservationsSchema.parse(
+        request.query
+      );
+
+    const reservations =
+      await reservationService.findUpcoming(
+        search
+      );
+
+    return reply.send({
+      success: true,
+      data: reservations,
+    });
   }
 }
 
