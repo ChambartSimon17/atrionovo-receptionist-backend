@@ -18,13 +18,9 @@ import ValidationError from "../../errors/ValidationError.js";
 // Current Rules
 // - Restaurant exists
 // - Reservation falls within opening hours
+// - Reservation starts on a valid arrival interval
+// - Reservation does not exceed the restaurant's maximum reservation size
 // - Restaurant has sufficient capacity
-//
-// Future Rules
-// - Arrival slot limits
-// - Holidays
-// - Special opening hours
-// - Maximum party size
 // ======================================================
 
 class ReservationEligibilityService {
@@ -48,7 +44,12 @@ class ReservationEligibilityService {
       endTime,
     });
 
-    this.#validatePartySize({
+    this.#validateArrivalInterval({
+      restaurant,
+      startTime,
+    });
+
+    this.#validateReservationSize({
       restaurant,
       guestCount,
     });
@@ -134,22 +135,46 @@ class ReservationEligibilityService {
     }
   }
 
-    /**
-   * Ensures the reservation does not exceed
-   * the restaurant's maximum party size.
+  /**
+   * Ensures the reservation starts on one of the
+   * restaurant's allowed arrival intervals.
    */
-  #validatePartySize({
+  #validateArrivalInterval({
     restaurant,
-    guestCount,
+    startTime,
   }) {
-    if (guestCount > restaurant.maxPartySize) {
+    const reservationStart = new Date(startTime);
+
+    const startMinutes = dateToMinutes(
+      reservationStart,
+      restaurant.timezone
+    );
+
+    if (
+      startMinutes %
+      restaurant.arrivalIntervalMinutes !==
+      0
+    ) {
       throw new ValidationError(
-        `For groups larger than ${restaurant.maxPartySize} people, please contact the restaurant's email.`
+        `Reservations must start every ${restaurant.arrivalIntervalMinutes} minutes.`
       );
     }
   }
 
-
+   /**
+   * Ensures the reservation does not exceed
+   * the restaurant's maximum reservation size.
+   */
+  #validateReservationSize({
+    restaurant,
+    guestCount,
+  }) {
+    if (guestCount > restaurant.maxReservationSize) {
+      throw new ValidationError(
+        `Maximum reservation size is ${restaurant.maxReservationSize}.`
+      );
+    }
+  }
 
   /**
    * Ensures the restaurant has enough

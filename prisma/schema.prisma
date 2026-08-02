@@ -102,7 +102,14 @@ model Restaurant {
 
   defaultReservationDurationMinutes Int @default(120)
 
-  maxPartySize Int @default(8)
+  maxReservationSize Int @default(8)
+
+  // Reservation arrival interval (minutes).
+  //
+  // Reservations may only start at
+  // multiples of this interval.
+
+  arrivalIntervalMinutes Int @default(15)
 
   timezone String @default("Europe/Brussels")
   language String @default("nl")
@@ -112,6 +119,7 @@ model Restaurant {
   // -------------------------
 
   openingHours OpeningHour[]
+  specialOpeningDays SpecialOpeningDay[]
   reservations Reservation[]
 
   // -------------------------
@@ -183,6 +191,124 @@ model OpeningHour {
 
   @@index([restaurantId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
 }
+
+
+// ------------------------------------------------------
+// SpecialOpeningDay
+// ------------------------------------------------------
+// Represents an exception to the restaurant's
+// normal weekly opening schedule.
+//
+// Examples
+//
+// 2026-12-24
+// - 12:00 → 15:00
+// - 18:00 → 22:00
+//
+// 2026-12-25
+// Closed
+// ------------------------------------------------------
+
+model SpecialOpeningDay {
+
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Restaurant Relationship
+  // -------------------------
+
+  restaurantId String
+
+  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
+
+  // -------------------------
+  // Date
+  // -------------------------
+
+  date DateTime
+
+  // -------------------------
+  // Configuration
+  // -------------------------
+
+  isClosed Boolean @default(false)
+
+  // -------------------------
+  // Relationships
+  // -------------------------
+
+  openingPeriods SpecialOpeningPeriod[]
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@unique([restaurantId, date])
+}
+
+
+// ------------------------------------------------------
+// SpecialOpeningPeriod
+// ------------------------------------------------------
+// Represents one opening period belonging
+// to a special opening day.
+//
+// Example
+//
+// Christmas Eve
+//
+// 12:00 → 15:00
+// 18:00 → 22:00
+// ------------------------------------------------------
+
+model SpecialOpeningPeriod {
+
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Relationship
+  // -------------------------
+
+  specialOpeningDayId String
+
+  specialOpeningDay SpecialOpeningDay @relation( fields: [specialOpeningDayId], references: [id], onDelete: Cascade )
+
+  // -------------------------
+  // Opening Period
+  // -------------------------
+
+  opensAtMinutes Int
+  closesAtMinutes Int
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([specialOpeningDayId])
+}
+
 
 // ======================================================
 // RESERVATION DOMAIN

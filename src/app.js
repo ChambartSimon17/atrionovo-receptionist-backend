@@ -5,6 +5,7 @@ import reservationRoutes from "./modules/reservation/reservation.routes.js";
 import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
 import openingHourRoutes from "./modules/restaurant/opening-hours/opening-hour.routes.js";
 import errorHandler from "./middleware/error.middleware.js";
+import specialOpeningDayRoutes from "./modules/restaurant/special-opening-days/special-opening-day.routes.js";
 
 const app = Fastify({
   logger: true,
@@ -28,6 +29,7 @@ app.register(restaurantRoutes, {
 app.register(openingHourRoutes, {
   prefix: "/restaurants",
 });
+await app.register(specialOpeningDayRoutes);
 
 app.setErrorHandler(errorHandler);
 

@@ -1,25 +1,25 @@
 info:
-  name: Overlapping Periods
+  name: Create Special Opening Day
   type: http
-  seq: 4
+  seq: 2
 
 http:
-  method: PUT
-  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/opening-hours
+  method: POST
+  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/special-opening-days
   body:
     type: json
     data: |-
       {
-        "openingHours": [
+        "date": "2026-12-24",
+        "isClosed": false,
+        "openingPeriods": [
           {
-            "dayOfWeek": "MONDAY",
             "opensAtMinutes": 720,
             "closesAtMinutes": 900
           },
           {
-            "dayOfWeek": "MONDAY",
-            "opensAtMinutes": 840,
-            "closesAtMinutes": 1080
+            "opensAtMinutes": 1080,
+            "closesAtMinutes": 1320
           }
         ]
       }

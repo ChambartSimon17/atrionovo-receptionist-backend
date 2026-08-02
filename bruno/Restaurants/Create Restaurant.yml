@@ -10,8 +10,8 @@ http:
     type: json
     data: |-
       {
-        "name": "Kin Khao",
-        "slug": "kin-khao",
+        "name": "Kin Khao-2",
+        "slug": "kin-khao-2",
         "maxCapacity": 50,
         "timezone": "Europe/Brussels",
         "language": "nl"

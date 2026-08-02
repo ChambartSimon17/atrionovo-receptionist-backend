@@ -5,7 +5,7 @@ info:
 
 http:
   method: PUT
-  url: http://localhost:3000/restaurants/cms6ftdc70000s0kx0pdyvhtb/opening-hours
+  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/opening-hours
   body:
     type: json
     data: |-

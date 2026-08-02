@@ -1,0 +1,18 @@
+info:
+  name: Get Special Opening Days
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:3000/restaurants/cmsblt8d50000s08j3u4pnxvp/special-opening-days
+  body:
+    type: json
+    data: ""
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
