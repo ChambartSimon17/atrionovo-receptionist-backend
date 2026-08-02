@@ -12,8 +12,8 @@ http:
       {
         "restaurantId": "cmsblt8d50000s08j3u4pnxvp",
         "guestCount": 2,
-        "startTime": "2026-08-03T15:00:00.000Z",
-        "endTime": "2026-08-03T17:00:00.000Z"
+        "startTime": "2026-12-24T11:30:00.000Z",
+        "endTime": "2026-12-24T13:30:00.000Z"
       }
   auth: inherit
 

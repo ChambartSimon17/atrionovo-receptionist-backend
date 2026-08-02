@@ -1,7 +1,7 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationRepository from "../reservation/reservation.repository.js";
-import openingHourRepository from "../restaurant/opening-hours/opening-hour.repository.js";
-import { dateToMinutes, dateToDayOfWeek } from "../../utils/time.utils.js";
+import openingScheduleService from "../restaurant/opening-schedule/opening-schedule.service.js";
+import { dateToMinutes } from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 
@@ -95,15 +95,10 @@ class ReservationEligibilityService {
     const reservationStart = new Date(startTime);
     const reservationEnd = new Date(endTime);
 
-    const dayOfWeek = dateToDayOfWeek(
-      reservationStart,
-      restaurant.timezone
-    );
-
     const openingHours =
-      await openingHourRepository.findByRestaurantAndDay(
-        restaurant.id,
-        dayOfWeek
+      await openingScheduleService.findOpeningPeriods(
+        restaurant,
+        reservationStart
       );
 
     if (openingHours.length === 0) {
