@@ -4,6 +4,8 @@ import reservationRepository from "./reservation.repository.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { addMinutes } from "../../utils/time.utils.js";
+import { normalizePhoneNumber } from "../../utils/phone.utils.js";
+import { normalizeEmail } from "../../utils/email.utils.js";
 
 // ======================================================
 // Reservation Service
@@ -53,6 +55,12 @@ class ReservationService {
 
     const completeReservation = {
       ...reservationData,
+      phoneNumber: normalizePhoneNumber(
+        reservationData.phoneNumber
+      ),
+      email: normalizeEmail(
+        reservationData.email
+      ),
       endTime,
     };
 
@@ -95,6 +103,12 @@ class ReservationService {
 
     const completeReservation = {
       ...reservationData,
+      phoneNumber: normalizePhoneNumber(
+        reservationData.phoneNumber
+      ),
+      email: normalizeEmail(
+        reservationData.email
+      ),
       endTime,
     };
 
@@ -153,7 +167,27 @@ class ReservationService {
       );
     }
 
-    return reservationRepository.findUpcoming(search);
+    const searchCriteria = {
+      ...search,
+    };
+
+    if (search.phoneNumber) {
+      searchCriteria.phoneNumber =
+        normalizePhoneNumber(
+          search.phoneNumber
+        );
+    }
+
+    if (search.email) {
+      searchCriteria.email =
+        normalizeEmail(
+          search.email
+        );
+    }
+
+    return reservationRepository.findUpcoming(
+      searchCriteria
+    );
   }
 }
 
