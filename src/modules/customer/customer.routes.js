@@ -20,4 +20,9 @@ export default async function customerRoutes(fastify) {
     "/:id",
     customerController.deleteCustomer
   );
+
+  fastify.get(
+    "/profile",
+    customerController.getCallerProfile
+  );
 }

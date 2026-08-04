@@ -1,7 +1,9 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationRepository from "../reservation/reservation.repository.js";
 import openingScheduleService from "../restaurant/opening-schedule/opening-schedule.service.js";
-import { dateToMinutes } from "../../utils/time.utils.js";
+import {
+  dateToMinutes,
+} from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 
@@ -112,6 +114,29 @@ class ReservationEligibilityService {
     if (openingHours.length === 0) {
       throw new ValidationError(
         "Restaurant is closed on this day."
+      );
+    }
+
+    // Reservations may not span multiple local days.
+    const formatter = new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: restaurant.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }
+    );
+
+    const startDate =
+      formatter.format(reservationStart);
+
+    const endDate =
+      formatter.format(reservationEnd);
+
+    if (startDate !== endDate) {
+      throw new ValidationError(
+        "Reservation cannot span multiple days."
       );
     }
 
@@ -228,7 +253,9 @@ class ReservationEligibilityService {
    * Calculates the total number of occupied seats
    * for the requested reservation period.
    */
-  #calculateOccupiedSeats(reservations) {
+  #calculateOccupiedSeats(
+    reservations
+  ) {
     return reservations.reduce(
       (total, reservation) =>
         total + reservation.guestCount,

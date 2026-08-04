@@ -1,0 +1,21 @@
+info:
+  name: Reschedule Reservation
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reservations/{{reservationId}}/reschedule"
+  body:
+    type: json
+    data: |-
+      {
+        "startTime": "2026-08-15T20:00:00.000Z"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

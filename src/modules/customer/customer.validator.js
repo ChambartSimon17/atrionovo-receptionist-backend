@@ -21,3 +21,9 @@ export const findCustomerSchema = z.object({
 
   phoneNumber: z.string().min(1),
 });
+
+export const callerProfileSchema = z.object({
+  restaurantId: z.string().min(1),
+
+  phoneNumber: z.string().min(1),
+});

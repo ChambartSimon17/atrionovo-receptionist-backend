@@ -158,6 +158,40 @@ class ReservationService {
   }
 
   /**
+   * Reschedules an existing reservation.
+   */
+  async rescheduleReservation(
+    id,
+    { startTime }
+  ) {
+    const reservation =
+      await reservationRepository.findById(id);
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found."
+      );
+    }
+
+    if (reservation.status !== "CONFIRMED") {
+      throw new ValidationError(
+        `Reservation cannot be rescheduled because it is ${reservation.status.toLowerCase()}.`
+      );
+    }
+
+    return this.updateReservation(id, {
+      restaurantId: reservation.restaurantId,
+      firstName: reservation.firstName,
+      lastName: reservation.lastName,
+      phoneNumber: reservation.phoneNumber,
+      email: reservation.email,
+      guestCount: reservation.guestCount,
+      startTime,
+      notes: reservation.notes,
+    });
+  }
+
+  /**
    * Deletes an existing reservation.
    */
   async deleteReservation(id) {

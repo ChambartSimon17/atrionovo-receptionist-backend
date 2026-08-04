@@ -17,7 +17,7 @@ http:
         "email": "simon@test.com",
         "guestCount": 1,
         "startTime": "2026-08-17T15:15:00.000Z",
-        "notes": "reservatieTest"
+        "notes": "reservatieTest2"
       }
   auth: inherit
 
@@ -30,6 +30,11 @@ runtime:
         bru.setVar(
           "reservationId",
           response.data.id
+        );
+
+        bru.setVar(
+          "phoneNumber",
+          response.data.phoneNumber
         );
   actions:
     - type: set-variable

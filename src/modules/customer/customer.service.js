@@ -179,6 +179,42 @@ class CustomerService {
   }
 
   /**
+   * Retrieves the caller profile together with
+   * upcoming reservations.
+   */
+  async getCallerProfile({
+    restaurantId,
+    phoneNumber,
+  }) {
+    await this.#ensureRestaurantExists(
+      restaurantId
+    );
+
+    const customer =
+      await customerRepository.findProfileByPhoneNumber(
+        restaurantId,
+        normalizePhoneNumber(phoneNumber)
+      );
+
+    if (!customer) {
+      return {
+        customer: null,
+        upcomingReservations: [],
+      };
+    }
+
+    const {
+      reservations,
+      ...customerData
+    } = customer;
+
+    return {
+      customer: customerData,
+      upcomingReservations: reservations,
+    };
+  }
+
+  /**
    * Ensures the restaurant exists.
    */
   async #ensureRestaurantExists(

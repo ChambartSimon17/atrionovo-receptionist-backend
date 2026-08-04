@@ -3,6 +3,7 @@ import {
   createReservationSchema,
   checkAvailabilitySchema,
   findUpcomingReservationsSchema,
+  rescheduleReservationSchema,
 } from "./reservation.validator.js";
 
 // ======================================================
@@ -67,6 +68,29 @@ class ReservationController {
 
     const updatedReservation =
       await reservationService.updateReservation(
+        id,
+        reservation
+      );
+
+    return reply.send({
+      success: true,
+      data: updatedReservation,
+    });
+  }
+
+  /**
+   * Reschedules an existing reservation.
+   */
+  async rescheduleReservation(request, reply) {
+    const { id } = request.params;
+
+    const reservation =
+      rescheduleReservationSchema.parse(
+        request.body
+      );
+
+    const updatedReservation =
+      await reservationService.rescheduleReservation(
         id,
         reservation
       );

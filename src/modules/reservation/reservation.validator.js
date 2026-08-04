@@ -18,6 +18,10 @@ export const createReservationSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const rescheduleReservationSchema = z.object({
+  startTime: z.iso.datetime(),
+});
+
 export const checkAvailabilitySchema = z.object({
   restaurantId: z.string().min(1),
 

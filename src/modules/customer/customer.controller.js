@@ -2,6 +2,7 @@ import customerService from "./customer.service.js";
 import {
   createCustomerSchema,
   findCustomerSchema,
+  callerProfileSchema,
 } from "./customer.validator.js";
 
 // ======================================================
@@ -53,6 +54,27 @@ class CustomerController {
     return reply.send({
       success: true,
       data: customer,
+    });
+  }
+
+  /**
+   * Retrieves the caller profile together with
+   * upcoming reservations.
+   */
+  async getCallerProfile(request, reply) {
+    const query =
+      callerProfileSchema.parse(
+        request.query
+      );
+
+    const profile =
+      await customerService.getCallerProfile(
+        query
+      );
+
+    return reply.send({
+      success: true,
+      data: profile,
     });
   }
 

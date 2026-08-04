@@ -39,6 +39,37 @@ class CustomerRepository {
   }
 
   /**
+   * Retrieves a customer together with
+   * upcoming confirmed reservations.
+   */
+  async findProfileByPhoneNumber(
+    restaurantId,
+    phoneNumber
+  ) {
+    return prisma.customer.findUnique({
+      where: {
+        restaurantId_phoneNumber: {
+          restaurantId,
+          phoneNumber,
+        },
+      },
+      include: {
+        reservations: {
+          where: {
+            status: "CONFIRMED",
+            startTime: {
+              gte: new Date(),
+            },
+          },
+          orderBy: {
+            startTime: "asc",
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * Retrieves a customer by email.
    */
   async findByEmail(
