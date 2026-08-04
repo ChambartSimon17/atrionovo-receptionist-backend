@@ -1,0 +1,38 @@
+info:
+  name: Create Customer
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/customers"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurantId": "{{restaurantId}}",
+        "firstName": "Simon",
+        "lastName": "Chambart",
+        "phoneNumber": "0470 12 34 56",
+        "email": "Simon@icloud.com",
+        "notes": "Prefers terrace",
+        "isVip": true
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        const response = res.getBody();
+
+        bru.setVar(
+          "customerId",
+          response.data.id
+        );
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

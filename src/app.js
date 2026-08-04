@@ -1,9 +1,9 @@
 import Fastify from "fastify";
 import healthRoutes from "./system/health.routes.js";
-import crmRoutes from "./modules/crm/crm.routes.js";
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
 import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
 import openingHourRoutes from "./modules/restaurant/opening-hours/opening-hour.routes.js";
+import customerRoutes from "./modules/customer/customer.routes.js";
 import errorHandler from "./middleware/error.middleware.js";
 import specialOpeningDayRoutes from "./modules/restaurant/special-opening-days/special-opening-day.routes.js";
 
@@ -19,9 +19,11 @@ app.get("/", async (request, reply) => {
 });
 
 app.register(healthRoutes);
-app.register(crmRoutes);
 app.register(reservationRoutes, {
   prefix: "/reservations",
+});
+app.register(customerRoutes, {
+  prefix: "/customers",
 });
 app.register(restaurantRoutes, {
   prefix: "/restaurants",

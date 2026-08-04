@@ -121,6 +121,7 @@ model Restaurant {
   openingHours OpeningHour[]
   specialOpeningDays SpecialOpeningDay[]
   reservations Reservation[]
+  customers Customer[]
 
   // -------------------------
   // Metadata
@@ -128,6 +129,57 @@ model Restaurant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+
+model Customer {
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Restaurant Relationship
+  // -------------------------
+
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Customer Information
+  // -------------------------
+
+  firstName String
+  lastName  String
+
+  phoneNumber String
+  email       String?
+
+  // -------------------------
+  // Customer Details
+  // -------------------------
+
+  notes String?
+
+  isVip Boolean @default(false)
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@unique([restaurantId, phoneNumber], map: "uq_customer_restaurant_phone")
+  @@index([restaurantId, email], map: "idx_customer_restaurant_email")
+  @@index([restaurantId, lastName], map: "idx_customer_restaurant_last_name")
 }
 
 // ------------------------------------------------------

@@ -1,0 +1,22 @@
+info:
+  name: Find Customer
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/customers/search?restaurantId={{restaurantId}}&phoneNumber=+32470123456"
+  params:
+    - name: restaurantId
+      value: "{{restaurantId}}"
+      type: query
+    - name: phoneNumber
+      value: "+32470123456"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
