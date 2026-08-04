@@ -89,6 +89,23 @@ class ReservationController {
   }
 
   /**
+   * Cancels an existing reservation.
+   */
+  async cancelReservation(request, reply) {
+    const { id } = request.params;
+
+    const cancelledReservation =
+      await reservationService.cancelReservation(
+        id
+      );
+
+    return reply.send({
+      success: true,
+      data: cancelledReservation,
+    });
+  }
+
+  /**
    * Finds upcoming reservations.
    */
   async findUpcoming(request, reply) {

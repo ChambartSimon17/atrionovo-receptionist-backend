@@ -21,6 +21,11 @@ export default async function reservationRoutes(fastify) {
     reservationController.deleteReservation
   );
 
+  fastify.post(
+    "/:id/cancel",
+    reservationController.cancelReservation
+  );
+
   fastify.get(
     "/upcoming",
     reservationController.findUpcoming

@@ -14,14 +14,23 @@ http:
         "firstName": "Simon",
         "lastName": "Chambart",
         "phoneNumber": "+32470123456",
-        "email": "simon@example.com",
+        "email": "simon@test.com",
         "guestCount": 1,
-        "startTime": "2026-08-03T15:15:00.000Z",
-        "notes": "Window seat"
+        "startTime": "2026-08-17T15:15:00.000Z",
+        "notes": "reservatieTest"
       }
   auth: inherit
 
 runtime:
+  scripts:
+    - type: tests
+      code: |-
+        const response = res.getBody();
+
+        bru.setVar(
+          "reservationId",
+          response.data.id
+        );
   actions:
     - type: set-variable
       phase: after-response

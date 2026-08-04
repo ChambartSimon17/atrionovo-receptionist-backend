@@ -105,6 +105,12 @@ class ReservationService {
       );
     }
 
+    if (existingReservation.status !== "CONFIRMED") {
+      throw new ValidationError(
+        `Reservation cannot be updated because it is ${existingReservation.status.toLowerCase()}.`
+      );
+    }
+
     const restaurant = await restaurantRepository.findById(
       reservationData.restaurantId
     );
@@ -165,6 +171,30 @@ class ReservationService {
     }
 
     await reservationRepository.delete(id);
+  }
+
+  /**
+   * Cancels an existing reservation.
+   */
+  async cancelReservation(id) {
+    const reservation =
+      await reservationRepository.findById(id);
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found."
+      );
+    }
+
+    if (reservation.status !== "CONFIRMED") {
+      throw new ValidationError(
+        `Reservation cannot be cancelled because it is ${reservation.status.toLowerCase()}.`
+      );
+    }
+
+    return reservationRepository.update(id, {
+      status: "CANCELLED",
+    });
   }
 
   /**
