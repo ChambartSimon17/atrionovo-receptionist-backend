@@ -170,6 +170,8 @@ model Customer {
   // Metadata
   // -------------------------
 
+  reservations Reservation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -390,10 +392,18 @@ model Reservation {
 
   restaurantId String
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
 
   // -------------------------
-  // Customer Information
+  // Customer Relationship
+  // -------------------------
+
+  customerId String?
+
+  customer Customer? @relation( fields: [customerId], references: [id], onDelete: SetNull )
+
+  // -------------------------
+  // Customer Snapshot
   // -------------------------
 
   firstName String
@@ -427,6 +437,7 @@ model Reservation {
   // -------------------------
 
   @@index([restaurantId], map: "idx_reservation_restaurant")
+  @@index([customerId], map: "idx_reservation_customer")
   @@index([startTime], map: "idx_reservation_start_time")
   @@index([endTime], map: "idx_reservation_end_time")
   @@index([restaurantId, startTime], map: "idx_reservation_restaurant_start")

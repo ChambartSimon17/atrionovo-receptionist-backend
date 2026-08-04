@@ -1,6 +1,7 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
+import customerService from "../customer/customer.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { addMinutes } from "../../utils/time.utils.js";
@@ -71,6 +72,18 @@ class ReservationService {
       endTime: completeReservation.endTime,
     });
 
+    const customer =
+      await customerService.syncCustomer({
+        restaurantId: completeReservation.restaurantId,
+        firstName: completeReservation.firstName,
+        lastName: completeReservation.lastName,
+        phoneNumber: completeReservation.phoneNumber,
+        email: completeReservation.email,
+      });
+
+    completeReservation.customerId =
+      customer.id;
+
     return reservationRepository.create(
       completeReservation
     );
@@ -119,6 +132,18 @@ class ReservationService {
       endTime: completeReservation.endTime,
       ignoreReservationId: id,
     });
+
+    const customer =
+      await customerService.syncCustomer({
+        restaurantId: completeReservation.restaurantId,
+        firstName: completeReservation.firstName,
+        lastName: completeReservation.lastName,
+        phoneNumber: completeReservation.phoneNumber,
+        email: completeReservation.email,
+      });
+
+    completeReservation.customerId =
+      customer.id;
 
     return reservationRepository.update(
       id,

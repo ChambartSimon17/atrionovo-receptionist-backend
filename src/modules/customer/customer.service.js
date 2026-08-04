@@ -54,6 +54,56 @@ class CustomerService {
   }
 
   /**
+   * Synchronizes customer information.
+   *
+   * If the customer already exists, the latest
+   * information is stored.
+   *
+   * Otherwise a new customer is created.
+   */
+  async syncCustomer(customerData) {
+    await this.#ensureRestaurantExists(
+      customerData.restaurantId
+    );
+
+    const normalizedCustomer = {
+      ...customerData,
+      phoneNumber: normalizePhoneNumber(
+        customerData.phoneNumber
+      ),
+      email: normalizeEmail(customerData.email),
+    };
+
+    const existingCustomer =
+      await customerRepository.findByPhoneNumber(
+        normalizedCustomer.restaurantId,
+        normalizedCustomer.phoneNumber
+      );
+
+    if (!existingCustomer) {
+      return customerRepository.create(
+        normalizedCustomer
+      );
+    }
+
+    const updatedCustomer = {
+      firstName: normalizedCustomer.firstName,
+      lastName: normalizedCustomer.lastName,
+      phoneNumber: normalizedCustomer.phoneNumber,
+    };
+
+    if (normalizedCustomer.email !== undefined) {
+      updatedCustomer.email =
+        normalizedCustomer.email;
+    }
+
+    return customerRepository.update(
+      existingCustomer.id,
+      updatedCustomer
+    );
+  }
+
+  /**
    * Updates an existing customer.
    */
   async updateCustomer(id, customerData) {
