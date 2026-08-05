@@ -45,7 +45,10 @@ class OpeningHourService {
     const restaurant = await restaurantRepository.findById(restaurantId);
 
     if (!restaurant) {
-      throw new NotFoundError("Restaurant not found.");
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
     }
   }
 

@@ -18,8 +18,13 @@ import AppError from "./AppError.js";
 // ======================================================
 
 class ValidationError extends AppError {
-  constructor(message = "Validation failed.") {
+  constructor(
+    message = "Validation failed.",
+    code = null
+  ) {
     super(message, 400);
+
+    this.code = code;
   }
 }
 

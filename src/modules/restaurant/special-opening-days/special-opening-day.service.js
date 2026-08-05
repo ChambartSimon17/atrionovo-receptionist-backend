@@ -66,7 +66,8 @@ class SpecialOpeningDayService {
 
     if (!existing) {
       throw new NotFoundError(
-        "Special opening day not found."
+        "Special opening day not found.",
+        ErrorCodes.SPECIAL_OPENING_DAY_NOT_FOUND
       );
     }
 
@@ -106,7 +107,8 @@ class SpecialOpeningDayService {
 
     if (!existing) {
       throw new NotFoundError(
-        "Special opening day not found."
+        "Special opening day not found.",
+        ErrorCodes.SPECIAL_OPENING_DAY_NOT_FOUND
       );
     }
 
@@ -121,7 +123,8 @@ class SpecialOpeningDayService {
 
     if (!restaurant) {
       throw new NotFoundError(
-        "Restaurant not found."
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
       );
     }
   }

@@ -112,7 +112,8 @@ class CustomerService {
 
     if (!existingCustomer) {
       throw new NotFoundError(
-        "Customer not found."
+        "Customer not found.",
+        ErrorCodes.CUSTOMER_NOT_FOUND
       );
     }
 
@@ -154,7 +155,8 @@ class CustomerService {
 
     if (!customer) {
       throw new NotFoundError(
-        "Customer not found."
+        "Customer not found.",
+        ErrorCodes.CUSTOMER_NOT_FOUND
       );
     }
 
@@ -227,7 +229,8 @@ class CustomerService {
 
     if (!restaurant) {
       throw new NotFoundError(
-        "Restaurant not found."
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
       );
     }
   }

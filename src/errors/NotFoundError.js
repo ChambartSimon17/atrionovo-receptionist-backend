@@ -14,8 +14,13 @@ import AppError from "./AppError.js";
 // ======================================================
 
 class NotFoundError extends AppError {
-  constructor(message = "Resource not found") {
+  constructor(
+    message = "Resource not found.",
+    code = null
+  ) {
     super(message, 404);
+
+    this.code = code;
   }
 }
 

@@ -4,6 +4,7 @@ import reservationRepository from "./reservation.repository.js";
 import customerService from "../customer/customer.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
+import { ErrorCodes } from "../../errors/error-codes.js";
 import { addMinutes } from "../../utils/time.utils.js";
 import { normalizePhoneNumber } from "../../utils/phone.utils.js";
 import { normalizeEmail } from "../../utils/email.utils.js";
@@ -101,13 +102,15 @@ class ReservationService {
 
     if (!existingReservation) {
       throw new NotFoundError(
-        "Reservation not found."
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
       );
     }
 
     if (existingReservation.status !== "CONFIRMED") {
       throw new ValidationError(
-        `Reservation cannot be updated because it is ${existingReservation.status.toLowerCase()}.`
+        `Reservation cannot be updated because it is ${existingReservation.status.toLowerCase()}.`,
+        ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
 
@@ -169,13 +172,15 @@ class ReservationService {
 
     if (!reservation) {
       throw new NotFoundError(
-        "Reservation not found."
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
       );
     }
 
     if (reservation.status !== "CONFIRMED") {
       throw new ValidationError(
-        `Reservation cannot be rescheduled because it is ${reservation.status.toLowerCase()}.`
+        `Reservation cannot be rescheduled because it is ${reservation.status.toLowerCase()}.`,
+        ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
 
@@ -200,7 +205,8 @@ class ReservationService {
 
     if (!reservation) {
       throw new NotFoundError(
-        "Reservation not found."
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
       );
     }
 
@@ -216,13 +222,15 @@ class ReservationService {
 
     if (!reservation) {
       throw new NotFoundError(
-        "Reservation not found."
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
       );
     }
 
     if (reservation.status !== "CONFIRMED") {
       throw new ValidationError(
-        `Reservation cannot be cancelled because it is ${reservation.status.toLowerCase()}.`
+        `Reservation cannot be cancelled because it is ${reservation.status.toLowerCase()}.`,
+        ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
 
@@ -242,7 +250,8 @@ class ReservationService {
 
     if (!restaurant) {
       throw new NotFoundError(
-        "Restaurant not found."
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
       );
     }
 
@@ -252,7 +261,8 @@ class ReservationService {
       !search.lastName
     ) {
       throw new ValidationError(
-        "Provide at least one search parameter."
+        "Provide at least one search parameter.",
+        ErrorCodes.MISSING_SEARCH_PARAMETER
       );
     }
 

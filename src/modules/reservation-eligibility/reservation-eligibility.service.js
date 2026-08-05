@@ -1,9 +1,7 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationRepository from "../reservation/reservation.repository.js";
 import openingScheduleService from "../restaurant/opening-schedule/opening-schedule.service.js";
-import {
-  dateToMinutes,
-} from "../../utils/time.utils.js";
+import { dateToMinutes } from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 
@@ -86,7 +84,8 @@ class ReservationEligibilityService {
 
     if (!restaurant) {
       throw new NotFoundError(
-        "Restaurant not found."
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
       );
     }
 
@@ -113,7 +112,8 @@ class ReservationEligibilityService {
 
     if (openingHours.length === 0) {
       throw new ValidationError(
-        "Restaurant is closed on this day."
+        "Restaurant is closed on this day.",
+        "RESTAURANT_CLOSED"
       );
     }
 
@@ -136,7 +136,8 @@ class ReservationEligibilityService {
 
     if (startDate !== endDate) {
       throw new ValidationError(
-        "Reservation cannot span multiple days."
+        "Reservation cannot span multiple days.",
+        "RESERVATION_SPANS_MULTIPLE_DAYS"
       );
     }
 
@@ -160,7 +161,8 @@ class ReservationEligibilityService {
 
     if (!fitsOpeningPeriod) {
       throw new ValidationError(
-        "Reservation falls outside opening hours."
+        "Reservation falls outside opening hours.",
+        "OUTSIDE_OPENING_HOURS"
       );
     }
   }
@@ -186,7 +188,8 @@ class ReservationEligibilityService {
       0
     ) {
       throw new ValidationError(
-        `Reservations must start every ${restaurant.arrivalIntervalMinutes} minutes.`
+        `Reservations must start every ${restaurant.arrivalIntervalMinutes} minutes.`,
+        "INVALID_ARRIVAL_INTERVAL"
       );
     }
   }
@@ -204,7 +207,8 @@ class ReservationEligibilityService {
       restaurant.maxReservationSize
     ) {
       throw new ValidationError(
-        `Maximum reservation size is ${restaurant.maxReservationSize}.`
+        `Maximum reservation size is ${restaurant.maxReservationSize}.`,
+        "MAX_RESERVATION_SIZE_EXCEEDED"
       );
     }
   }
@@ -244,7 +248,8 @@ class ReservationEligibilityService {
       restaurant.maxCapacity
     ) {
       throw new ValidationError(
-        "Restaurant capacity exceeded."
+        "Restaurant capacity exceeded.",
+        "CAPACITY_EXCEEDED"
       );
     }
   }

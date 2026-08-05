@@ -1,4 +1,8 @@
-export default async function errorHandler(error, request, reply) {
+export default async function errorHandler(
+  error,
+  request,
+  reply
+) {
   request.log.error(error);
 
   const statusCode = error.statusCode || 500;
@@ -9,6 +13,7 @@ export default async function errorHandler(error, request, reply) {
       statusCode === 500
         ? "Internal server error"
         : error.message,
+    code: error.code || null,
     errors: error.details || [],
   });
 }
