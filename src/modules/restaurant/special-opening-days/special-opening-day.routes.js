@@ -9,13 +9,15 @@ import specialOpeningDayController from "./special-opening-day.controller.js";
 // special opening days.
 // ======================================================
 
-export default async function specialOpeningDayRoutes(fastify) {
+export default async function specialOpeningDayRoutes(
+  fastify
+) {
   /**
    * Retrieves all special opening days
    * for a restaurant.
    */
   fastify.get(
-    "/restaurants/:restaurantId/special-opening-days",
+    "/:restaurantId/special-opening-days",
     specialOpeningDayController.findByRestaurant
   );
 
@@ -23,7 +25,7 @@ export default async function specialOpeningDayRoutes(fastify) {
    * Creates a new special opening day.
    */
   fastify.post(
-    "/restaurants/:restaurantId/special-opening-days",
+    "/:restaurantId/special-opening-days",
     specialOpeningDayController.create
   );
 
@@ -31,7 +33,7 @@ export default async function specialOpeningDayRoutes(fastify) {
    * Updates an existing special opening day.
    */
   fastify.put(
-    "/restaurants/:restaurantId/special-opening-days/:id",
+    "/:restaurantId/special-opening-days/:id",
     specialOpeningDayController.update
   );
 
@@ -39,7 +41,7 @@ export default async function specialOpeningDayRoutes(fastify) {
    * Deletes a special opening day.
    */
   fastify.delete(
-    "/restaurants/:restaurantId/special-opening-days/:id",
+    "/:restaurantId/special-opening-days/:id",
     specialOpeningDayController.delete
   );
 }
