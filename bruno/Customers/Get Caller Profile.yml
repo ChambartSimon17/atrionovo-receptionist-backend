@@ -5,7 +5,14 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/customers/profile"
+  url: "{{baseUrl}}/customers/profile?restaurantId={{restaurantId}}&phoneNumber={{phoneNumber}}"
+  params:
+    - name: restaurantId
+      value: "{{restaurantId}}"
+      type: query
+    - name: phoneNumber
+      value: "{{phoneNumber}}"
+      type: query
   auth: inherit
 
 settings:

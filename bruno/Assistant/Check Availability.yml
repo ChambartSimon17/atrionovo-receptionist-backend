@@ -1,11 +1,11 @@
 info:
-  name: Get Caller Profile
+  name: Check Availability
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
-  url: "{{baseUrl}}/assistant/caller-profile"
+  url: "{{baseUrl}}/assistant/check-availability"
   headers:
     - name: x-restaurant-id
       value: cmscbcxyy000ks0l4jnrhygy5
@@ -13,7 +13,9 @@ http:
     type: json
     data: |-
       {
-        "phoneNumber": "+32470123456"
+        "guestCount": 2,
+        "startTime": "2026-08-10T15:00:00.000Z",
+        "endTime": "2026-08-10T17:00:00.000Z"
       }
   auth: inherit
 

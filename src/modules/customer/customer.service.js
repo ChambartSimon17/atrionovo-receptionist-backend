@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant/restaurant.repository.js";
 import customerRepository from "./customer.repository.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
+import { ErrorCodes } from "../../errors/error-codes.js";
 import { normalizePhoneNumber } from "../../utils/phone.utils.js";
 import { normalizeEmail } from "../../utils/email.utils.js";
 

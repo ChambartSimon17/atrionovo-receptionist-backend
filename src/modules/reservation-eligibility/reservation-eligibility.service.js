@@ -4,6 +4,7 @@ import openingScheduleService from "../restaurant/opening-schedule/opening-sched
 import { dateToMinutes } from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
+import { ErrorCodes } from "../../errors/error-codes.js";
 
 // ======================================================
 // Reservation Eligibility Service

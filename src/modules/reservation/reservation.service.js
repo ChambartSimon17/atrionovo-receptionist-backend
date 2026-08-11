@@ -288,6 +288,23 @@ class ReservationService {
       searchCriteria
     );
   }
+
+  /**
+   * Finds a reservation by ID.
+   */
+  async findById(id) {
+    const reservation =
+      await reservationRepository.findById(id);
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    return reservation;
+  }
 }
 
 export default new ReservationService();
