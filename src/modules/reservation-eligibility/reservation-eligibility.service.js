@@ -20,8 +20,15 @@ import { ErrorCodes } from "../../errors/error-codes.js";
 // - Restaurant exists
 // - Reservation falls within opening hours
 // - Reservation starts on a valid arrival interval
-// - Reservation does not exceed the restaurant's maximum reservation size
+// - Reservation does not exceed the restaurant's
+//   maximum reservation size
 // - Restaurant has sufficient capacity
+//
+// Alternative Slot Rules
+// - Search nearby valid arrival times
+// - Reuse the exact same eligibility rules
+// - Return the closest available slots
+// - Never return invalid reservation times
 // ======================================================
 
 class ReservationEligibilityService {
@@ -38,9 +45,10 @@ class ReservationEligibilityService {
     endTime,
     ignoreReservationId,
   }) {
-    const restaurant = await this.#getRestaurant(
-      restaurantId
-    );
+    const restaurant =
+      await this.#getRestaurant(
+        restaurantId
+      );
 
     await this.#validateOpeningHours({
       restaurant,
@@ -72,12 +80,140 @@ class ReservationEligibilityService {
   }
 
   /**
+   * Finds nearby available reservation slots.
+   *
+   * Every candidate is checked using the same
+   * eligibility rules as a normal reservation.
+   *
+   * The closest available slots are returned first.
+   */
+  async findAlternativeSlots({
+    restaurantId,
+    guestCount,
+    startTime,
+    endTime,
+    ignoreReservationId,
+    maxResults = 3,
+    searchSteps = 6,
+  }) {
+    const restaurant =
+      await this.#getRestaurant(
+        restaurantId
+      );
+
+    const requestedStart =
+      new Date(startTime);
+
+    const requestedEnd =
+      new Date(endTime);
+
+    const reservationDuration =
+      requestedEnd.getTime() -
+      requestedStart.getTime();
+
+    const intervalMinutes =
+      restaurant.arrivalIntervalMinutes;
+
+    const candidates = [];
+
+    for (
+      let step = 1;
+      step <= searchSteps;
+      step++
+    ) {
+      const offsetMinutes =
+        step * intervalMinutes;
+
+      const earlierStart =
+        new Date(
+          requestedStart.getTime() -
+            offsetMinutes * 60 * 1000
+        );
+
+      const earlierEnd =
+        new Date(
+          earlierStart.getTime() +
+            reservationDuration
+        );
+
+      const laterStart =
+        new Date(
+          requestedStart.getTime() +
+            offsetMinutes * 60 * 1000
+        );
+
+      const laterEnd =
+        new Date(
+          laterStart.getTime() +
+            reservationDuration
+        );
+
+      candidates.push({
+        startTime: earlierStart,
+        endTime: earlierEnd,
+        distance: offsetMinutes,
+      });
+
+      candidates.push({
+        startTime: laterStart,
+        endTime: laterEnd,
+        distance: offsetMinutes,
+      });
+    }
+
+    candidates.sort(
+      (a, b) =>
+        a.distance - b.distance
+    );
+
+    const alternatives = [];
+
+    for (const candidate of candidates) {
+      try {
+        await this.checkEligibility({
+          restaurantId,
+          guestCount,
+          startTime: candidate.startTime,
+          endTime: candidate.endTime,
+          ignoreReservationId,
+        });
+
+        alternatives.push({
+          startTime:
+            candidate.startTime,
+          endTime:
+            candidate.endTime,
+        });
+
+        if (
+          alternatives.length >=
+          maxResults
+        ) {
+          break;
+        }
+      } catch (error) {
+        if (
+          error instanceof ValidationError
+        ) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    return alternatives;
+  }
+
+  /**
    * Retrieves the restaurant.
    *
    * Throws a NotFoundError when the restaurant
    * does not exist.
    */
-  async #getRestaurant(restaurantId) {
+  async #getRestaurant(
+    restaurantId
+  ) {
     const restaurant =
       await restaurantRepository.findById(
         restaurantId
@@ -102,8 +238,11 @@ class ReservationEligibilityService {
     startTime,
     endTime,
   }) {
-    const reservationStart = new Date(startTime);
-    const reservationEnd = new Date(endTime);
+    const reservationStart =
+      new Date(startTime);
+
+    const reservationEnd =
+      new Date(endTime);
 
     const openingHours =
       await openingScheduleService.findOpeningPeriods(
@@ -114,56 +253,65 @@ class ReservationEligibilityService {
     if (openingHours.length === 0) {
       throw new ValidationError(
         "Restaurant is closed on this day.",
-        "RESTAURANT_CLOSED"
+        ErrorCodes.RESTAURANT_CLOSED
       );
     }
 
     // Reservations may not span multiple local days.
-    const formatter = new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone: restaurant.timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }
-    );
+    const formatter =
+      new Intl.DateTimeFormat(
+        "en-CA",
+        {
+          timeZone:
+            restaurant.timezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }
+      );
 
     const startDate =
-      formatter.format(reservationStart);
+      formatter.format(
+        reservationStart
+      );
 
     const endDate =
-      formatter.format(reservationEnd);
+      formatter.format(
+        reservationEnd
+      );
 
     if (startDate !== endDate) {
       throw new ValidationError(
         "Reservation cannot span multiple days.",
-        "RESERVATION_SPANS_MULTIPLE_DAYS"
+        ErrorCodes.RESERVATION_SPANS_MULTIPLE_DAYS
       );
     }
 
-    const startMinutes = dateToMinutes(
-      reservationStart,
-      restaurant.timezone
-    );
+    const startMinutes =
+      dateToMinutes(
+        reservationStart,
+        restaurant.timezone
+      );
 
-    const endMinutes = dateToMinutes(
-      reservationEnd,
-      restaurant.timezone
-    );
+    const endMinutes =
+      dateToMinutes(
+        reservationEnd,
+        restaurant.timezone
+      );
 
-    const fitsOpeningPeriod = openingHours.some(
-      (openingHour) =>
-        startMinutes >=
-          openingHour.opensAtMinutes &&
-        endMinutes <=
-          openingHour.closesAtMinutes
-    );
+    const fitsOpeningPeriod =
+      openingHours.some(
+        (openingHour) =>
+          startMinutes >=
+            openingHour.opensAtMinutes &&
+          endMinutes <=
+            openingHour.closesAtMinutes
+      );
 
     if (!fitsOpeningPeriod) {
       throw new ValidationError(
         "Reservation falls outside opening hours.",
-        "OUTSIDE_OPENING_HOURS"
+        ErrorCodes.OUTSIDE_OPENING_HOURS
       );
     }
   }
@@ -176,12 +324,14 @@ class ReservationEligibilityService {
     restaurant,
     startTime,
   }) {
-    const reservationStart = new Date(startTime);
+    const reservationStart =
+      new Date(startTime);
 
-    const startMinutes = dateToMinutes(
-      reservationStart,
-      restaurant.timezone
-    );
+    const startMinutes =
+      dateToMinutes(
+        reservationStart,
+        restaurant.timezone
+      );
 
     if (
       startMinutes %
@@ -190,7 +340,7 @@ class ReservationEligibilityService {
     ) {
       throw new ValidationError(
         `Reservations must start every ${restaurant.arrivalIntervalMinutes} minutes.`,
-        "INVALID_ARRIVAL_INTERVAL"
+        ErrorCodes.INVALID_ARRIVAL_INTERVAL
       );
     }
   }
@@ -209,7 +359,7 @@ class ReservationEligibilityService {
     ) {
       throw new ValidationError(
         `Maximum reservation size is ${restaurant.maxReservationSize}.`,
-        "MAX_RESERVATION_SIZE_EXCEEDED"
+        ErrorCodes.MAX_RESERVATION_SIZE_EXCEEDED
       );
     }
   }
@@ -233,10 +383,12 @@ class ReservationEligibilityService {
       );
 
     if (ignoreReservationId) {
-      reservations = reservations.filter(
-        (reservation) =>
-          reservation.id !== ignoreReservationId
-      );
+      reservations =
+        reservations.filter(
+          (reservation) =>
+            reservation.id !==
+            ignoreReservationId
+        );
     }
 
     const occupiedSeats =
@@ -250,7 +402,7 @@ class ReservationEligibilityService {
     ) {
       throw new ValidationError(
         "Restaurant capacity exceeded.",
-        "CAPACITY_EXCEEDED"
+        ErrorCodes.CAPACITY_EXCEEDED
       );
     }
   }
@@ -264,7 +416,8 @@ class ReservationEligibilityService {
   ) {
     return reservations.reduce(
       (total, reservation) =>
-        total + reservation.guestCount,
+        total +
+        reservation.guestCount,
       0
     );
   }

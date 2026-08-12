@@ -1,5 +1,6 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
+import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import ValidationError from "../../errors/ValidationError.js";
 
 // ======================================================
@@ -87,22 +88,36 @@ class AssistantService {
 
       return {
         available: true,
+
         requestedSlot: {
           startTime,
           endTime,
         },
+
         alternativeSlots: [],
+
         reason: null,
       };
     } catch (error) {
       if (error instanceof ValidationError) {
+        const alternativeSlots =
+          await reservationEligibilityService.findAlternativeSlots({
+            restaurantId,
+            guestCount,
+            startTime,
+            endTime,
+          });
+
         return {
           available: false,
+
           requestedSlot: {
             startTime,
             endTime,
           },
-          alternativeSlots: [],
+
+          alternativeSlots,
+
           reason: error.code,
         };
       }
@@ -111,48 +126,51 @@ class AssistantService {
     }
   }
 
+  /**
+   * Creates a new reservation.
+   */
   async createReservation(
     reservationData
   ) {
     const reservation =
-        await reservationService.createReservation(
+      await reservationService.createReservation(
         reservationData
-        );
+      );
 
     return {
-        message:
+      message:
         "Reservation created successfully.",
 
-        customer: {
+      customer: {
         firstName:
-            reservation.firstName,
+          reservation.firstName,
 
         lastName:
-            reservation.lastName,
+          reservation.lastName,
 
         phoneNumber:
-            reservation.phoneNumber,
+          reservation.phoneNumber,
 
         email:
-            reservation.email,
-        },
+          reservation.email,
+      },
 
-        reservation: {
+      reservation: {
         id:
-            reservation.id,
+          reservation.id,
 
         startTime:
-            reservation.startTime,
+          reservation.startTime,
 
         endTime:
-            reservation.endTime,
+          reservation.endTime,
 
         guestCount:
-            reservation.guestCount,
+          reservation.guestCount,
 
         status:
-            reservation.status,
-        },
+          reservation.status,
+      },
     };
   }
 
@@ -169,78 +187,80 @@ class AssistantService {
     const existingReservation =
       await reservationService.findById(
         reservationId
-        );
+      );
 
     const reservation =
-        await reservationService.updateReservation(
-            reservationId,
-            {
-                restaurantId,
-                
-                firstName:
-                existingReservation.firstName,
-
-                lastName:
-                existingReservation.lastName,
-
-                phoneNumber:
-                existingReservation.phoneNumber,
-
-                email:
-                existingReservation.email,
-
-                notes:
-                existingReservation.notes,
-
-                guestCount,
-
-                startTime,
-            }
-        );
-
-        return {
-            message:
-            "Reservation updated successfully.",
-
-            reservation: {
-            id: reservation.id,
-
-            startTime:
-                reservation.startTime,
-
-            endTime:
-                reservation.endTime,
-
-            guestCount:
-                reservation.guestCount,
-
-            status:
-                reservation.status,
-            },
-        };
-    }
-
-    /**
-     * Cancels an existing reservation.
-     */
-    async cancelReservation({
+      await reservationService.updateReservation(
         reservationId,
-    }) {
-        const reservation =
-            await reservationService.cancelReservation(
-                reservationId
-            );
+        {
+          restaurantId,
 
-        return {
-            message:
-            "Reservation cancelled successfully.",
+          firstName:
+            existingReservation.firstName,
 
-            reservation: {
-                id: reservation.id,
-                status: reservation.status,
-            },
-        };
-    }
+          lastName:
+            existingReservation.lastName,
+
+          phoneNumber:
+            existingReservation.phoneNumber,
+
+          email:
+            existingReservation.email,
+
+          notes:
+            existingReservation.notes,
+
+          guestCount,
+
+          startTime,
+        }
+      );
+
+    return {
+      message:
+        "Reservation updated successfully.",
+
+      reservation: {
+        id: reservation.id,
+
+        startTime:
+          reservation.startTime,
+
+        endTime:
+          reservation.endTime,
+
+        guestCount:
+          reservation.guestCount,
+
+        status:
+          reservation.status,
+      },
+    };
+  }
+
+  /**
+   * Cancels an existing reservation.
+   */
+  async cancelReservation({
+    reservationId,
+  }) {
+    const reservation =
+      await reservationService.cancelReservation(
+        reservationId
+      );
+
+    return {
+      message:
+        "Reservation cancelled successfully.",
+
+      reservation: {
+        id: reservation.id,
+
+        status:
+          reservation.status,
+      },
+    };
+  }
 }
 
 export default new AssistantService();
