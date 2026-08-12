@@ -26,16 +26,22 @@ class ReservationController {
    * Checks whether a reservation can be accepted.
    */
   async checkAvailability(request, reply) {
-    const reservation =
-      checkAvailabilitySchema.parse(request.body);
-
-    const available =
-      await reservationService.checkAvailability(
-        reservation
+    const body =
+      checkAvailabilitySchema.parse(
+        request.body
       );
 
+    const result =
+      await reservationService.checkAvailability({
+        restaurantId:
+          request.headers["x-restaurant-id"],
+
+        ...body,
+      });
+
     return reply.send({
-      available,
+      success: true,
+      data: result,
     });
   }
 

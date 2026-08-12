@@ -23,7 +23,6 @@ export const rescheduleReservationSchema = z.object({
 });
 
 export const checkAvailabilitySchema = z.object({
-  restaurantId: z.string().min(1),
 
   guestCount: z.number().int().positive(),
 

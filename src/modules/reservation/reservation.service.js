@@ -24,6 +24,9 @@ import { normalizeEmail } from "../../utils/email.utils.js";
 class ReservationService {
   /**
    * Checks whether a reservation can be accepted.
+   *
+   * If the requested slot is unavailable, nearby
+   * alternative slots are returned.
    */
   async checkAvailability({
     restaurantId,
@@ -31,12 +34,52 @@ class ReservationService {
     startTime,
     endTime,
   }) {
-    return reservationEligibilityService.checkEligibility({
-      restaurantId,
-      guestCount,
-      startTime,
-      endTime,
-    });
+    try {
+      await reservationEligibilityService.checkEligibility({
+        restaurantId,
+        guestCount,
+        startTime,
+        endTime,
+      });
+
+      return {
+        available: true,
+
+        requestedSlot: {
+          startTime,
+          endTime,
+        },
+
+        alternativeSlots: [],
+
+        reason: null,
+      };
+    } catch (error) {
+      if (!(error instanceof ValidationError)) {
+        throw error;
+      }
+
+      const alternativeSlots =
+        await reservationEligibilityService.findAlternativeSlots({
+          restaurantId,
+          guestCount,
+          startTime,
+          endTime,
+        });
+
+      return {
+        available: false,
+
+        requestedSlot: {
+          startTime,
+          endTime,
+        },
+
+        alternativeSlots,
+
+        reason: error.code,
+      };
+    }
   }
 
   /**
@@ -46,9 +89,10 @@ class ReservationService {
    * using the restaurant's default reservation duration.
    */
   async createReservation(reservationData) {
-    const restaurant = await restaurantRepository.findById(
-      reservationData.restaurantId
-    );
+    const restaurant =
+      await restaurantRepository.findById(
+        reservationData.restaurantId
+      );
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
@@ -57,29 +101,48 @@ class ReservationService {
 
     const completeReservation = {
       ...reservationData,
+
       phoneNumber: normalizePhoneNumber(
         reservationData.phoneNumber
       ),
+
       email: normalizeEmail(
         reservationData.email
       ),
+
       endTime,
     };
 
     await reservationEligibilityService.checkEligibility({
-      restaurantId: completeReservation.restaurantId,
-      guestCount: completeReservation.guestCount,
-      startTime: completeReservation.startTime,
-      endTime: completeReservation.endTime,
+      restaurantId:
+        completeReservation.restaurantId,
+
+      guestCount:
+        completeReservation.guestCount,
+
+      startTime:
+        completeReservation.startTime,
+
+      endTime:
+        completeReservation.endTime,
     });
 
     const customer =
       await customerService.syncCustomer({
-        restaurantId: completeReservation.restaurantId,
-        firstName: completeReservation.firstName,
-        lastName: completeReservation.lastName,
-        phoneNumber: completeReservation.phoneNumber,
-        email: completeReservation.email,
+        restaurantId:
+          completeReservation.restaurantId,
+
+        firstName:
+          completeReservation.firstName,
+
+        lastName:
+          completeReservation.lastName,
+
+        phoneNumber:
+          completeReservation.phoneNumber,
+
+        email:
+          completeReservation.email,
       });
 
     completeReservation.customerId =
@@ -107,16 +170,20 @@ class ReservationService {
       );
     }
 
-    if (existingReservation.status !== "CONFIRMED") {
+    if (
+      existingReservation.status !==
+      "CONFIRMED"
+    ) {
       throw new ValidationError(
         `Reservation cannot be updated because it is ${existingReservation.status.toLowerCase()}.`,
         ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
 
-    const restaurant = await restaurantRepository.findById(
-      reservationData.restaurantId
-    );
+    const restaurant =
+      await restaurantRepository.findById(
+        reservationData.restaurantId
+      );
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
@@ -125,30 +192,50 @@ class ReservationService {
 
     const completeReservation = {
       ...reservationData,
+
       phoneNumber: normalizePhoneNumber(
         reservationData.phoneNumber
       ),
+
       email: normalizeEmail(
         reservationData.email
       ),
+
       endTime,
     };
 
     await reservationEligibilityService.checkEligibility({
-      restaurantId: completeReservation.restaurantId,
-      guestCount: completeReservation.guestCount,
-      startTime: completeReservation.startTime,
-      endTime: completeReservation.endTime,
+      restaurantId:
+        completeReservation.restaurantId,
+
+      guestCount:
+        completeReservation.guestCount,
+
+      startTime:
+        completeReservation.startTime,
+
+      endTime:
+        completeReservation.endTime,
+
       ignoreReservationId: id,
     });
 
     const customer =
       await customerService.syncCustomer({
-        restaurantId: completeReservation.restaurantId,
-        firstName: completeReservation.firstName,
-        lastName: completeReservation.lastName,
-        phoneNumber: completeReservation.phoneNumber,
-        email: completeReservation.email,
+        restaurantId:
+          completeReservation.restaurantId,
+
+        firstName:
+          completeReservation.firstName,
+
+        lastName:
+          completeReservation.lastName,
+
+        phoneNumber:
+          completeReservation.phoneNumber,
+
+        email:
+          completeReservation.email,
       });
 
     completeReservation.customerId =
@@ -177,7 +264,10 @@ class ReservationService {
       );
     }
 
-    if (reservation.status !== "CONFIRMED") {
+    if (
+      reservation.status !==
+      "CONFIRMED"
+    ) {
       throw new ValidationError(
         `Reservation cannot be rescheduled because it is ${reservation.status.toLowerCase()}.`,
         ErrorCodes.RESERVATION_NOT_CONFIRMED
@@ -185,14 +275,28 @@ class ReservationService {
     }
 
     return this.updateReservation(id, {
-      restaurantId: reservation.restaurantId,
-      firstName: reservation.firstName,
-      lastName: reservation.lastName,
-      phoneNumber: reservation.phoneNumber,
-      email: reservation.email,
-      guestCount: reservation.guestCount,
+      restaurantId:
+        reservation.restaurantId,
+
+      firstName:
+        reservation.firstName,
+
+      lastName:
+        reservation.lastName,
+
+      phoneNumber:
+        reservation.phoneNumber,
+
+      email:
+        reservation.email,
+
+      guestCount:
+        reservation.guestCount,
+
       startTime,
-      notes: reservation.notes,
+
+      notes:
+        reservation.notes,
     });
   }
 
@@ -227,16 +331,22 @@ class ReservationService {
       );
     }
 
-    if (reservation.status !== "CONFIRMED") {
+    if (
+      reservation.status !==
+      "CONFIRMED"
+    ) {
       throw new ValidationError(
         `Reservation cannot be cancelled because it is ${reservation.status.toLowerCase()}.`,
         ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
 
-    return reservationRepository.update(id, {
-      status: "CANCELLED",
-    });
+    return reservationRepository.update(
+      id,
+      {
+        status: "CANCELLED",
+      }
+    );
   }
 
   /**

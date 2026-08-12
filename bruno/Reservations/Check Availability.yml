@@ -6,14 +6,16 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/reservations/check-availability"
+  headers:
+    - name: x-restaurant-id
+      value: "{{restaurantId}}"
   body:
     type: json
     data: |-
       {
-        "restaurantId": "{{restaurantId}}",
-        "guestCount": 2,
-        "startTime": "2026-12-24T12:00:00.000Z",
-        "endTime": "2026-12-24T12:00:00.000Z"
+        "guestCount": 5,
+        "startTime": "2026-08-17T17:00:00.000Z",
+        "endTime": "2026-08-17T19:00:00.000Z"
       }
   auth: inherit
 

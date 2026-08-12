@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant.repository.js";
 import openingHourRepository from "./opening-hour.repository.js";
 import NotFoundError from "../../../errors/NotFoundError.js";
 import ValidationError from "../../../errors/ValidationError.js";
+import { ErrorCodes } from "../../../errors/error-codes.js";
 import { minutesToTime } from "../../../utils/time.utils.js";
 
 // ======================================================
