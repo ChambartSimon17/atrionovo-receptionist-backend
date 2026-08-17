@@ -57,6 +57,44 @@ enum DayOfWeek {
   SUNDAY
 }
 
+enum UserRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+// ======================================================
+// USER DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// User
+// ------------------------------------------------------
+// Represents a user account for an AtrioNovo restaurant.
+//
+
+model User {
+  id String @id @default(cuid())
+
+  restaurantId String
+
+  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
+
+  email String @unique
+  passwordHash String
+
+  firstName String
+  lastName String
+
+  role UserRole @default(STAFF)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+
 // ======================================================
 // RESTAURANT DOMAIN
 // ======================================================
@@ -122,6 +160,7 @@ model Restaurant {
   specialOpeningDays SpecialOpeningDay[]
   reservations Reservation[]
   customers Customer[]
+  users User[]
 
   // -------------------------
   // Metadata

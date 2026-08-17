@@ -9,6 +9,7 @@ import specialOpeningDayRoutes from "./modules/restaurant/special-opening-days/s
 import customerRoutes from "./modules/customer/customer.routes.js";
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
 import assistantRoutes from "./modules/assistant/assistant.routes.js";
+import authRoutes from "./modules/auth/auth.routes.js";
 
 import errorHandler from "./middleware/error.middleware.js";
 
@@ -67,6 +68,14 @@ app.register(reservationRoutes, {
 
 app.register(assistantRoutes, {
   prefix: "/assistant",
+});
+
+// ======================================================
+// Authentication
+// ======================================================
+
+app.register(authRoutes, {
+  prefix: "/auth",
 });
 
 // ======================================================
