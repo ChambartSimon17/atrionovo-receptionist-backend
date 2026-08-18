@@ -13,13 +13,13 @@ http:
     type: json
     data: |-
       {
-        "firstName": "Simon",
-        "lastName": "Chambart",
-        "phoneNumber": "+32470123456",
-        "email": "simon@test.com",
-        "guestCount": 2,
-        "startTime": "2026-08-12T17:00:00.000Z",
-        "notes": "Window seat"
+          "email": "shambarsimon@icloud.com",
+          "notes": "",
+          "lastName": "Shambar",
+          "firstName": "Simon",
+          "startTime": "2026-08-24T17:00:00",
+          "guestCount": 3,
+          "phoneNumber": "0470212555"
       }
   auth: inherit
 

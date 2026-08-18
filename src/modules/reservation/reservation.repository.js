@@ -98,6 +98,24 @@ class ReservationRepository {
       },
     });
   }
+
+  async findUpcomingForRestaurant(
+    restaurantId
+  ) {
+    return prisma.reservation.findMany({
+      where: {
+        restaurantId,
+        status: "CONFIRMED",
+        startTime: {
+          gte: new Date(),
+        },
+      },
+
+      orderBy: {
+        startTime: "asc",
+      },
+    });
+  }
 }
 
 export default new ReservationRepository();

@@ -13,7 +13,7 @@ http:
     type: json
     data: |-
       {
-        "reservationId": "cmsnf7ff10005s06gntoae4f6",
+        "reservationId": "cmsp6pi5b000as0dats1hi2jo",
         "guestCount": 6,
         "startTime": "2026-08-10T17:00:00.000Z"
       }

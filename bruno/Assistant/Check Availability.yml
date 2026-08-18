@@ -13,9 +13,9 @@ http:
     type: json
     data: |-
       {
-        "guestCount": 2,
-        "startTime": "2026-08-10T15:00:00.000Z",
-        "endTime": "2026-08-10T17:00:00.000Z"
+          "endTime": "2026-08-14T22:00:00",
+          "startTime": "2026-08-14T20:00:00",
+          "guestCount": 2
       }
   auth: inherit
 

@@ -154,6 +154,26 @@ class ReservationController {
       data: reservations,
     });
   }
+
+  /**
+   * Finds upcoming reservations for
+   * the authenticated restaurant.
+   */
+  async findUpcomingForRestaurant(
+    request,
+    reply
+  ) {
+    const reservations =
+      await reservationService.findUpcomingForRestaurant(
+        request.user.restaurantId
+      );
+
+    return reply.send({
+      success: true,
+      data: reservations,
+    });
+  }
+  
 }
 
 export default new ReservationController();

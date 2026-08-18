@@ -13,8 +13,8 @@ http:
         "restaurantId": "{{restaurantId}}",
         "firstName": "Simon",
         "lastName": "Chambart",
-        "phoneNumber": "0470 12 34 56",
-        "email": "Simon@icloud.com",
+        "phoneNumber": "0470212555",
+        "email": "chambartsimon@icloud.com",
         "notes": "Prefers terrace",
         "isVip": true
       }

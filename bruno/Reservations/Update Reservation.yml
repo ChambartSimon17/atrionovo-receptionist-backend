@@ -16,7 +16,7 @@ http:
         "phoneNumber": "+32470123456",
         "email": "simon@example.com",
         "guestCount": 4,
-        "startTime": "2026-08-03T15:30:00.000Z",
+        "startTime": "2026-08-17T15:30:00.000Z",
         "notes": "Window seat"
       }
   auth: inherit

@@ -5,13 +5,13 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/customers/search?restaurantId={{restaurantId}}&phoneNumber=+32470123456"
+  url: "{{baseUrl}}/customers/search?restaurantId={{restaurantId}}&phoneNumber={{phoneNumber}}"
   params:
     - name: restaurantId
       value: "{{restaurantId}}"
       type: query
     - name: phoneNumber
-      value: "+32470123456"
+      value: "{{phoneNumber}}"
       type: query
   auth: inherit
 

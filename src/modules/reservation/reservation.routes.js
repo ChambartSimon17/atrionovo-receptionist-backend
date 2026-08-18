@@ -1,6 +1,18 @@
 import reservationController from "./reservation.controller.js";
+import { authenticate } from "../../middleware/auth.middleware.js";
 
 export default async function reservationRoutes(fastify) {
+
+  fastify.get(
+    "/",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.findUpcomingForRestaurant.bind(
+      reservationController
+    )
+  );
+
   fastify.post(
     "/check-availability",
     reservationController.checkAvailability

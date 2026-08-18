@@ -15,13 +15,16 @@ http:
         "lastName": "Chambart",
         "phoneNumber": "+32470123456",
         "email": "simon@test.com",
-        "guestCount": 1,
+        "guestCount": 5,
         "startTime": "2026-08-17T15:15:00.000Z",
         "notes": "reservatieTest2"
       }
   auth: inherit
 
 runtime:
+  variables:
+    - name: restaurantId
+      value: cmsx40oy30000s01nzviohyxu
   scripts:
     - type: tests
       code: |-

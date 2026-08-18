@@ -6,6 +6,17 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurantName": "Refter2",
+        "slug": "refter2",
+        "firstName": "Louis",
+        "lastName": "Vanhecke",
+        "email": "louisvanhecke@refter.com",
+        "password": "testpassword123"
+      }
   auth: inherit
 
 settings:

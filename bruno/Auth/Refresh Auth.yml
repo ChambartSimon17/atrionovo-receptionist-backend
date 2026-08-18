@@ -6,7 +6,12 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/auth/refresh"
-  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN4NDBveTcwMDAyczAxbjc1NzQ3anFvIiwiaWF0IjoxNzg2OTY0OTE5LCJleHAiOjE3ODk1NTY5MTl9.Wgcl7umE4TCL4q8VY0BslJzf0t-2rLgHlXO8zh-9COc"
+      }
 
 settings:
   encodeUrl: true
