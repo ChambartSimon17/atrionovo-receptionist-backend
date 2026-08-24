@@ -1,12 +1,19 @@
 import specialOpeningDayController from "./special-opening-day.controller.js";
+import { authenticate } from "../../../middleware/auth.middleware.js";
+import {
+  requireRestaurantOwnership,
+} from "../../../middleware/restaurant-ownership.middleware.js";
 
 // ======================================================
 // Special Opening Day Routes
 // ======================================================
 //
-// Responsibility
-// Register HTTP routes related to a restaurant's
-// special opening days.
+// Dashboard routes are protected by:
+//
+// 1. JWT authentication
+// 2. Restaurant ownership
+//
+// These routes are NOT VAPI routes.
 // ======================================================
 
 export default async function specialOpeningDayRoutes(
@@ -14,18 +21,31 @@ export default async function specialOpeningDayRoutes(
 ) {
   /**
    * Retrieves all special opening days
-   * for a restaurant.
+   * for the authenticated restaurant.
    */
   fastify.get(
     "/:restaurantId/special-opening-days",
+    {
+      preHandler: [
+        authenticate,
+        requireRestaurantOwnership,
+      ],
+    },
     specialOpeningDayController.findByRestaurant
   );
 
   /**
-   * Creates a new special opening day.
+   * Creates a new special opening day
+   * for the authenticated restaurant.
    */
   fastify.post(
     "/:restaurantId/special-opening-days",
+    {
+      preHandler: [
+        authenticate,
+        requireRestaurantOwnership,
+      ],
+    },
     specialOpeningDayController.create
   );
 
@@ -34,14 +54,26 @@ export default async function specialOpeningDayRoutes(
    */
   fastify.put(
     "/:restaurantId/special-opening-days/:id",
+    {
+      preHandler: [
+        authenticate,
+        requireRestaurantOwnership,
+      ],
+    },
     specialOpeningDayController.update
   );
 
   /**
-   * Deletes a special opening day.
+   * Deletes an existing special opening day.
    */
   fastify.delete(
     "/:restaurantId/special-opening-days/:id",
+    {
+      preHandler: [
+        authenticate,
+        requireRestaurantOwnership,
+      ],
+    },
     specialOpeningDayController.delete
   );
 }

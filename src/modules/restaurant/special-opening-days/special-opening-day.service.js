@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant.repository.js";
 import specialOpeningDayRepository from "./special-opening-day.repository.js";
 import NotFoundError from "../../../errors/NotFoundError.js";
 import ValidationError from "../../../errors/ValidationError.js";
+import { ErrorCodes } from "../../../errors/error-codes.js";
 import { minutesToTime } from "../../../utils/time.utils.js";
 
 // ======================================================
@@ -18,16 +19,25 @@ import { minutesToTime } from "../../../utils/time.utils.js";
 // - Open days require at least one opening period
 // - Opening time must be before closing time
 // - Opening periods may not overlap
+// - A special opening day may only be accessed by
+//   its own restaurant
 // ======================================================
 
 class SpecialOpeningDayService {
   /**
    * Creates a new special opening day.
    */
-  async create(restaurantId, specialOpeningDay) {
-    await this.#ensureRestaurantExists(restaurantId);
+  async create(
+    restaurantId,
+    specialOpeningDay
+  ) {
+    await this.#ensureRestaurantExists(
+      restaurantId
+    );
 
-    const date = new Date(specialOpeningDay.date);
+    const date = new Date(
+      specialOpeningDay.date
+    );
 
     await this.#ensureDateIsAvailable(
       restaurantId,
@@ -38,19 +48,25 @@ class SpecialOpeningDayService {
       specialOpeningDay
     );
 
-    return specialOpeningDayRepository.createSpecialOpeningDay({
-      restaurantId,
-      ...specialOpeningDay,
-      date,
-    });
+    return specialOpeningDayRepository.createSpecialOpeningDay(
+      {
+        restaurantId,
+        ...specialOpeningDay,
+        date,
+      }
+    );
   }
 
   /**
    * Retrieves all special opening days
    * for a restaurant.
    */
-  async findByRestaurant(restaurantId) {
-    await this.#ensureRestaurantExists(restaurantId);
+  async findByRestaurant(
+    restaurantId
+  ) {
+    await this.#ensureRestaurantExists(
+      restaurantId
+    );
 
     return specialOpeningDayRepository.findByRestaurant(
       restaurantId
@@ -59,10 +75,20 @@ class SpecialOpeningDayService {
 
   /**
    * Updates an existing special opening day.
+   *
+   * The restaurantId is used to ensure that the
+   * special opening day belongs to the authenticated
+   * restaurant.
    */
-  async update(id, specialOpeningDay) {
+  async update(
+    id,
+    restaurantId,
+    specialOpeningDay
+  ) {
     const existing =
-      await specialOpeningDayRepository.findById(id);
+      await specialOpeningDayRepository.findById(
+        id
+      );
 
     if (!existing) {
       throw new NotFoundError(
@@ -71,15 +97,25 @@ class SpecialOpeningDayService {
       );
     }
 
-    const date = new Date(specialOpeningDay.date);
+    this.#ensureBelongsToRestaurant(
+      existing,
+      restaurantId
+    );
+
+    const date = new Date(
+      specialOpeningDay.date
+    );
 
     const duplicate =
       await specialOpeningDayRepository.findByRestaurantAndDate(
-        existing.restaurantId,
+        restaurantId,
         date
       );
 
-    if (duplicate && duplicate.id !== id) {
+    if (
+      duplicate &&
+      duplicate.id !== id
+    ) {
       throw new ValidationError(
         "A special opening day already exists for this date."
       );
@@ -100,10 +136,19 @@ class SpecialOpeningDayService {
 
   /**
    * Deletes a special opening day.
+   *
+   * The restaurantId is used to ensure that the
+   * special opening day belongs to the authenticated
+   * restaurant.
    */
-  async delete(id) {
+  async delete(
+    id,
+    restaurantId
+  ) {
     const existing =
-      await specialOpeningDayRepository.findById(id);
+      await specialOpeningDayRepository.findById(
+        id
+      );
 
     if (!existing) {
       throw new NotFoundError(
@@ -112,14 +157,26 @@ class SpecialOpeningDayService {
       );
     }
 
+    this.#ensureBelongsToRestaurant(
+      existing,
+      restaurantId
+    );
+
     await specialOpeningDayRepository.deleteSpecialOpeningDay(
       id
     );
   }
 
-  async #ensureRestaurantExists(restaurantId) {
+  /**
+   * Ensures the restaurant exists.
+   */
+  async #ensureRestaurantExists(
+    restaurantId
+  ) {
     const restaurant =
-      await restaurantRepository.findById(restaurantId);
+      await restaurantRepository.findById(
+        restaurantId
+      );
 
     if (!restaurant) {
       throw new NotFoundError(
@@ -129,6 +186,29 @@ class SpecialOpeningDayService {
     }
   }
 
+  /**
+   * Ensures that a special opening day belongs
+   * to the requested restaurant.
+   */
+  #ensureBelongsToRestaurant(
+    specialOpeningDay,
+    restaurantId
+  ) {
+    if (
+      specialOpeningDay.restaurantId !==
+      restaurantId
+    ) {
+      throw new NotFoundError(
+        "Special opening day not found.",
+        ErrorCodes.SPECIAL_OPENING_DAY_NOT_FOUND
+      );
+    }
+  }
+
+  /**
+   * Ensures no special opening day already exists
+   * for the requested date.
+   */
   async #ensureDateIsAvailable(
     restaurantId,
     date
@@ -146,12 +226,16 @@ class SpecialOpeningDayService {
     }
   }
 
+  /**
+   * Validates the complete special opening day.
+   */
   #validateSpecialOpeningDay(
     specialOpeningDay
   ) {
     if (specialOpeningDay.isClosed) {
       if (
-        specialOpeningDay.openingPeriods.length > 0
+        specialOpeningDay.openingPeriods
+          .length > 0
       ) {
         throw new ValidationError(
           "Closed days cannot contain opening periods."
@@ -162,7 +246,8 @@ class SpecialOpeningDayService {
     }
 
     if (
-      specialOpeningDay.openingPeriods.length === 0
+      specialOpeningDay.openingPeriods
+        .length === 0
     ) {
       throw new ValidationError(
         "Open days must contain at least one opening period."
@@ -178,7 +263,12 @@ class SpecialOpeningDayService {
     );
   }
 
-  #validateOpeningPeriods(openingPeriods) {
+  /**
+   * Validates every opening period.
+   */
+  #validateOpeningPeriods(
+    openingPeriods
+  ) {
     for (const openingPeriod of openingPeriods) {
       if (
         openingPeriod.opensAtMinutes >=
@@ -191,27 +281,47 @@ class SpecialOpeningDayService {
     }
   }
 
+  /**
+   * Ensures opening periods do not overlap.
+   */
   #validateNoOverlappingPeriods(
     openingPeriods
   ) {
-    const sortedPeriods = [...openingPeriods].sort(
-      (a, b) =>
-        a.opensAtMinutes - b.opensAtMinutes
-    );
+    const sortedPeriods =
+      [...openingPeriods].sort(
+        (a, b) =>
+          a.opensAtMinutes -
+          b.opensAtMinutes
+      );
 
-    for (let i = 1; i < sortedPeriods.length; i++) {
-      const previous = sortedPeriods[i - 1];
-      const current = sortedPeriods[i];
+    for (
+      let i = 1;
+      i < sortedPeriods.length;
+      i++
+    ) {
+      const previous =
+        sortedPeriods[i - 1];
+
+      const current =
+        sortedPeriods[i];
 
       if (
         current.opensAtMinutes <
         previous.closesAtMinutes
       ) {
         const previousPeriod =
-          `${minutesToTime(previous.opensAtMinutes)}-${minutesToTime(previous.closesAtMinutes)}`;
+          `${minutesToTime(
+            previous.opensAtMinutes
+          )}-${minutesToTime(
+            previous.closesAtMinutes
+          )}`;
 
         const currentPeriod =
-          `${minutesToTime(current.opensAtMinutes)}-${minutesToTime(current.closesAtMinutes)}`;
+          `${minutesToTime(
+            current.opensAtMinutes
+          )}-${minutesToTime(
+            current.closesAtMinutes
+          )}`;
 
         throw new ValidationError(
           `Opening periods overlap: ${previousPeriod} and ${currentPeriod}.`

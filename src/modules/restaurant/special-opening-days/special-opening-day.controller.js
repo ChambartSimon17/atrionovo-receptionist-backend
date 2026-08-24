@@ -24,25 +24,37 @@ class SpecialOpeningDayController {
    * Retrieves all special opening days
    * for a restaurant.
    */
-  async findByRestaurant(request, reply) {
-    const { restaurantId } = request.params;
+  async findByRestaurant(
+    request,
+    reply
+  ) {
+    const { restaurantId } =
+      request.params;
 
     const specialOpeningDays =
       await specialOpeningDayService.findByRestaurant(
         restaurantId
       );
 
-    return reply.send(specialOpeningDays);
+    return reply.send(
+      specialOpeningDays
+    );
   }
 
   /**
    * Creates a new special opening day.
    */
-  async create(request, reply) {
-    const { restaurantId } = request.params;
+  async create(
+    request,
+    reply
+  ) {
+    const { restaurantId } =
+      request.params;
 
     const specialOpeningDay =
-      specialOpeningDaySchema.parse(request.body);
+      specialOpeningDaySchema.parse(
+        request.body
+      );
 
     const created =
       await specialOpeningDayService.create(
@@ -50,34 +62,56 @@ class SpecialOpeningDayController {
         specialOpeningDay
       );
 
-    return reply.status(201).send(created);
+    return reply.status(201).send(
+      created
+    );
   }
 
   /**
    * Updates a special opening day.
    */
-  async update(request, reply) {
-    const { id } = request.params;
+  async update(
+    request,
+    reply
+  ) {
+    const {
+      restaurantId,
+      id,
+    } = request.params;
 
     const specialOpeningDay =
-      specialOpeningDaySchema.parse(request.body);
+      specialOpeningDaySchema.parse(
+        request.body
+      );
 
     const updated =
       await specialOpeningDayService.update(
         id,
+        restaurantId,
         specialOpeningDay
       );
 
-    return reply.send(updated);
+    return reply.send(
+      updated
+    );
   }
 
   /**
    * Deletes a special opening day.
    */
-  async delete(request, reply) {
-    const { id } = request.params;
+  async delete(
+    request,
+    reply
+  ) {
+    const {
+      restaurantId,
+      id,
+    } = request.params;
 
-    await specialOpeningDayService.delete(id);
+    await specialOpeningDayService.delete(
+      id,
+      restaurantId
+    );
 
     return reply.status(204).send();
   }
