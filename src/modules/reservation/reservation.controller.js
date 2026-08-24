@@ -4,6 +4,7 @@ import {
   checkAvailabilitySchema,
   findUpcomingReservationsSchema,
   rescheduleReservationSchema,
+  updateReservationSchema,
 } from "./reservation.validator.js";
 
 // ======================================================
@@ -191,7 +192,32 @@ class ReservationController {
       data: reservation,
     });
   }
-  
+
+  /**
+   * Updates an existing reservation
+   * for the authenticated restaurant.
+   */
+  async updateReservationForRestaurant(request, reply) {
+    const { id } = request.params;
+
+    const reservation =
+      updateReservationSchema.parse(
+        request.body
+      );
+
+    const updatedReservation =
+      await reservationService.updateReservationForRestaurant(
+        id,
+        request.user.restaurantId,
+        reservation
+      );
+
+    return reply.send({
+      success: true,
+      data: updatedReservation,
+    });
+  }
+
 }
 
 export default new ReservationController();

@@ -465,6 +465,44 @@ class ReservationService {
 
     return reservation;
   }
+
+  /**
+   * Updates an existing reservation
+   * for a specific restaurant.
+   */
+  async updateReservationForRestaurant(
+    id,
+    restaurantId,
+    reservationData
+  ) {
+    const existingReservation =
+      await reservationRepository.findById(id);
+
+    if (!existingReservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    if (
+      existingReservation.restaurantId !==
+      restaurantId
+    ) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    return this.updateReservation(
+      id,
+      {
+        ...reservationData,
+        restaurantId,
+      }
+    );
+  }
 }
 
 export default new ReservationService();

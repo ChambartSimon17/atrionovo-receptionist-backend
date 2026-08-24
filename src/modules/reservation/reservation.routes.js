@@ -40,6 +40,16 @@ export default async function reservationRoutes(fastify) {
     reservationController.updateReservation
   );
 
+  fastify.put(
+    "/:id/edit",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.updateReservationForRestaurant.bind(
+      reservationController
+    )
+  );
+
   fastify.delete(
     "/:id",
     reservationController.deleteReservation

@@ -51,3 +51,21 @@ export const findUpcomingReservationsSchema = z
         "Provide at least one search parameter.",
     }
   );
+
+  export const updateReservationSchema = z.object({
+  restaurantId: z.string().min(1),
+
+  firstName: z.string().min(1),
+
+  lastName: z.string().min(1),
+
+  phoneNumber: z.string().min(1),
+
+  email: z.email().optional(),
+
+  guestCount: z.number().int().positive(),
+
+  startTime: z.iso.datetime(),
+
+  notes: z.string().optional(),
+});
