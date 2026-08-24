@@ -439,6 +439,32 @@ class ReservationService {
 
     return reservation;
   }
+
+    /**
+   * Finds a reservation by ID for a specific restaurant.
+   */
+  async findByIdForRestaurant(id, restaurantId) {
+    const reservation =
+      await reservationRepository.findById(id);
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    if (
+      reservation.restaurantId !== restaurantId
+    ) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    return reservation;
+  }
 }
 
 export default new ReservationService();

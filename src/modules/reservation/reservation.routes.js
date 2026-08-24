@@ -3,12 +3,24 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 
 export default async function reservationRoutes(fastify) {
 
+  // Dashboard: upcoming reservations for logged-in restaurant
   fastify.get(
     "/",
     {
       preHandler: authenticate,
     },
     reservationController.findUpcomingForRestaurant.bind(
+      reservationController
+    )
+  );
+
+  // Single reservation
+  fastify.get(
+    "/:id",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.findByIdForRestaurant.bind(
       reservationController
     )
   );
@@ -39,9 +51,9 @@ export default async function reservationRoutes(fastify) {
   );
 
   fastify.post(
-  "/:id/reschedule",
-  reservationController.rescheduleReservation
-);
+    "/:id/reschedule",
+    reservationController.rescheduleReservation
+  );
 
   fastify.get(
     "/upcoming",

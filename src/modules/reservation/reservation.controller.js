@@ -173,6 +173,24 @@ class ReservationController {
       data: reservations,
     });
   }
+
+  /**
+   * Finds a reservation by ID for the authenticated restaurant.
+   */
+  async findByIdForRestaurant(request, reply) {
+    const { id } = request.params;
+
+    const reservation =
+      await reservationService.findByIdForRestaurant(
+        id,
+        request.user.restaurantId
+      );
+
+    return reply.send({
+      success: true,
+      data: reservation,
+    });
+  }
   
 }
 
