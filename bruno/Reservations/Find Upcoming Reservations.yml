@@ -15,6 +15,11 @@ http:
       type: query
   auth: inherit
 
+runtime:
+  variables:
+    - name: restaurantId
+      value: cmsx40oy30000s01nzviohyxu
+
 settings:
   encodeUrl: true
   timeout: 0

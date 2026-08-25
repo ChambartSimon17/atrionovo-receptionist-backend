@@ -42,6 +42,18 @@ class RestaurantRepository {
       data,
     });
   }
+
+  /**
+   * Updates an existing restaurant.
+   */
+  async update(id, data) {
+    return prisma.restaurant.update({
+      where: {
+        id,
+      },
+      data,
+    });
+  }
 }
 
 export default new RestaurantRepository();

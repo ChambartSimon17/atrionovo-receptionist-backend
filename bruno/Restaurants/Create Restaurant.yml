@@ -19,6 +19,9 @@ http:
   auth: inherit
 
 runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
   actions:
     - type: set-variable
       phase: after-response
