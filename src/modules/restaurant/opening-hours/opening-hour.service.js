@@ -39,6 +39,15 @@ class OpeningHourService {
   }
 
   /**
+   * Retrieves the restaurant's complete weekly opening schedule.
+   */
+  async findSchedule(restaurantId) {
+    await this.#ensureRestaurantExists(restaurantId);
+
+    return openingHourRepository.findSchedule(restaurantId);
+  }
+
+  /**
    * Ensures the restaurant exists before performing
    * any opening hour operations.
    */

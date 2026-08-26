@@ -19,20 +19,37 @@ import { replaceOpeningHoursSchema } from "./opening-hour.validator.js";
 
 class OpeningHourController {
   /**
+   * Retrieves the restaurant's complete weekly
+   * opening schedule.
+   */
+  async findSchedule(request, reply) {
+    const { restaurantId } = request.params;
+
+    const schedule =
+      await openingHourService.findSchedule(
+        restaurantId
+      );
+
+    return reply.code(200).send(schedule);
+  }
+
+  /**
    * Replaces the restaurant's complete weekly
    * opening schedule.
    */
   async replaceSchedule(request, reply) {
     const { restaurantId } = request.params;
 
-    const { openingHours } = replaceOpeningHoursSchema.parse(
-      request.body
-    );
+    const { openingHours } =
+      replaceOpeningHoursSchema.parse(
+        request.body
+      );
 
-    const schedule = await openingHourService.replaceSchedule(
-      restaurantId,
-      openingHours
-    );
+    const schedule =
+      await openingHourService.replaceSchedule(
+        restaurantId,
+        openingHours
+      );
 
     return reply.code(200).send(schedule);
   }

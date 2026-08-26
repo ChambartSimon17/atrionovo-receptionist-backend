@@ -5,15 +5,6 @@ export const updateRestaurantSchema = z.object({
 
   maxCapacity: z.number().int().positive(),
 
-  defaultReservationDurationMinutes:
-    z.number().int().positive(),
-
-  maxReservationSize:
-    z.number().int().positive(),
-
-  arrivalIntervalMinutes:
-    z.number().int().positive(),
-
   timezone: z.string().min(1),
 
   language: z.string().min(1),

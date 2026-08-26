@@ -19,6 +19,17 @@ import {
 export default async function openingHourRoutes(
   fastify
 ) {
+  fastify.get(
+    "/:restaurantId/opening-hours",
+    {
+      preHandler: [
+        authenticate,
+        requireRestaurantOwnership,
+      ],
+    },
+    openingHourController.findSchedule
+  );
+
   fastify.put(
     "/:restaurantId/opening-hours",
     {
@@ -29,4 +40,6 @@ export default async function openingHourRoutes(
     },
     openingHourController.replaceSchedule
   );
+
+  
 }
