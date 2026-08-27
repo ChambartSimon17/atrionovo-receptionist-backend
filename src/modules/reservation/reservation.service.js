@@ -422,6 +422,31 @@ class ReservationService {
     );
   }
 
+  /**
+   * Finds all confirmed reservations for a specific
+   * restaurant on a specific calendar day.
+   */
+  async findForRestaurantByDay(
+    restaurantId,
+    date
+  ) {
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    return reservationRepository.findForRestaurantByDay(
+      restaurantId,
+      date
+    );
+  }
 
   /**
    * Finds a reservation by ID.
@@ -440,7 +465,7 @@ class ReservationService {
     return reservation;
   }
 
-    /**
+  /**
    * Finds a reservation by ID for a specific restaurant.
    */
   async findByIdForRestaurant(id, restaurantId) {

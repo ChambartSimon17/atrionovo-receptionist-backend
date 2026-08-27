@@ -176,6 +176,28 @@ class ReservationController {
   }
 
   /**
+   * Finds all confirmed reservations for the
+   * authenticated restaurant on a specific day.
+   */
+  async findForRestaurantByDay(
+    request,
+    reply
+  ) {
+    const { date } = request.query;
+
+    const reservations =
+      await reservationService.findForRestaurantByDay(
+        request.user.restaurantId,
+        date
+      );
+
+    return reply.send({
+      success: true,
+      data: reservations,
+    });
+  }
+
+  /**
    * Finds a reservation by ID for the authenticated restaurant.
    */
   async findByIdForRestaurant(request, reply) {

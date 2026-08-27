@@ -14,6 +14,17 @@ export default async function reservationRoutes(fastify) {
     )
   );
 
+  // Reservations for a specific calendar day
+  fastify.get(
+    "/day",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.findForRestaurantByDay.bind(
+      reservationController
+    )
+  );
+
   // Single reservation
   fastify.get(
     "/:id",

@@ -116,6 +116,41 @@ class ReservationRepository {
       },
     });
   }
+
+  /**
+   * Retrieves all confirmed reservations for a restaurant
+   * on a specific calendar day.
+   *
+   * The reservation time itself does not matter.
+   * Reservations earlier today are included as well.
+   */
+  async findForRestaurantByDay(
+    restaurantId,
+    date
+  ) {
+    const startOfDay = new Date(`${date}T00:00:00`);
+    const startOfNextDay = new Date(`${date}T00:00:00`);
+
+    startOfNextDay.setDate(
+      startOfNextDay.getDate() + 1
+    );
+
+    return prisma.reservation.findMany({
+      where: {
+        restaurantId,
+        status: "CONFIRMED",
+
+        startTime: {
+          gte: startOfDay,
+          lt: startOfNextDay,
+        },
+      },
+
+      orderBy: {
+        startTime: "asc",
+      },
+    });
+  } 
 }
 
 export default new ReservationRepository();
