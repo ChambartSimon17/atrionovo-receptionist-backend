@@ -1,4 +1,7 @@
 import prisma from "../../db/prisma.js";
+import {
+  getUtcRangeForLocalDay,
+} from "../../utils/time.utils.js";
 
 class ReservationRepository {
   async findRestaurantById(restaurantId) {
@@ -126,13 +129,15 @@ class ReservationRepository {
    */
   async findForRestaurantByDay(
     restaurantId,
-    date
+    date,
+    timezone
   ) {
-    const startOfDay = new Date(`${date}T00:00:00`);
-    const startOfNextDay = new Date(`${date}T00:00:00`);
-
-    startOfNextDay.setDate(
-      startOfNextDay.getDate() + 1
+    const {
+      start,
+      end,
+    } = getUtcRangeForLocalDay(
+      date,
+      timezone
     );
 
     return prisma.reservation.findMany({
@@ -141,8 +146,8 @@ class ReservationRepository {
         status: "CONFIRMED",
 
         startTime: {
-          gte: startOfDay,
-          lt: startOfNextDay,
+          gte: start,
+          lt: end,
         },
       },
 

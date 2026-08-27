@@ -444,7 +444,8 @@ class ReservationService {
 
     return reservationRepository.findForRestaurantByDay(
       restaurantId,
-      date
+      date,
+      restaurant.timezone
     );
   }
 
