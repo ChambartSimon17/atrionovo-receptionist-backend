@@ -155,7 +155,92 @@ class ReservationRepository {
         startTime: "asc",
       },
     });
-  } 
+  }
+
+  /**
+   * Retrieves all confirmed reservations for a restaurant
+   * during a specific calendar month.
+   *
+   * Converts the local calendar month boundaries to UTC
+   * using the specified timezone to account for DST changes
+   * and ensure accurate cross-timezone month boundaries.
+   *
+   * Returns only the startTime for each reservation,
+   * suitable for analytics, availability analysis, or
+   * generating reservation counts by date.
+   *
+   * Example:
+   * findReservationCountsForMonth(
+   *   "rest123",
+   *   2026,
+   *   8,
+   *   "Europe/Brussels"
+   * )
+   * => Returns all August 2026 reservations in Brussels time
+   */
+  async findReservationCountsForMonth(
+    restaurantId,
+    year,
+    month,
+    timezone
+  ) {
+    const firstDay = `${year}-${String(
+      month
+    ).padStart(2, "0")}-01`;
+
+    const nextMonthDate =
+      new Date(
+        Number(year),
+        Number(month),
+        1
+      );
+
+    const nextMonthYear =
+      nextMonthDate.getFullYear();
+
+    const nextMonth =
+      String(
+        nextMonthDate.getMonth() + 1
+      ).padStart(2, "0");
+
+    const nextMonthDay = `${nextMonthYear}-${nextMonth}-01`;
+
+    const {
+      start: rangeStart,
+    } = getUtcRangeForLocalDay(
+      firstDay,
+      timezone
+    );
+
+    const {
+      start: rangeEnd,
+    } = getUtcRangeForLocalDay(
+      nextMonthDay,
+      timezone
+    );
+
+    return prisma.reservation.findMany({
+      where: {
+        restaurantId,
+
+        status: "CONFIRMED",
+
+        startTime: {
+          gte: rangeStart,
+          lt: rangeEnd,
+        },
+      },
+
+      select: {
+        startTime: true,
+      },
+
+      orderBy: {
+        startTime: "asc",
+      },
+    });
+  }
+  
 }
 
 export default new ReservationRepository();

@@ -240,6 +240,60 @@ class ReservationController {
     });
   }
 
+  /**
+   * Retrieves reservation counts by calendar day
+   * for a specific month.
+   *
+   * Query parameters:
+   *   year (required): Full year (e.g., 2026)
+   *   month (required): Month number 1-12
+   *
+   * Returns an object mapping YYYY-MM-DD date strings
+   * to the number of confirmed reservations on that day.
+   */
+  async findReservationCountsForMonth(
+    request,
+    reply
+  ) {
+    const {
+      year,
+      month,
+    } = request.query;
+
+    const parsedYear =
+      Number(year);
+
+    const parsedMonth =
+      Number(month);
+
+    if (
+      !Number.isInteger(parsedYear) ||
+      !Number.isInteger(parsedMonth) ||
+      parsedMonth < 1 ||
+      parsedMonth > 12
+    ) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          message:
+            "Invalid year or month.",
+        },
+      });
+    }
+
+    const counts =
+      await reservationService.findReservationCountsForMonth(
+        request.user.restaurantId,
+        parsedYear,
+        parsedMonth
+      );
+
+    return reply.send({
+      success: true,
+      data: counts,
+    });
+  }
+
 }
 
 export default new ReservationController();

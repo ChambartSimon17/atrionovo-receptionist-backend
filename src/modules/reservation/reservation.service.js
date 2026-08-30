@@ -529,6 +529,94 @@ class ReservationService {
       }
     );
   }
+
+  /**
+   * Retrieves reservation counts for each calendar day
+   * during a specific month.
+   *
+   * Aggregates confirmed reservations by local calendar date,
+   * respecting the restaurant's timezone to ensure accurate
+   * month boundaries. Returns a map of YYYY-MM-DD strings to
+   * reservation counts for that day.
+   *
+   * Useful for availability calendars, analytics dashboards,
+   * and booking overview displays.
+   */
+  async findReservationCountsForMonth(
+    restaurantId,
+    year,
+    month
+  ) {
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    const reservations =
+      await reservationRepository.findReservationCountsForMonth(
+        restaurantId,
+        year,
+        month,
+        restaurant.timezone
+      );
+
+    const counts = {};
+
+    for (const reservation of reservations) {
+      const date =
+        new Date(
+          reservation.startTime
+        );
+
+      const formatter =
+        new Intl.DateTimeFormat(
+          "en-CA",
+          {
+            timeZone:
+              restaurant.timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }
+        );
+
+      const parts =
+        formatter.formatToParts(date);
+
+      const yearPart =
+        parts.find(
+          (part) =>
+            part.type === "year"
+        ).value;
+
+      const monthPart =
+        parts.find(
+          (part) =>
+            part.type === "month"
+        ).value;
+
+      const dayPart =
+        parts.find(
+          (part) =>
+            part.type === "day"
+        ).value;
+
+      const localDate =
+        `${yearPart}-${monthPart}-${dayPart}`;
+
+      counts[localDate] =
+        (counts[localDate] || 0) + 1;
+    }
+
+    return counts;
+  }
 }
 
 export default new ReservationService();

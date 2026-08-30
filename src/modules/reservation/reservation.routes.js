@@ -25,6 +25,17 @@ export default async function reservationRoutes(fastify) {
     )
   );
 
+  // Reservation counts for a specific month
+  fastify.get(
+    "/month",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.findReservationCountsForMonth.bind(
+      reservationController
+    )
+  );
+
   // Single reservation
   fastify.get(
     "/:id",
