@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
 import customerService from "../customer/customer.service.js";
+import tableAssignmentService from "../restaurant/table/table-assignment.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -87,12 +88,22 @@ class ReservationService {
    *
    * The reservation end time is automatically calculated
    * using the restaurant's default reservation duration.
+   *
+   * The best available table combination is automatically
+   * assigned to the reservation.
    */
   async createReservation(reservationData) {
     const restaurant =
       await restaurantRepository.findById(
         reservationData.restaurantId
       );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
@@ -127,6 +138,28 @@ class ReservationService {
         completeReservation.endTime,
     });
 
+    const tableAssignment =
+      await tableAssignmentService.assignTables({
+        restaurantId:
+          completeReservation.restaurantId,
+
+        guestCount:
+          completeReservation.guestCount,
+
+        startTime:
+          completeReservation.startTime,
+
+        endTime:
+          completeReservation.endTime,
+      });
+
+    if (!tableAssignment) {
+      throw new ValidationError(
+        "No available table combination found for this reservation.",
+        ErrorCodes.RESERVATION_NOT_AVAILABLE
+      );
+    }
+
     const customer =
       await customerService.syncCustomer({
         restaurantId:
@@ -148,6 +181,15 @@ class ReservationService {
     completeReservation.customerId =
       customer.id;
 
+    completeReservation.tables = {
+      create:
+        tableAssignment.tables.map(
+          (table) => ({
+            tableId: table.id,
+          })
+        ),
+    };
+
     return reservationRepository.create(
       completeReservation
     );
@@ -158,6 +200,9 @@ class ReservationService {
    *
    * The reservation end time is automatically recalculated
    * using the restaurant's default reservation duration.
+   *
+   * The table assignment is recalculated based on the
+   * updated reservation details.
    */
   async updateReservation(id, reservationData) {
     const existingReservation =
@@ -184,6 +229,13 @@ class ReservationService {
       await restaurantRepository.findById(
         reservationData.restaurantId
       );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
@@ -220,6 +272,28 @@ class ReservationService {
       ignoreReservationId: id,
     });
 
+    const tableAssignment =
+      await tableAssignmentService.assignTables({
+        restaurantId:
+          completeReservation.restaurantId,
+
+        guestCount:
+          completeReservation.guestCount,
+
+        startTime:
+          completeReservation.startTime,
+
+        endTime:
+          completeReservation.endTime,
+      });
+
+    if (!tableAssignment) {
+      throw new ValidationError(
+        "No available table combination found for this reservation.",
+        ErrorCodes.RESERVATION_NOT_AVAILABLE
+      );
+    }
+
     const customer =
       await customerService.syncCustomer({
         restaurantId:
@@ -240,6 +314,17 @@ class ReservationService {
 
     completeReservation.customerId =
       customer.id;
+
+    completeReservation.tables = {
+      deleteMany: {},
+
+      create:
+        tableAssignment.tables.map(
+          (table) => ({
+            tableId: table.id,
+          })
+        ),
+    };
 
     return reservationRepository.update(
       id,

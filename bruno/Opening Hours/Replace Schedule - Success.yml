@@ -25,10 +25,27 @@ http:
             "dayOfWeek": "TUESDAY",
             "opensAtMinutes": 720,
             "closesAtMinutes": 1320
+          },
+          {
+            "dayOfWeek": "WEDNESDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 1320
+          },
+          {
+            "dayOfWeek": "THURSDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 1320
+          },
+          {
+            "dayOfWeek": "FRIDAY",
+            "opensAtMinutes": 720,
+            "closesAtMinutes": 1320
           }
         ]
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN4NDBveTcwMDAyczAxbjc1NzQ3anFvIiwicmVzdGF1cmFudElkIjoiY21zeDQwb3kzMDAwMHMwMW56dmlvaHl4dSIsInJvbGUiOiJPV05FUiIsImlhdCI6MTc4NzkyMDQxMSwiZXhwIjoxNzg3OTIxMzExfQ.NWGs85FtvY7VmOCd1m_wo6u5drcQMcFl4-zXUK1w8UU
 
 runtime:
   variables:

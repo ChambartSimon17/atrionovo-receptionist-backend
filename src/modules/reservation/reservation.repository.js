@@ -51,6 +51,37 @@ class ReservationRepository {
     });
   }
 
+  async createWithTables(
+    reservationData,
+    tableIds
+  ) {
+    return prisma.reservation.create({
+      data: {
+        ...reservationData,
+
+        tables: {
+          create: tableIds.map(
+            (tableId) => ({
+              table: {
+                connect: {
+                  id: tableId,
+                },
+              },
+            })
+          ),
+        },
+      },
+
+      include: {
+        tables: {
+          include: {
+            table: true,
+          },
+        },
+      },
+    });
+  }
+
   async update(id, reservationData) {
     return prisma.reservation.update({
       where: {

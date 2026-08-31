@@ -15,9 +15,9 @@ http:
         "lastName": "Chambart",
         "phoneNumber": "+32470123456",
         "email": "simon@test.com",
-        "guestCount": 5,
-        "startTime": "2026-08-17T15:15:00.000Z",
-        "notes": "reservatieTest2"
+        "guestCount": 1,
+        "startTime": "2026-08-28T16:30:00.000Z",
+        "notes": "EditReservationCheck"
       }
   auth: inherit
 

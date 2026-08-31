@@ -63,6 +63,16 @@ enum UserRole {
   STAFF
 }
 
+// ------------------------------------------------------
+// Table shapes
+// ------------------------------------------------------
+
+enum TableShape {
+  ROUND
+  SQUARE
+  RECTANGLE
+}
+
 // ======================================================
 // USER DOMAIN
 // ======================================================
@@ -78,13 +88,13 @@ model User {
 
   restaurantId String
 
-  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  email String @unique
+  email        String @unique
   passwordHash String
 
   firstName String
-  lastName String
+  lastName  String
 
   role UserRole @default(STAFF)
 
@@ -93,7 +103,6 @@ model User {
 
   @@index([restaurantId])
 }
-
 
 // ======================================================
 // RESTAURANT DOMAIN
@@ -129,8 +138,9 @@ model Restaurant {
   // Basic Information
   // -------------------------
 
-  name String
-  slug String @unique
+  name        String
+  slug        String @unique
+  countryCode String
 
   // -------------------------
   // Restaurant Configuration
@@ -156,11 +166,12 @@ model Restaurant {
   // Relationships
   // -------------------------
 
-  openingHours OpeningHour[]
+  openingHours       OpeningHour[]
   specialOpeningDays SpecialOpeningDay[]
-  reservations Reservation[]
-  customers Customer[]
-  users User[]
+  reservations       Reservation[]
+  customers          Customer[]
+  users              User[]
+  tables             Table[]
 
   // -------------------------
   // Metadata
@@ -169,8 +180,6 @@ model Restaurant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
 
 model Customer {
   // -------------------------
@@ -221,6 +230,100 @@ model Customer {
   @@unique([restaurantId, phoneNumber], map: "uq_customer_restaurant_phone")
   @@index([restaurantId, email], map: "idx_customer_restaurant_email")
   @@index([restaurantId, lastName], map: "idx_customer_restaurant_last_name")
+}
+
+// ======================================================
+// TABLE DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// Table
+// ------------------------------------------------------
+// Represents a physical restaurant table.
+//
+// The table contains both:
+//
+// 1. Reservation logic
+//    - capacity
+//    - active/inactive
+//
+// 2. Floor plan information
+//    - position
+//    - size
+//    - shape
+//    - rotation
+//
+// The floor plan values allow the frontend to
+// visually position the table inside the restaurant.
+// ------------------------------------------------------
+
+model Table {
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Restaurant Relationship
+  // -------------------------
+
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Table Information
+  // -------------------------
+
+  name String
+
+  capacity Int
+
+  shape TableShape @default(RECTANGLE)
+
+  // -------------------------
+  // Floor Plan
+  // -------------------------
+  //
+  // Coordinates are stored relative
+  // to the restaurant floor plan.
+
+  x Float @default(0)
+  y Float @default(0)
+
+  width  Float @default(100)
+  height Float @default(60)
+
+  rotation Float @default(0)
+
+  // -------------------------
+  // Status
+  // -------------------------
+
+  // Allows a restaurant to temporarily
+  // disable a table without deleting it.
+
+  isActive Boolean @default(true)
+
+  // -------------------------
+  // Relationships
+  // -------------------------
+
+  reservations ReservationTable[]
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([restaurantId])
 }
 
 // ------------------------------------------------------
@@ -285,7 +388,6 @@ model OpeningHour {
   @@index([restaurantId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
 }
 
-
 // ------------------------------------------------------
 // SpecialOpeningDay
 // ------------------------------------------------------
@@ -303,7 +405,6 @@ model OpeningHour {
 // ------------------------------------------------------
 
 model SpecialOpeningDay {
-
   // -------------------------
   // Primary Key
   // -------------------------
@@ -316,7 +417,7 @@ model SpecialOpeningDay {
 
   restaurantId String
 
-  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Date
@@ -350,7 +451,6 @@ model SpecialOpeningDay {
   @@unique([restaurantId, date])
 }
 
-
 // ------------------------------------------------------
 // SpecialOpeningPeriod
 // ------------------------------------------------------
@@ -366,7 +466,6 @@ model SpecialOpeningDay {
 // ------------------------------------------------------
 
 model SpecialOpeningPeriod {
-
   // -------------------------
   // Primary Key
   // -------------------------
@@ -379,13 +478,13 @@ model SpecialOpeningPeriod {
 
   specialOpeningDayId String
 
-  specialOpeningDay SpecialOpeningDay @relation( fields: [specialOpeningDayId], references: [id], onDelete: Cascade )
+  specialOpeningDay SpecialOpeningDay @relation(fields: [specialOpeningDayId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Opening Period
   // -------------------------
 
-  opensAtMinutes Int
+  opensAtMinutes  Int
   closesAtMinutes Int
 
   // -------------------------
@@ -401,7 +500,6 @@ model SpecialOpeningPeriod {
 
   @@index([specialOpeningDayId])
 }
-
 
 // ======================================================
 // RESERVATION DOMAIN
@@ -431,7 +529,7 @@ model Reservation {
 
   restaurantId String
 
-  restaurant Restaurant @relation( fields: [restaurantId], references: [id], onDelete: Cascade )
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Customer Relationship
@@ -439,7 +537,7 @@ model Reservation {
 
   customerId String?
 
-  customer Customer? @relation( fields: [customerId], references: [id], onDelete: SetNull )
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   // -------------------------
   // Customer Snapshot
@@ -465,6 +563,12 @@ model Reservation {
   notes String?
 
   // -------------------------
+  // Table Assignment
+  // -------------------------
+
+  tables ReservationTable[]
+
+  // -------------------------
   // Metadata
   // -------------------------
 
@@ -480,4 +584,39 @@ model Reservation {
   @@index([startTime], map: "idx_reservation_start_time")
   @@index([endTime], map: "idx_reservation_end_time")
   @@index([restaurantId, startTime], map: "idx_reservation_restaurant_start")
+}
+
+// ======================================================
+// RESERVATION ↔ TABLE
+// ======================================================
+
+// ------------------------------------------------------
+// ReservationTable
+// ------------------------------------------------------
+// Connects reservations with one or more tables.
+//
+// This allows:
+//
+// Reservation → Table 1
+//
+// but also:
+//
+// Reservation → Table 1 + Table 2
+//
+// which is necessary for larger groups.
+// ------------------------------------------------------
+
+model ReservationTable {
+  reservationId String
+  tableId       String
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  // Prevent the same table from being
+  // assigned twice to the same reservation.
+
+  @@id([reservationId, tableId])
+  @@index([tableId])
 }

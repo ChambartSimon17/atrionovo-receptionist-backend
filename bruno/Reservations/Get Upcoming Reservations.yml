@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/reservations"
-  auth: inherit
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN4NDBveTcwMDAyczAxbjc1NzQ3anFvIiwicmVzdGF1cmFudElkIjoiY21zeDQwb3kzMDAwMHMwMW56dmlvaHl4dSIsInJvbGUiOiJPV05FUiIsImlhdCI6MTc4NzY2MzQ1MywiZXhwIjoxNzg3NjY0MzUzfQ.fl9FuqXkfZI7FVdl5pFosRTUm_UlTVBjZjxYHyJBmuU
 
 settings:
   encodeUrl: true
