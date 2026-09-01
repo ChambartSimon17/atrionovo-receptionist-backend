@@ -5,7 +5,8 @@ class TableAssignmentService {
     restaurantId,
     guestCount,
     startTime,
-    endTime
+    endTime,
+    ignoreReservationId
   ) {
     const tables =
       await tableRepository.findActiveTablesForRestaurant(
@@ -19,7 +20,8 @@ class TableAssignmentService {
         await tableRepository.findTableReservations(
           table.id,
           startTime,
-          endTime
+          endTime,
+          ignoreReservationId
         );
 
       if (reservations.length === 0) {
@@ -104,13 +106,15 @@ class TableAssignmentService {
     guestCount,
     startTime,
     endTime,
+    ignoreReservationId,
   }) {
     const availableTables =
       await this.findAvailableTables(
         restaurantId,
         guestCount,
         startTime,
-        endTime
+        endTime,
+        ignoreReservationId
       );
 
     return this.findBestTableCombination(

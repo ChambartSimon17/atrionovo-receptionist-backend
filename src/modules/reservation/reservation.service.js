@@ -2,6 +2,7 @@ import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
 import customerService from "../customer/customer.service.js";
+import tableRepository from "../restaurant/table/table.repository.js";
 import tableAssignmentService from "../restaurant/table/table-assignment.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
@@ -285,6 +286,8 @@ class ReservationService {
 
         endTime:
           completeReservation.endTime,
+
+        ignoreReservationId: id,
       });
 
     if (!tableAssignment) {
@@ -404,6 +407,10 @@ class ReservationService {
 
   /**
    * Cancels an existing reservation.
+   *
+   * The reservation remains in the database for historical
+   * purposes, but its table assignments are removed so the
+   * tables become available for future reservations.
    */
   async cancelReservation(id) {
     const reservation =
@@ -425,6 +432,10 @@ class ReservationService {
         ErrorCodes.RESERVATION_NOT_CONFIRMED
       );
     }
+
+    await tableRepository.deleteReservationTables(
+      id
+    );
 
     return reservationRepository.update(
       id,

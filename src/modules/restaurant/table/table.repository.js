@@ -13,13 +13,24 @@ class TableRepository {
     });
   }
 
-  async findTableReservations(tableId, startTime, endTime) {
+  async findTableReservations(
+    tableId,
+    startTime,
+    endTime,
+    ignoreReservationId
+  ) {
     return prisma.reservationTable.findMany({
       where: {
         tableId,
 
         reservation: {
           status: "CONFIRMED",
+
+          ...(ignoreReservationId && {
+            id: {
+              not: ignoreReservationId,
+            },
+          }),
 
           startTime: {
             lt: endTime,
@@ -34,6 +45,26 @@ class TableRepository {
       include: {
         reservation: true,
       },
+    });
+  }
+
+  async deleteReservationTables(reservationId) {
+    return prisma.reservationTable.deleteMany({
+      where: {
+        reservationId,
+      },
+    });
+  }
+
+  async createReservationTables(
+    reservationId,
+    tables
+  ) {
+    return prisma.reservationTable.createMany({
+      data: tables.map((table) => ({
+        reservationId,
+        tableId: table.id,
+      })),
     });
   }
 }
