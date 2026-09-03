@@ -1,3 +1,4 @@
+import prisma from "../../db/prisma.js";
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
@@ -139,6 +140,7 @@ class ReservationService {
         completeReservation.endTime,
     });
 
+  return prisma.$transaction(async (tx) => {
     const tableAssignment =
       await tableAssignmentService.assignTables({
         restaurantId:
@@ -152,6 +154,7 @@ class ReservationService {
 
         endTime:
           completeReservation.endTime,
+        db: tx,
       });
 
     if (!tableAssignment) {
@@ -165,36 +168,32 @@ class ReservationService {
       await customerService.syncCustomer({
         restaurantId:
           completeReservation.restaurantId,
-
         firstName:
           completeReservation.firstName,
-
         lastName:
           completeReservation.lastName,
-
         phoneNumber:
           completeReservation.phoneNumber,
-
         email:
           completeReservation.email,
-      });
+        },
+        tx
+      );
 
-    completeReservation.customerId =
-      customer.id;
-
-    completeReservation.tables = {
-      create:
+    const reservation =
+      await reservationRepository.createWithTables({
+          ...completeReservation,
+          customerId: customer.id,
+        },
         tableAssignment.tables.map(
-          (table) => ({
-            tableId: table.id,
-          })
+          (table) => table.id
         ),
-    };
+        tx
+      );
 
-    return reservationRepository.create(
-      completeReservation
-    );
-  }
+    return reservation;
+  });
+}
 
   /**
    * Updates an existing reservation.
@@ -216,10 +215,7 @@ class ReservationService {
       );
     }
 
-    if (
-      existingReservation.status !==
-      "CONFIRMED"
-    ) {
+    if (existingReservation.status !== "CONFIRMED") {
       throw new ValidationError(
         `Reservation cannot be updated because it is ${existingReservation.status.toLowerCase()}.`,
         ErrorCodes.RESERVATION_NOT_CONFIRMED
@@ -273,6 +269,7 @@ class ReservationService {
       ignoreReservationId: id,
     });
 
+  return prisma.$transaction(async (tx) => {
     const tableAssignment =
       await tableAssignmentService.assignTables({
         restaurantId:
@@ -288,6 +285,7 @@ class ReservationService {
           completeReservation.endTime,
 
         ignoreReservationId: id,
+        db: tx,
       });
 
     if (!tableAssignment) {
@@ -298,42 +296,41 @@ class ReservationService {
     }
 
     const customer =
-      await customerService.syncCustomer({
-        restaurantId:
-          completeReservation.restaurantId,
-
-        firstName:
-          completeReservation.firstName,
-
-        lastName:
-          completeReservation.lastName,
-
-        phoneNumber:
-          completeReservation.phoneNumber,
-
-        email:
-          completeReservation.email,
-      });
-
-    completeReservation.customerId =
-      customer.id;
-
-    completeReservation.tables = {
-      deleteMany: {},
-
-      create:
-        tableAssignment.tables.map(
-          (table) => ({
-            tableId: table.id,
-          })
-        ),
-    };
+     await customerService.syncCustomer(
+        {
+          restaurantId:
+            completeReservation.restaurantId,
+          firstName:
+            completeReservation.firstName,
+          lastName:
+            completeReservation.lastName,
+          phoneNumber:
+            completeReservation.phoneNumber,
+          email:
+            completeReservation.email,
+        },
+        tx
+      );
 
     return reservationRepository.update(
       id,
-      completeReservation
+      {
+        ...completeReservation,
+        customerId: customer.id,
+        tables: {
+          deleteMany: {},
+          create:
+            tableAssignment.tables.map(
+              (table) => ({
+                tableId: table.id,
+              })
+            ),
+        },
+      },
+      tx
     );
-  }
+  });
+}
 
   /**
    * Reschedules an existing reservation.
@@ -390,6 +387,9 @@ class ReservationService {
 
   /**
    * Deletes an existing reservation.
+   *
+   * Related table assignments are automatically removed
+   * through the ReservationTable foreign-key cascade.
    */
   async deleteReservation(id) {
     const reservation =
@@ -411,6 +411,9 @@ class ReservationService {
    * The reservation remains in the database for historical
    * purposes, but its table assignments are removed so the
    * tables become available for future reservations.
+   *
+   * The table assignments and status update are executed
+   * inside the same transaction to prevent partial changes.
    */
   async cancelReservation(id) {
     const reservation =
@@ -433,16 +436,20 @@ class ReservationService {
       );
     }
 
+  return prisma.$transaction(async (tx) => {
     await tableRepository.deleteReservationTables(
-      id
+      id,
+      tx
     );
 
     return reservationRepository.update(
       id,
       {
         status: "CANCELLED",
-      }
+      },
+      tx
     );
+    });
   }
 
   /**

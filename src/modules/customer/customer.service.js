@@ -18,15 +18,21 @@ import { normalizeEmail } from "../../utils/email.utils.js";
 // - Phone numbers are unique per restaurant
 // - Phone numbers are normalized
 // - Emails are normalized
+//
+// Transaction Support
+// - Database operations can receive a Prisma client.
+// - This allows reservation flows to execute customer
+//   operations inside the same Prisma transaction.
 // ======================================================
 
 class CustomerService {
   /**
    * Creates a new customer.
    */
-  async createCustomer(customerData) {
+  async createCustomer(customerData, db) {
     await this.#ensureRestaurantExists(
-      customerData.restaurantId
+      customerData.restaurantId,
+      db
     );
 
     const normalizedCustomer = {
@@ -34,13 +40,16 @@ class CustomerService {
       phoneNumber: normalizePhoneNumber(
         customerData.phoneNumber
       ),
-      email: normalizeEmail(customerData.email),
+      email: normalizeEmail(
+        customerData.email
+      ),
     };
 
     const existingCustomer =
       await customerRepository.findByPhoneNumber(
         normalizedCustomer.restaurantId,
-        normalizedCustomer.phoneNumber
+        normalizedCustomer.phoneNumber,
+        db
       );
 
     if (existingCustomer) {
@@ -50,7 +59,8 @@ class CustomerService {
     }
 
     return customerRepository.create(
-      normalizedCustomer
+      normalizedCustomer,
+      db
     );
   }
 
@@ -61,10 +71,14 @@ class CustomerService {
    * information is stored.
    *
    * Otherwise a new customer is created.
+   *
+   * The optional Prisma client allows this operation
+   * to participate in a larger transaction.
    */
-  async syncCustomer(customerData) {
+  async syncCustomer(customerData, db) {
     await this.#ensureRestaurantExists(
-      customerData.restaurantId
+      customerData.restaurantId,
+      db
     );
 
     const normalizedCustomer = {
@@ -72,18 +86,22 @@ class CustomerService {
       phoneNumber: normalizePhoneNumber(
         customerData.phoneNumber
       ),
-      email: normalizeEmail(customerData.email),
+      email: normalizeEmail(
+        customerData.email
+      ),
     };
 
     const existingCustomer =
       await customerRepository.findByPhoneNumber(
         normalizedCustomer.restaurantId,
-        normalizedCustomer.phoneNumber
+        normalizedCustomer.phoneNumber,
+        db
       );
 
     if (!existingCustomer) {
       return customerRepository.create(
-        normalizedCustomer
+        normalizedCustomer,
+        db
       );
     }
 
@@ -93,23 +111,29 @@ class CustomerService {
       phoneNumber: normalizedCustomer.phoneNumber,
     };
 
-    if (normalizedCustomer.email !== undefined) {
+    if (
+      normalizedCustomer.email !== undefined
+    ) {
       updatedCustomer.email =
         normalizedCustomer.email;
     }
 
     return customerRepository.update(
       existingCustomer.id,
-      updatedCustomer
+      updatedCustomer,
+      db
     );
   }
 
   /**
    * Updates an existing customer.
    */
-  async updateCustomer(id, customerData) {
+  async updateCustomer(id, customerData, db) {
     const existingCustomer =
-      await customerRepository.findById(id);
+      await customerRepository.findById(
+        id,
+        db
+      );
 
     if (!existingCustomer) {
       throw new NotFoundError(
@@ -123,13 +147,16 @@ class CustomerService {
       phoneNumber: normalizePhoneNumber(
         customerData.phoneNumber
       ),
-      email: normalizeEmail(customerData.email),
+      email: normalizeEmail(
+        customerData.email
+      ),
     };
 
     const duplicateCustomer =
       await customerRepository.findByPhoneNumber(
         normalizedCustomer.restaurantId,
-        normalizedCustomer.phoneNumber
+        normalizedCustomer.phoneNumber,
+        db
       );
 
     if (
@@ -143,16 +170,20 @@ class CustomerService {
 
     return customerRepository.update(
       id,
-      normalizedCustomer
+      normalizedCustomer,
+      db
     );
   }
 
   /**
    * Deletes a customer.
    */
-  async deleteCustomer(id) {
+  async deleteCustomer(id, db) {
     const customer =
-      await customerRepository.findById(id);
+      await customerRepository.findById(
+        id,
+        db
+      );
 
     if (!customer) {
       throw new NotFoundError(
@@ -161,7 +192,10 @@ class CustomerService {
       );
     }
 
-    await customerRepository.delete(id);
+    await customerRepository.delete(
+      id,
+      db
+    );
   }
 
   /**
@@ -170,14 +204,16 @@ class CustomerService {
   async findByPhoneNumber({
     restaurantId,
     phoneNumber,
-  }) {
+  }, db) {
     await this.#ensureRestaurantExists(
-      restaurantId
+      restaurantId,
+      db
     );
 
     return customerRepository.findByPhoneNumber(
       restaurantId,
-      normalizePhoneNumber(phoneNumber)
+      normalizePhoneNumber(phoneNumber),
+      db
     );
   }
 
@@ -188,15 +224,17 @@ class CustomerService {
   async getCallerProfile({
     restaurantId,
     phoneNumber,
-  }) {
+  }, db) {
     await this.#ensureRestaurantExists(
-      restaurantId
+      restaurantId,
+      db
     );
 
     const customer =
       await customerRepository.findProfileByPhoneNumber(
         restaurantId,
-        normalizePhoneNumber(phoneNumber)
+        normalizePhoneNumber(phoneNumber),
+        db
       );
 
     if (!customer) {
@@ -221,11 +259,13 @@ class CustomerService {
    * Ensures the restaurant exists.
    */
   async #ensureRestaurantExists(
-    restaurantId
+    restaurantId,
+    db
   ) {
     const restaurant =
       await restaurantRepository.findById(
-        restaurantId
+        restaurantId,
+        db
       );
 
     if (!restaurant) {

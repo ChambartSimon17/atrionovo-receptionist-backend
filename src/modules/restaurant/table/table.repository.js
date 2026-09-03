@@ -1,8 +1,14 @@
 import prisma from "../../../db/prisma.js";
 
 class TableRepository {
-  async findActiveTablesForRestaurant(restaurantId) {
-    return prisma.table.findMany({
+  /**
+   * Retrieves all active tables for a restaurant.
+   */
+  async findActiveTablesForRestaurant(
+    restaurantId,
+    db = prisma
+  ) {
+    return db.table.findMany({
       where: {
         restaurantId,
         isActive: true,
@@ -13,13 +19,18 @@ class TableRepository {
     });
   }
 
+  /**
+   * Retrieves reservations occupying a table
+   * during the requested time period.
+   */
   async findTableReservations(
     tableId,
     startTime,
     endTime,
-    ignoreReservationId
+    ignoreReservationId,
+    db = prisma
   ) {
-    return prisma.reservationTable.findMany({
+    return db.reservationTable.findMany({
       where: {
         tableId,
 
@@ -48,19 +59,29 @@ class TableRepository {
     });
   }
 
-  async deleteReservationTables(reservationId) {
-    return prisma.reservationTable.deleteMany({
+  /**
+   * Deletes all table assignments for a reservation.
+   */
+  async deleteReservationTables(
+    reservationId,
+    db = prisma
+  ) {
+    return db.reservationTable.deleteMany({
       where: {
         reservationId,
       },
     });
   }
 
+  /**
+   * Creates table assignments for a reservation.
+   */
   async createReservationTables(
     reservationId,
-    tables
+    tables,
+    db = prisma
   ) {
-    return prisma.reservationTable.createMany({
+    return db.reservationTable.createMany({
       data: tables.map((table) => ({
         reservationId,
         tableId: table.id,

@@ -4,8 +4,11 @@ class CustomerRepository {
   /**
    * Creates a customer.
    */
-  async create(data) {
-    return prisma.customer.create({
+  async create(
+    data,
+    db = prisma
+  ) {
+    return db.customer.create({
       data,
     });
   }
@@ -13,8 +16,11 @@ class CustomerRepository {
   /**
    * Retrieves a customer by id.
    */
-  async findById(id) {
-    return prisma.customer.findUnique({
+  async findById(
+    id,
+    db = prisma
+  ) {
+    return db.customer.findUnique({
       where: {
         id,
       },
@@ -26,9 +32,10 @@ class CustomerRepository {
    */
   async findByPhoneNumber(
     restaurantId,
-    phoneNumber
+    phoneNumber,
+    db = prisma
   ) {
-    return prisma.customer.findUnique({
+    return db.customer.findUnique({
       where: {
         restaurantId_phoneNumber: {
           restaurantId,
@@ -44,9 +51,10 @@ class CustomerRepository {
    */
   async findProfileByPhoneNumber(
     restaurantId,
-    phoneNumber
+    phoneNumber,
+    db = prisma
   ) {
-    return prisma.customer.findUnique({
+    return db.customer.findUnique({
       where: {
         restaurantId_phoneNumber: {
           restaurantId,
@@ -74,9 +82,10 @@ class CustomerRepository {
    */
   async findByEmail(
     restaurantId,
-    email
+    email,
+    db = prisma
   ) {
-    return prisma.customer.findFirst({
+    return db.customer.findFirst({
       where: {
         restaurantId,
         email,
@@ -87,8 +96,12 @@ class CustomerRepository {
   /**
    * Updates a customer.
    */
-  async update(id, data) {
-    return prisma.customer.update({
+  async update(
+    id,
+    data,
+    db = prisma
+  ) {
+    return db.customer.update({
       where: {
         id,
       },
@@ -99,8 +112,11 @@ class CustomerRepository {
   /**
    * Deletes a customer.
    */
-  async delete(id) {
-    return prisma.customer.delete({
+  async delete(
+    id,
+    db = prisma
+  ) {
+    return db.customer.delete({
       where: {
         id,
       },

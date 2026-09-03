@@ -1,16 +1,22 @@
 import tableRepository from "./table.repository.js";
 
 class TableAssignmentService {
+  /**
+   * Finds all active tables that are not occupied
+   * during the requested reservation period.
+   */
   async findAvailableTables(
     restaurantId,
     guestCount,
     startTime,
     endTime,
-    ignoreReservationId
+    ignoreReservationId,
+    db
   ) {
     const tables =
       await tableRepository.findActiveTablesForRestaurant(
-        restaurantId
+        restaurantId,
+        db
       );
 
     const availableTables = [];
@@ -21,7 +27,8 @@ class TableAssignmentService {
           table.id,
           startTime,
           endTime,
-          ignoreReservationId
+          ignoreReservationId,
+          db
         );
 
       if (reservations.length === 0) {
@@ -32,6 +39,10 @@ class TableAssignmentService {
     return availableTables;
   }
 
+  /**
+   * Finds the smallest table combination that can
+   * accommodate the requested number of guests.
+   */
   findBestTableCombination(
     availableTables,
     guestCount
@@ -101,12 +112,17 @@ class TableAssignmentService {
     return bestCombination;
   }
 
+  /**
+   * Finds the best available table combination
+   * for a reservation.
+   */
   async assignTables({
     restaurantId,
     guestCount,
     startTime,
     endTime,
     ignoreReservationId,
+    db,
   }) {
     const availableTables =
       await this.findAvailableTables(
@@ -114,7 +130,8 @@ class TableAssignmentService {
         guestCount,
         startTime,
         endTime,
-        ignoreReservationId
+        ignoreReservationId,
+        db
       );
 
     return this.findBestTableCombination(

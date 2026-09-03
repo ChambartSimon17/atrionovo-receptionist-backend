@@ -4,16 +4,22 @@ import {
 } from "../../utils/time.utils.js";
 
 class ReservationRepository {
-  async findRestaurantById(restaurantId) {
-    return prisma.restaurant.findUnique({
+  async findRestaurantById(
+    restaurantId,
+    db = prisma
+  ) {
+    return db.restaurant.findUnique({
       where: {
         id: restaurantId,
       },
     });
   }
 
-  async findById(id) {
-    return prisma.reservation.findUnique({
+  async findById(
+    id,
+    db = prisma
+  ) {
+    return db.reservation.findUnique({
       where: {
         id,
       },
@@ -23,9 +29,10 @@ class ReservationRepository {
   async findOverlappingReservations(
     restaurantId,
     startTime,
-    endTime
+    endTime,
+    db = prisma
   ) {
-    return prisma.reservation.findMany({
+    return db.reservation.findMany({
       where: {
         restaurantId,
         status: "CONFIRMED",
@@ -45,17 +52,21 @@ class ReservationRepository {
     });
   }
 
-  async create(data) {
-    return prisma.reservation.create({
+  async create(
+    data,
+    db = prisma
+  ) {
+    return db.reservation.create({
       data,
     });
   }
 
   async createWithTables(
     reservationData,
-    tableIds
+    tableIds,
+    db = prisma
   ) {
-    return prisma.reservation.create({
+    return db.reservation.create({
       data: {
         ...reservationData,
 
@@ -82,8 +93,12 @@ class ReservationRepository {
     });
   }
 
-  async update(id, reservationData) {
-    return prisma.reservation.update({
+  async update(
+    id,
+    reservationData,
+    db = prisma
+  ) {
+    return db.reservation.update({
       where: {
         id,
       },
@@ -91,8 +106,11 @@ class ReservationRepository {
     });
   }
 
-  async delete(id) {
-    return prisma.reservation.delete({
+  async delete(
+    id,
+    db = prisma
+  ) {
+    return db.reservation.delete({
       where: {
         id,
       },
@@ -104,7 +122,7 @@ class ReservationRepository {
     phoneNumber,
     email,
     lastName,
-  }) {
+  }, db = prisma) {
     const where = {
       restaurantId,
       status: "CONFIRMED",
@@ -125,7 +143,7 @@ class ReservationRepository {
       where.lastName = lastName;
     }
 
-    return prisma.reservation.findMany({
+    return db.reservation.findMany({
       where,
       orderBy: {
         startTime: "asc",
@@ -134,9 +152,10 @@ class ReservationRepository {
   }
 
   async findUpcomingForRestaurant(
-    restaurantId
+    restaurantId,
+    db = prisma
   ) {
-    return prisma.reservation.findMany({
+    return db.reservation.findMany({
       where: {
         restaurantId,
         status: "CONFIRMED",
@@ -161,7 +180,8 @@ class ReservationRepository {
   async findForRestaurantByDay(
     restaurantId,
     date,
-    timezone
+    timezone,
+    db = prisma
   ) {
     const {
       start,
@@ -171,7 +191,7 @@ class ReservationRepository {
       timezone
     );
 
-    return prisma.reservation.findMany({
+    return db.reservation.findMany({
       where: {
         restaurantId,
         status: "CONFIRMED",
@@ -213,7 +233,8 @@ class ReservationRepository {
     restaurantId,
     year,
     month,
-    timezone
+    timezone,
+    db = prisma
   ) {
     const firstDay = `${year}-${String(
       month
@@ -234,7 +255,8 @@ class ReservationRepository {
         nextMonthDate.getMonth() + 1
       ).padStart(2, "0");
 
-    const nextMonthDay = `${nextMonthYear}-${nextMonth}-01`;
+    const nextMonthDay =
+      `${nextMonthYear}-${nextMonth}-01`;
 
     const {
       start: rangeStart,
@@ -250,7 +272,7 @@ class ReservationRepository {
       timezone
     );
 
-    return prisma.reservation.findMany({
+    return db.reservation.findMany({
       where: {
         restaurantId,
 
