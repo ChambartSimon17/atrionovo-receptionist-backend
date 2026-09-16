@@ -1,4 +1,3 @@
-import prisma from "../../db/prisma.js";
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
@@ -8,6 +7,7 @@ import tableAssignmentService from "../restaurant/table/table-assignment.service
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
+import { runTransaction } from "../../utils/transaction.utils.js";
 import { addMinutes } from "../../utils/time.utils.js";
 import { normalizePhoneNumber } from "../../utils/phone.utils.js";
 import { normalizeEmail } from "../../utils/email.utils.js";
@@ -22,6 +22,18 @@ import { normalizeEmail } from "../../utils/email.utils.js";
 // This service orchestrates reservation-related business
 // operations and delegates eligibility checks to the
 // Reservation Eligibility Service.
+//
+// Concurrency
+// Reservation creation and updates use a SERIALIZABLE
+// transaction for the authoritative capacity check,
+// table assignment, customer synchronization, and
+// reservation write.
+//
+// The initial eligibility check remains outside the
+// transaction as a fast pre-validation. The capacity
+// check is repeated inside the transaction because the
+// database state may have changed between the initial
+// check and the transaction.
 // ======================================================
 
 class ReservationService {
@@ -93,6 +105,10 @@ class ReservationService {
    *
    * The best available table combination is automatically
    * assigned to the reservation.
+   *
+   * The authoritative capacity check, table assignment,
+   * customer synchronization, and reservation creation
+   * are executed inside one SERIALIZABLE transaction.
    */
   async createReservation(reservationData) {
     const restaurant =
@@ -126,6 +142,12 @@ class ReservationService {
       endTime,
     };
 
+    // Fast pre-validation.
+    //
+    // The capacity check performed here is not authoritative
+    // because another reservation could be created immediately
+    // afterwards. Capacity is therefore checked again inside
+    // the transaction below.
     await reservationEligibilityService.checkEligibility({
       restaurantId:
         completeReservation.restaurantId,
@@ -140,9 +162,13 @@ class ReservationService {
         completeReservation.endTime,
     });
 
-  return prisma.$transaction(async (tx) => {
-    const tableAssignment =
-      await tableAssignmentService.assignTables({
+    return runTransaction(async (tx) => {
+      // Authoritative capacity check.
+      //
+      // This uses the transaction client so the capacity
+      // decision is made as part of the same transaction
+      // that creates the reservation.
+      await reservationEligibilityService.checkCapacity({
         restaurantId:
           completeReservation.restaurantId,
 
@@ -154,46 +180,70 @@ class ReservationService {
 
         endTime:
           completeReservation.endTime,
+
         db: tx,
       });
 
-    if (!tableAssignment) {
-      throw new ValidationError(
-        "No available table combination found for this reservation.",
-        ErrorCodes.RESERVATION_NOT_AVAILABLE
-      );
-    }
+      const tableAssignment =
+        await tableAssignmentService.assignTables({
+          restaurantId:
+            completeReservation.restaurantId,
 
-    const customer =
-      await customerService.syncCustomer({
-        restaurantId:
-          completeReservation.restaurantId,
-        firstName:
-          completeReservation.firstName,
-        lastName:
-          completeReservation.lastName,
-        phoneNumber:
-          completeReservation.phoneNumber,
-        email:
-          completeReservation.email,
-        },
-        tx
-      );
+          guestCount:
+            completeReservation.guestCount,
 
-    const reservation =
-      await reservationRepository.createWithTables({
-          ...completeReservation,
-          customerId: customer.id,
-        },
-        tableAssignment.tables.map(
-          (table) => table.id
-        ),
-        tx
-      );
+          startTime:
+            completeReservation.startTime,
 
-    return reservation;
-  });
-}
+          endTime:
+            completeReservation.endTime,
+
+          db: tx,
+        });
+
+      if (!tableAssignment) {
+        throw new ValidationError(
+          "No available table combination found for this reservation.",
+          ErrorCodes.RESERVATION_NOT_AVAILABLE
+        );
+      }
+
+      const customer =
+        await customerService.syncCustomer(
+          {
+            restaurantId:
+              completeReservation.restaurantId,
+
+            firstName:
+              completeReservation.firstName,
+
+            lastName:
+              completeReservation.lastName,
+
+            phoneNumber:
+              completeReservation.phoneNumber,
+
+            email:
+              completeReservation.email,
+          },
+          tx
+        );
+
+      const reservation =
+        await reservationRepository.createWithTables(
+          {
+            ...completeReservation,
+            customerId: customer.id,
+          },
+          tableAssignment.tables.map(
+            (table) => table.id
+          ),
+          tx
+        );
+
+      return reservation;
+    });
+  }
 
   /**
    * Updates an existing reservation.
@@ -203,6 +253,10 @@ class ReservationService {
    *
    * The table assignment is recalculated based on the
    * updated reservation details.
+   *
+   * The authoritative capacity check, table assignment,
+   * customer synchronization, and reservation update
+   * are executed inside one SERIALIZABLE transaction.
    */
   async updateReservation(id, reservationData) {
     const existingReservation =
@@ -253,6 +307,12 @@ class ReservationService {
       endTime,
     };
 
+    // Fast pre-validation.
+    //
+    // The capacity check performed here is not authoritative
+    // because another reservation could be created immediately
+    // afterwards. Capacity is therefore checked again inside
+    // the transaction below.
     await reservationEligibilityService.checkEligibility({
       restaurantId:
         completeReservation.restaurantId,
@@ -269,9 +329,12 @@ class ReservationService {
       ignoreReservationId: id,
     });
 
-  return prisma.$transaction(async (tx) => {
-    const tableAssignment =
-      await tableAssignmentService.assignTables({
+    return runTransaction(async (tx) => {
+      // Authoritative capacity check.
+      //
+      // The current reservation is excluded from the
+      // calculation because it is being updated.
+      await reservationEligibilityService.checkCapacity({
         restaurantId:
           completeReservation.restaurantId,
 
@@ -285,52 +348,80 @@ class ReservationService {
           completeReservation.endTime,
 
         ignoreReservationId: id,
+
         db: tx,
       });
 
-    if (!tableAssignment) {
-      throw new ValidationError(
-        "No available table combination found for this reservation.",
-        ErrorCodes.RESERVATION_NOT_AVAILABLE
-      );
-    }
-
-    const customer =
-     await customerService.syncCustomer(
-        {
+      const tableAssignment =
+        await tableAssignmentService.assignTables({
           restaurantId:
             completeReservation.restaurantId,
-          firstName:
-            completeReservation.firstName,
-          lastName:
-            completeReservation.lastName,
-          phoneNumber:
-            completeReservation.phoneNumber,
-          email:
-            completeReservation.email,
+
+          guestCount:
+            completeReservation.guestCount,
+
+          startTime:
+            completeReservation.startTime,
+
+          endTime:
+            completeReservation.endTime,
+
+          ignoreReservationId: id,
+
+          db: tx,
+        });
+
+      if (!tableAssignment) {
+        throw new ValidationError(
+          "No available table combination found for this reservation.",
+          ErrorCodes.RESERVATION_NOT_AVAILABLE
+        );
+      }
+
+      const customer =
+        await customerService.syncCustomer(
+          {
+            restaurantId:
+              completeReservation.restaurantId,
+
+            firstName:
+              completeReservation.firstName,
+
+            lastName:
+              completeReservation.lastName,
+
+            phoneNumber:
+              completeReservation.phoneNumber,
+
+            email:
+              completeReservation.email,
+          },
+          tx
+        );
+
+      return reservationRepository.update(
+        id,
+        {
+          ...completeReservation,
+
+          customerId:
+            customer.id,
+
+          tables: {
+            deleteMany: {},
+
+            create:
+              tableAssignment.tables.map(
+                (table) => ({
+                  tableId: table.id,
+                })
+              ),
+          },
         },
         tx
       );
-
-    return reservationRepository.update(
-      id,
-      {
-        ...completeReservation,
-        customerId: customer.id,
-        tables: {
-          deleteMany: {},
-          create:
-            tableAssignment.tables.map(
-              (table) => ({
-                tableId: table.id,
-              })
-            ),
-        },
-      },
-      tx
-    );
-  });
-}
+    });
+  }
 
   /**
    * Reschedules an existing reservation.
@@ -436,19 +527,19 @@ class ReservationService {
       );
     }
 
-  return prisma.$transaction(async (tx) => {
-    await tableRepository.deleteReservationTables(
-      id,
-      tx
-    );
+    return runTransaction(async (tx) => {
+      await tableRepository.deleteReservationTables(
+        id,
+        tx
+      );
 
-    return reservationRepository.update(
-      id,
-      {
-        status: "CANCELLED",
-      },
-      tx
-    );
+      return reservationRepository.update(
+        id,
+        {
+          status: "CANCELLED",
+        },
+        tx
+      );
     });
   }
 

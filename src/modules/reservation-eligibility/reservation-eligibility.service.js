@@ -13,8 +13,23 @@ import { ErrorCodes } from "../../errors/error-codes.js";
 // Responsibility
 // Determine whether a reservation can be accepted.
 //
-// This service evaluates all restaurant business rules
+// This service evaluates restaurant business rules
 // before a reservation is created.
+//
+// Concurrency
+// Capacity can be checked in two contexts:
+//
+// 1. Normal eligibility checks
+//    - Uses the normal Prisma client.
+//    - Used for availability checks and fast
+//      pre-validation.
+//
+// 2. Authoritative capacity checks
+//    - Uses the transaction client when provided.
+//    - Used during reservation creation/update.
+//    - Must execute inside the same SERIALIZABLE
+//      transaction as table assignment and reservation
+//      creation/update.
 //
 // Current Rules
 // - Restaurant exists
@@ -77,6 +92,40 @@ class ReservationEligibilityService {
     return {
       eligible: true,
     };
+  }
+
+  /**
+   * Performs the authoritative restaurant capacity check.
+   *
+   * This method is intended to run inside the reservation
+   * transaction during creation or update.
+   *
+   * The transaction client is passed to the repository so
+   * the capacity read participates in the same transaction
+   * as the reservation write.
+   */
+  async checkCapacity({
+    restaurantId,
+    guestCount,
+    startTime,
+    endTime,
+    ignoreReservationId,
+    db,
+  }) {
+    const restaurant =
+      await this.#getRestaurant(
+        restaurantId,
+        db
+      );
+
+    await this.#validateCapacity({
+      restaurant,
+      guestCount,
+      startTime,
+      endTime,
+      ignoreReservationId,
+      db,
+    });
   }
 
   /**
@@ -208,15 +257,17 @@ class ReservationEligibilityService {
   /**
    * Retrieves the restaurant.
    *
-   * Throws a NotFoundError when the restaurant
-   * does not exist.
+   * Uses the provided database client when called
+   * from inside a transaction.
    */
   async #getRestaurant(
-    restaurantId
+    restaurantId,
+    db
   ) {
     const restaurant =
       await restaurantRepository.findById(
-        restaurantId
+        restaurantId,
+        db
       );
 
     if (!restaurant) {
@@ -367,6 +418,11 @@ class ReservationEligibilityService {
   /**
    * Ensures the restaurant has enough
    * remaining capacity.
+   *
+   * When db is provided, the overlapping reservation
+   * query executes through that database client.
+   * This allows the method to participate in the
+   * surrounding SERIALIZABLE transaction.
    */
   async #validateCapacity({
     restaurant,
@@ -374,12 +430,14 @@ class ReservationEligibilityService {
     startTime,
     endTime,
     ignoreReservationId,
+    db,
   }) {
     let reservations =
       await reservationRepository.findOverlappingReservations(
         restaurant.id,
         startTime,
-        endTime
+        endTime,
+        db
       );
 
     if (ignoreReservationId) {
