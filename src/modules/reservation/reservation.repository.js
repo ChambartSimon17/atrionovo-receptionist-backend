@@ -26,6 +26,27 @@ class ReservationRepository {
     });
   }
 
+  /**
+   * Finds a reservation by ID while also
+   * verifying that it belongs to the
+   * specified restaurant.
+   *
+   * This is used for restaurant-scoped
+   * reservation operations.
+   */
+  async findByIdForRestaurant(
+    id,
+    restaurantId,
+    db = prisma
+  ) {
+    return db.reservation.findFirst({
+      where: {
+        id,
+        restaurantId,
+      },
+    });
+  }
+
   async findOverlappingReservations(
     restaurantId,
     startTime,
@@ -35,7 +56,13 @@ class ReservationRepository {
     return db.reservation.findMany({
       where: {
         restaurantId,
-        status: "CONFIRMED",
+
+        status: {
+          in: [
+            "CONFIRMED",
+            "SEATED",
+          ],
+        },
 
         startTime: {
           lt: endTime,
@@ -171,10 +198,13 @@ class ReservationRepository {
   }
 
   /**
-   * Retrieves all confirmed reservations for a restaurant
+   * Retrieves all active reservations for a restaurant
    * on a specific calendar day.
    *
-   * The reservation time itself does not matter.
+   * Both CONFIRMED and SEATED reservations are included
+   * because seated reservations must remain visible in
+   * the restaurant's operational reservation list.
+   *
    * Reservations earlier today are included as well.
    */
   async findForRestaurantByDay(
@@ -194,7 +224,13 @@ class ReservationRepository {
     return db.reservation.findMany({
       where: {
         restaurantId,
-        status: "CONFIRMED",
+
+        status: {
+          in: [
+            "CONFIRMED",
+            "SEATED",
+          ],
+        },
 
         startTime: {
           gte: start,
@@ -301,7 +337,50 @@ class ReservationRepository {
       },
     });
   }
-  
+
+  /**
+   * Marks a reservation as seated.
+   *
+   * The restaurant ownership and current
+   * reservation status are validated by the
+   * service before this method is called.
+   */
+  async markAsSeated(
+    reservationId,
+    db = prisma
+  ) {
+    return db.reservation.update({
+      where: {
+        id: reservationId,
+      },
+
+      data: {
+        status: "SEATED",
+      },
+    });
+  }
+
+  /**
+   * Marks a reservation as completed.
+   *
+   * The restaurant ownership and current
+   * reservation status are validated by the
+   * service before this method is called.
+   */
+  async markAsCompleted(
+    reservationId,
+    db = prisma
+  ) {
+    return db.reservation.update({
+      where: {
+        id: reservationId,
+      },
+
+      data: {
+        status: "COMPLETED",
+      },
+    });
+  }
 }
 
 export default new ReservationRepository();

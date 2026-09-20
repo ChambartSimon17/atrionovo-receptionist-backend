@@ -544,6 +544,85 @@ class ReservationService {
   }
 
   /**
+   * Marks a confirmed reservation as seated.
+   *
+   * The reservation must belong to the specified
+   * restaurant and must currently have CONFIRMED status.
+   */
+  async seatReservation(
+    reservationId,
+    restaurantId
+  ) {
+    const reservation =
+      await reservationRepository.findByIdForRestaurant(
+        reservationId,
+        restaurantId
+      );
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    if (
+      reservation.status !==
+      "CONFIRMED"
+    ) {
+      throw new ValidationError(
+        "Only confirmed reservations can be marked as seated.",
+        ErrorCodes.RESERVATION_NOT_CONFIRMED
+      );
+    }
+
+    return reservationRepository.markAsSeated(
+      reservationId
+    );
+  }
+
+  /**
+   * Marks a seated reservation as completed.
+   *
+   * A reservation can only be completed after
+   * the guests have been marked as seated.
+   *
+   * The reservation remains in the database for
+   * historical purposes.
+   */
+  async completeReservation(
+    reservationId,
+    restaurantId
+  ) {
+    const reservation =
+      await reservationRepository.findByIdForRestaurant(
+        reservationId,
+        restaurantId
+      );
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    if (
+      reservation.status !==
+      "SEATED"
+    ) {
+      throw new ValidationError(
+        "Only seated reservations can be marked as completed.",
+        ErrorCodes.RESERVATION_NOT_CONFIRMED
+      );
+    }
+
+    return reservationRepository.markAsCompleted(
+      reservationId
+    );
+  }
+
+  /**
    * Finds upcoming reservations.
    */
   async findUpcoming(search) {
@@ -617,8 +696,9 @@ class ReservationService {
   }
 
   /**
-   * Finds all confirmed reservations for a specific
-   * restaurant on a specific calendar day.
+   * Finds all confirmed and seated reservations
+   * for a specific restaurant on a specific
+   * calendar day.
    */
   async findForRestaurantByDay(
     restaurantId,

@@ -31,9 +31,21 @@ datasource db {
 // ------------------------------------------------------
 
 enum ReservationStatus {
+  // Reservation is accepted and the guests
+  // have not yet been marked as seated.
   CONFIRMED
-  CANCELLED
+
+  // Guests have arrived and are currently
+  // seated at their assigned table(s).
+  SEATED
+
+  // Guests have finished dining.
   COMPLETED
+
+  // Reservation was cancelled.
+  CANCELLED
+
+  // Guests never arrived.
   NO_SHOW
 }
 

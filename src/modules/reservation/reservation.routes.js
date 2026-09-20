@@ -82,6 +82,20 @@ export default async function reservationRoutes(fastify) {
     reservationController.cancelReservation
   );
 
+  fastify.patch(
+    "/:restaurantId/:reservationId/seat",
+    reservationController.seatReservation.bind(
+      reservationController
+    )
+  );
+
+  fastify.patch(
+    "/:restaurantId/:reservationId/complete",
+    reservationController.completeReservation.bind(
+      reservationController
+    )
+  );
+
   fastify.post(
     "/:id/reschedule",
     reservationController.rescheduleReservation

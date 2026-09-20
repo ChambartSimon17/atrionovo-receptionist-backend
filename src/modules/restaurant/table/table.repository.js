@@ -134,7 +134,12 @@ class TableRepository {
         tableId,
 
         reservation: {
-          status: "CONFIRMED",
+          status: {
+            in: [
+              "CONFIRMED",
+              "SEATED",
+            ],
+          },
 
           ...(ignoreReservationId && {
             id: {

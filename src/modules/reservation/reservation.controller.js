@@ -137,6 +137,42 @@ class ReservationController {
   }
 
   /**
+   * Marks a confirmed reservation as seated.
+   */
+  async seatReservation(request, reply) {
+    const {
+      restaurantId,
+      reservationId,
+    } = request.params;
+
+    const reservation =
+      await reservationService.seatReservation(
+        reservationId,
+        restaurantId
+      );
+
+    return reply.send(reservation);
+  }
+
+  /**
+   * Marks a seated reservation as completed.
+   */
+  async completeReservation(request, reply) {
+    const {
+      restaurantId,
+      reservationId,
+    } = request.params;
+
+    const reservation =
+      await reservationService.completeReservation(
+        reservationId,
+        restaurantId
+      );
+
+    return reply.send(reservation);
+  }
+
+  /**
    * Finds upcoming reservations.
    */
   async findUpcoming(request, reply) {
