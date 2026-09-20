@@ -205,6 +205,14 @@ class ReservationRepository {
       orderBy: {
         startTime: "asc",
       },
+
+      include: {
+        tables: {
+          include: {
+            table: true,
+          },
+        },
+      },
     });
   }
 

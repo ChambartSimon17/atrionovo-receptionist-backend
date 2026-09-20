@@ -28,4 +28,8 @@ export const ErrorCodes = {
   // Restaurant
   RESTAURANT_NOT_FOUND:
     "RESTAURANT_NOT_FOUND",
+
+  // Table
+  TABLE_NOT_FOUND:
+    "TABLE_NOT_FOUND",
 };
