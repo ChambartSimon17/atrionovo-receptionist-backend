@@ -11,6 +11,7 @@ class TableRepository {
     return db.table.findMany({
       where: {
         restaurantId,
+        isActive: true,
       },
       orderBy: {
         name: "asc",
@@ -114,6 +115,31 @@ class TableRepository {
       },
       orderBy: {
         capacity: "asc",
+      },
+    });
+  }
+
+  async findActiveReservationsForTable(tableId, db = prisma) {
+    const now = new Date();
+
+    return db.reservationTable.findMany({
+      where: {
+        tableId,
+        reservation: {
+          status: {
+            in: ["CONFIRMED", "SEATED"],
+          },
+          endTime: {
+            gt: now,
+          },
+        },
+      },
+      include: {
+        reservation: {
+          include: {
+            tables: true,
+          },
+        },
       },
     });
   }

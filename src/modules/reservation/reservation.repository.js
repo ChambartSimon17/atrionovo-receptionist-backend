@@ -120,6 +120,29 @@ class ReservationRepository {
     });
   }
 
+  async replaceTables(
+    reservationId,
+    tableIds,
+    db = prisma
+  ) {
+    await db.reservationTable.deleteMany({
+      where: {
+        reservationId,
+      },
+    });
+
+    if (tableIds.length === 0) {
+      return;
+    }
+
+    await db.reservationTable.createMany({
+      data: tableIds.map((tableId) => ({
+        reservationId,
+        tableId,
+      })),
+    });
+  }
+
   async update(
     id,
     reservationData,

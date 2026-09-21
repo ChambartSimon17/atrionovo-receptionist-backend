@@ -11,6 +11,7 @@ class TableAssignmentService {
     startTime,
     endTime,
     ignoreReservationId,
+    excludeTableId,
     db
   ) {
     const tables =
@@ -22,6 +23,10 @@ class TableAssignmentService {
     const availableTables = [];
 
     for (const table of tables) {
+      if (table.id === excludeTableId) {
+        continue;
+      }
+
       const reservations =
         await tableRepository.findTableReservations(
           table.id,
@@ -122,6 +127,7 @@ class TableAssignmentService {
     startTime,
     endTime,
     ignoreReservationId,
+    excludeTableId,
     db,
   }) {
     const availableTables =
@@ -131,6 +137,7 @@ class TableAssignmentService {
         startTime,
         endTime,
         ignoreReservationId,
+        excludeTableId,
         db
       );
 

@@ -1,8 +1,12 @@
 import tableRepository from "./table.repository.js";
 import restaurantRepository from "../restaurant.repository.js";
+import reservationRepository from "../../reservation/reservation.repository.js";
+import tableAssignmentService from "./table-assignment.service.js";
 import NotFoundError from "../../../errors/NotFoundError.js";
 import ValidationError from "../../../errors/ValidationError.js";
+import ConflictError from "../../../errors/ConflictError.js";
 import { ErrorCodes } from "../../../errors/error-codes.js";
+import { runTransaction } from "../../../utils/transaction.utils.js";
 
 const VALID_TABLE_SHAPES = [
   "ROUND",
@@ -127,24 +131,88 @@ class TableService {
     restaurantId,
     tableId
   ) {
-    await this.#validateRestaurant(restaurantId);
+    return runTransaction(async (db) => {
+      const table =
+        await tableRepository.findById(
+          tableId,
+          restaurantId,
+          db
+        );
 
-    const table = await tableRepository.findById(
-      tableId,
-      restaurantId
-    );
+      if (!table) {
+        throw new NotFoundError(
+          "Tafel niet gevonden.",
+          ErrorCodes.TABLE_NOT_FOUND
+        );
+      }
 
-    if (!table) {
-      throw new NotFoundError(
-        "Table not found.",
-        ErrorCodes.TABLE_NOT_FOUND
+      if (!table.isActive) {
+        return table;
+      }
+
+      const affectedReservations =
+        await tableRepository.findActiveReservationsForTable(
+          tableId,
+          db
+        );
+
+      const seatedReservations =
+        affectedReservations.filter(
+          ({ reservation }) =>
+            reservation.status === "SEATED"
+        );
+
+      if (seatedReservations.length > 0) {
+        throw new ConflictError(
+          "Deze tafel kan niet worden gedeactiveerd omdat er nog een gezelschap aan tafel zit."
+        );
+      }
+
+      const confirmedReservations =
+        affectedReservations.filter(
+          ({ reservation }) =>
+            reservation.status === "CONFIRMED"
+        );
+
+      for (const {
+        reservation,
+      } of confirmedReservations) {
+        const assignment =
+          await tableAssignmentService.assignTables({
+            restaurantId,
+            guestCount:
+              reservation.guestCount,
+            startTime:
+              reservation.startTime,
+            endTime:
+              reservation.endTime,
+            ignoreReservationId:
+              reservation.id,
+            excludeTableId: tableId,
+            db,
+          });
+
+        if (!assignment) {
+          throw new ConflictError(
+            `De tafel kan niet worden gedeactiveerd omdat reservatie ${reservation.id} geen nieuwe tafelcombinatie heeft.`
+          );
+        }
+
+        await reservationRepository.replaceTables(
+          reservation.id,
+          assignment.tables.map(
+            (table) => table.id
+          ),
+          db
+        );
+      }
+
+      return tableRepository.deactivate(
+        tableId,
+        restaurantId,
+        db
       );
-    }
-
-    return tableRepository.deactivate(
-      tableId,
-      restaurantId
-    );
+    });
   }
 
   /**
