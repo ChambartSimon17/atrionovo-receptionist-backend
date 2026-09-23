@@ -1,5 +1,22 @@
 import prisma from "../../db/prisma.js";
 
+// ======================================================
+// Customer Repository
+// ======================================================
+//
+// Responsibility
+// Handle database operations related to customers.
+//
+// Tenant Isolation
+// Dashboard customer operations are restaurant-scoped.
+// ID-based operations therefore require restaurantId.
+//
+// Transaction Support
+// All methods accept an optional Prisma client so they
+// can participate in larger transactions such as
+// reservation creation/update flows.
+// ======================================================
+
 class CustomerRepository {
   /**
    * Creates a customer.
@@ -14,15 +31,77 @@ class CustomerRepository {
   }
 
   /**
-   * Retrieves a customer by id.
+   * Retrieves a customer by id within a restaurant.
+   *
+   * Restaurant scoping prevents a customer belonging
+   * to another restaurant from being accessed.
    */
   async findById(
     id,
+    restaurantId,
     db = prisma
   ) {
-    return db.customer.findUnique({
+    return db.customer.findFirst({
       where: {
         id,
+        restaurantId,
+      },
+    });
+  }
+
+  /**
+   * Retrieves all customers belonging to a restaurant.
+   *
+   * Customers are ordered alphabetically by last name,
+   * then by first name.
+   *
+   * Restaurant scoping ensures that customers from
+   * other restaurants are never returned.
+   */
+  async findAllForRestaurant(
+    restaurantId,
+    db = prisma
+  ) {
+    return db.customer.findMany({
+      where: {
+        restaurantId,
+      },
+      orderBy: [
+        {
+          lastName: "asc",
+        },
+        {
+          firstName: "asc",
+        },
+      ],
+    });
+  }
+
+  /**
+   * Retrieves a customer by id together with
+   * their reservation history.
+   *
+   * The customer is scoped to the restaurant so
+   * customers from another restaurant cannot be accessed.
+   *
+   * Reservations are ordered from newest to oldest.
+   */
+  async findByIdWithReservations(
+    id,
+    restaurantId,
+    db = prisma
+  ) {
+    return db.customer.findFirst({
+      where: {
+        id,
+        restaurantId,
+      },
+      include: {
+        reservations: {
+          orderBy: {
+            startTime: "desc",
+          },
+        },
       },
     });
   }
@@ -94,31 +173,52 @@ class CustomerRepository {
   }
 
   /**
-   * Updates a customer.
+   * Updates a customer within a restaurant.
+   *
+   * Restaurant scoping prevents updates to customers
+   * belonging to another restaurant.
    */
   async update(
     id,
+    restaurantId,
     data,
     db = prisma
   ) {
-    return db.customer.update({
+    return db.customer.updateMany({
       where: {
         id,
+        restaurantId,
       },
       data,
+    }).then(async (result) => {
+      if (result.count === 0) {
+        return null;
+      }
+
+      return db.customer.findFirst({
+        where: {
+          id,
+          restaurantId,
+        },
+      });
     });
   }
 
   /**
-   * Deletes a customer.
+   * Deletes a customer within a restaurant.
+   *
+   * Restaurant scoping prevents deletion of customers
+   * belonging to another restaurant.
    */
   async delete(
     id,
+    restaurantId,
     db = prisma
   ) {
-    return db.customer.delete({
+    return db.customer.deleteMany({
       where: {
         id,
+        restaurantId,
       },
     });
   }

@@ -6,7 +6,27 @@ info:
 http:
   method: PATCH
   url: "{{baseUrl}}/restaurants/{{restaurantId}}/tables/{{tableId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "T2",
+        "capacity": 2,
+        "shape": "SQUARE",
+        "x": 100,
+        "y": 300,
+        "width": 80,
+        "height": 80,
+        "rotation": 0
+      }
   auth: inherit
+
+runtime:
+  variables:
+    - name: restaurantId
+      value: cmsx40oy30000s01nzviohyxu
+    - name: tableId
+      value: cmthj1ncv0001xqlmefzykpt2
 
 settings:
   encodeUrl: true

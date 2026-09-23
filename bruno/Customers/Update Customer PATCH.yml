@@ -1,0 +1,29 @@
+info:
+  name: Update Customer PATCH
+  type: http
+  seq: 6
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/customers/{{customerId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "test@example.com"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN4NDBveTcwMDAyczAxbjc1NzQ3anFvIiwicmVzdGF1cmFudElkIjoiY21zeDQwb3kzMDAwMHMwMW56dmlvaHl4dSIsInJvbGUiOiJPV05FUiIsImlhdCI6MTc5MDAwNTIzNSwiZXhwIjoxNzkwMDA2MTM1fQ.yW-OdGRYk4mYQbMJqifz_GukJWBd2X-42q-Lf9i8eoE
+
+runtime:
+  variables:
+    - name: customerId
+      value: cmsyozz8l0007rqsylaj84opc
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

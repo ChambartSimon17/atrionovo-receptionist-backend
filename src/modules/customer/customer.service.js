@@ -19,10 +19,19 @@ import { normalizeEmail } from "../../utils/email.utils.js";
 // - Phone numbers are normalized
 // - Emails are normalized
 //
+// Dashboard Security
+// - Dashboard customer operations are scoped to the
+//   authenticated restaurant.
+//
+// Receptionist / VAPI
+// - syncCustomer(), findByPhoneNumber() and
+//   getCallerProfile() continue to support the
+//   restaurant context supplied by the receptionist flow.
+//
 // Transaction Support
 // - Database operations can receive a Prisma client.
-// - This allows reservation flows to execute customer
-//   operations inside the same Prisma transaction.
+// - This allows customer operations to participate
+//   in larger transactions.
 // ======================================================
 
 class CustomerService {
@@ -66,6 +75,8 @@ class CustomerService {
 
   /**
    * Synchronizes customer information.
+   *
+   * Used by reservation/receptionist flows.
    *
    * If the customer already exists, the latest
    * information is stored.
@@ -120,6 +131,7 @@ class CustomerService {
 
     return customerRepository.update(
       existingCustomer.id,
+      normalizedCustomer.restaurantId,
       updatedCustomer,
       db
     );
@@ -127,11 +139,22 @@ class CustomerService {
 
   /**
    * Updates an existing customer.
+   *
+   * Restaurant context comes from the authenticated
+   * dashboard user.
+   *
+   * Only supplied fields are updated.
    */
-  async updateCustomer(id, customerData, db) {
+  async updateCustomer(
+    id,
+    restaurantId,
+    customerData,
+    db
+  ) {
     const existingCustomer =
       await customerRepository.findById(
         id,
+        restaurantId,
         db
       );
 
@@ -144,44 +167,80 @@ class CustomerService {
 
     const normalizedCustomer = {
       ...customerData,
-      phoneNumber: normalizePhoneNumber(
-        customerData.phoneNumber
-      ),
-      email: normalizeEmail(
-        customerData.email
-      ),
     };
 
-    const duplicateCustomer =
-      await customerRepository.findByPhoneNumber(
-        normalizedCustomer.restaurantId,
-        normalizedCustomer.phoneNumber,
+    if (
+      customerData.phoneNumber !== undefined
+    ) {
+      normalizedCustomer.phoneNumber =
+        normalizePhoneNumber(
+          customerData.phoneNumber
+        );
+    }
+
+    if (
+      customerData.email !== undefined
+    ) {
+      normalizedCustomer.email =
+        normalizeEmail(
+          customerData.email
+        );
+    }
+
+    if (
+      normalizedCustomer.phoneNumber !==
+      undefined
+    ) {
+      const duplicateCustomer =
+        await customerRepository.findByPhoneNumber(
+          restaurantId,
+          normalizedCustomer.phoneNumber,
+          db
+        );
+
+      if (
+        duplicateCustomer &&
+        duplicateCustomer.id !== id
+      ) {
+        throw new ValidationError(
+          "A customer with this phone number already exists."
+        );
+      }
+    }
+
+    const updatedCustomer =
+      await customerRepository.update(
+        id,
+        restaurantId,
+        normalizedCustomer,
         db
       );
 
-    if (
-      duplicateCustomer &&
-      duplicateCustomer.id !== id
-    ) {
-      throw new ValidationError(
-        "A customer with this phone number already exists."
+    if (!updatedCustomer) {
+      throw new NotFoundError(
+        "Customer not found.",
+        ErrorCodes.CUSTOMER_NOT_FOUND
       );
     }
 
-    return customerRepository.update(
-      id,
-      normalizedCustomer,
-      db
-    );
+    return updatedCustomer;
   }
 
   /**
    * Deletes a customer.
+   *
+   * Restaurant context comes from the authenticated
+   * dashboard user.
    */
-  async deleteCustomer(id, db) {
+  async deleteCustomer(
+    id,
+    restaurantId,
+    db
+  ) {
     const customer =
       await customerRepository.findById(
         id,
+        restaurantId,
         db
       );
 
@@ -194,12 +253,73 @@ class CustomerService {
 
     await customerRepository.delete(
       id,
+      restaurantId,
       db
     );
   }
 
   /**
+   * Retrieves all customers belonging to a restaurant.
+   *
+   * The restaurant is determined by the authenticated
+   * dashboard user.
+   */
+  async getCustomers(
+    restaurantId,
+    db
+  ) {
+    await this.#ensureRestaurantExists(
+      restaurantId,
+      db
+    );
+
+    return customerRepository.findAllForRestaurant(
+      restaurantId,
+      db
+    );
+  }
+
+  /**
+   * Retrieves a customer together with their
+   * reservation history.
+   *
+   * The restaurant context comes from the
+   * authenticated dashboard user.
+   */
+  async getCustomer(
+    id,
+    restaurantId,
+    db
+  ) {
+    const customer =
+      await customerRepository.findByIdWithReservations(
+        id,
+        restaurantId,
+        db
+      );
+
+    if (!customer) {
+      throw new NotFoundError(
+        "Customer not found.",
+        ErrorCodes.CUSTOMER_NOT_FOUND
+      );
+    }
+
+    const {
+      reservations,
+      ...customerData
+    } = customer;
+
+    return {
+      customer: customerData,
+      reservations,
+    };
+  }
+
+  /**
    * Finds a customer by phone number.
+   *
+   * Used by receptionist/VAPI flows.
    */
   async findByPhoneNumber({
     restaurantId,
@@ -220,6 +340,8 @@ class CustomerService {
   /**
    * Retrieves the caller profile together with
    * upcoming reservations.
+   *
+   * Used by receptionist/VAPI flows.
    */
   async getCallerProfile({
     restaurantId,

@@ -5,7 +5,7 @@ info:
 
 http:
   method: PATCH
-  url: "{{baseUrl}}/reservations/{{restaurantId}}/cmu70sh6a0001s0i2y9wtnr40/seat"
+  url: "{{baseUrl}}/reservations/{{restaurantId}}/cmu9yvpgu0001s0lcr34exg3y/complete"
   auth: inherit
 
 runtime:

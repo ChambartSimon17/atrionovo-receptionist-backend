@@ -5,8 +5,26 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/restaurants/cmsx40oy30000s01nzviohyxu/tables"
+  url: "{{baseUrl}}/restaurants/{{restaurantId}}/tables"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "T10",
+        "capacity": 4,
+        "shape": "ROUND",
+        "x": 250,
+        "y": 150,
+        "width": 100,
+        "height": 100,
+        "rotation": 0
+      }
   auth: inherit
+
+runtime:
+  variables:
+    - name: restaurantId
+      value: cmsx40oy30000s01nzviohyxu
 
 settings:
   encodeUrl: true

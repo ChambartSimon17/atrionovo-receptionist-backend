@@ -3,6 +3,7 @@ import {
   createCustomerSchema,
   findCustomerSchema,
   callerProfileSchema,
+  updateCustomerSchema,
 } from "./customer.validator.js";
 
 // ======================================================
@@ -14,15 +15,27 @@ import {
 //
 // Responsibilities
 // - Validate incoming requests
+// - Extract authenticated restaurant context
 // - Delegate business logic to the service
 // - Return HTTP responses
 //
 // This controller contains no business logic.
+//
+// Authentication
+// Dashboard customer-management endpoints derive
+// restaurantId from request.user rather than from the
+// request body.
+//
+// Receptionist/VAPI endpoints keep their existing
+// restaurantId-based request format.
 // ======================================================
 
 class CustomerController {
   /**
    * Creates a new customer.
+   *
+   * Used by internal/customer flows that explicitly
+   * provide the restaurant context.
    */
   async createCustomer(request, reply) {
     const customer =
@@ -41,6 +54,8 @@ class CustomerController {
 
   /**
    * Finds a customer by phone number.
+   *
+   * Used by receptionist/VAPI flows.
    */
   async findCustomer(request, reply) {
     const search =
@@ -60,6 +75,8 @@ class CustomerController {
   /**
    * Retrieves the caller profile together with
    * upcoming reservations.
+   *
+   * Used by receptionist/VAPI flows.
    */
   async getCallerProfile(request, reply) {
     const query =
@@ -79,17 +96,58 @@ class CustomerController {
   }
 
   /**
+   * Retrieves all customers belonging to the
+   * authenticated restaurant.
+   */
+  async getCustomers(request, reply) {
+    const customers =
+      await customerService.getCustomers(
+        request.user.restaurantId
+      );
+
+    return reply.send({
+      success: true,
+      data: customers,
+    });
+  }
+
+  /**
+   * Retrieves a customer together with their
+   * reservation history.
+   */
+  async getCustomer(request, reply) {
+    const { id } = request.params;
+
+    const result =
+      await customerService.getCustomer(
+        id,
+        request.user.restaurantId
+      );
+
+    return reply.send({
+      success: true,
+      data: result,
+    });
+  }
+
+  /**
    * Updates an existing customer.
+   *
+   * Restaurant context is taken from the
+   * authenticated user.
    */
   async updateCustomer(request, reply) {
     const { id } = request.params;
 
     const customer =
-      createCustomerSchema.parse(request.body);
+      updateCustomerSchema.parse(
+        request.body
+      );
 
     const updatedCustomer =
       await customerService.updateCustomer(
         id,
+        request.user.restaurantId,
         customer
       );
 
@@ -101,11 +159,17 @@ class CustomerController {
 
   /**
    * Deletes an existing customer.
+   *
+   * Restaurant context is taken from the
+   * authenticated user.
    */
   async deleteCustomer(request, reply) {
     const { id } = request.params;
 
-    await customerService.deleteCustomer(id);
+    await customerService.deleteCustomer(
+      id,
+      request.user.restaurantId
+    );
 
     return reply.status(204).send();
   }
