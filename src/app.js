@@ -14,6 +14,9 @@ import customerRoutes from "./modules/customer/customer.routes.js";
 
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
 
+import publicBookingRoutes
+  from "./modules/public-booking/public-booking.routes.js";
+
 import assistantRoutes from "./modules/assistant/assistant.routes.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -71,6 +74,10 @@ app.register(customerRoutes, {
 
 app.register(reservationRoutes, {
   prefix: "/reservations",
+});
+
+app.register(publicBookingRoutes, {
+  prefix: "/public/booking",
 });
 
 // ======================================================
