@@ -23,12 +23,9 @@ export const rescheduleReservationSchema = z.object({
 });
 
 export const checkAvailabilitySchema = z.object({
-
   guestCount: z.number().int().positive(),
 
   startTime: z.iso.datetime(),
-
-  endTime: z.iso.datetime(),
 });
 
 export const findUpcomingReservationsSchema = z

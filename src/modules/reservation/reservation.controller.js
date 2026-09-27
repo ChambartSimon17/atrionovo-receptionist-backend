@@ -47,6 +47,33 @@ class ReservationController {
   }
 
   /**
+   * Checks whether a reservation can be accepted
+   * for the authenticated restaurant.
+   */
+  async checkAvailabilityForRestaurant(
+    request,
+    reply
+  ) {
+    const body =
+      checkAvailabilitySchema.parse(
+        request.body
+      );
+
+    const result =
+      await reservationService.checkAvailability({
+        restaurantId:
+          request.user.restaurantId,
+
+        ...body,
+      });
+
+    return reply.send({
+      success: true,
+      data: result,
+    });
+  }
+
+  /**
    * Creates a new reservation.
    */
   async createReservation(request, reply) {

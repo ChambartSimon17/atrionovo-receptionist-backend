@@ -35,6 +35,14 @@ export default async function customerRoutes(
   );
 
   fastify.get(
+    "/search-by-name",
+    {
+      preHandler: authenticate,
+    },
+    customerController.searchCustomers
+  );
+
+  fastify.get(
     "/:id",
     {
       preHandler: authenticate,

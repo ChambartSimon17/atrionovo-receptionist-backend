@@ -4,6 +4,7 @@ import {
   findCustomerSchema,
   callerProfileSchema,
   updateCustomerSchema,
+  searchCustomersSchema,
 } from "./customer.validator.js";
 
 // ======================================================
@@ -103,6 +104,30 @@ class CustomerController {
     const customers =
       await customerService.getCustomers(
         request.user.restaurantId
+      );
+
+    return reply.send({
+      success: true,
+      data: customers,
+    });
+  }
+
+  /**
+   * Searches customers by name.
+   *
+   * Restaurant context comes from the
+   * authenticated dashboard user.
+   */
+  async searchCustomers(request, reply) {
+    const query =
+      searchCustomersSchema.parse(
+        request.query
+      );
+
+    const customers =
+      await customerService.searchCustomers(
+        request.user.restaurantId,
+        query.query
       );
 
     return reply.send({

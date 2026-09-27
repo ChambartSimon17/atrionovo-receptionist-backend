@@ -3,18 +3,15 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 
 export default async function reservationRoutes(fastify) {
 
-  // Dashboard: upcoming reservations for logged-in restaurant
+  // ====================================================
+  // Static routes FIRST
+  // ====================================================
+
   fastify.get(
-    "/",
-    {
-      preHandler: authenticate,
-    },
-    reservationController.findUpcomingForRestaurant.bind(
-      reservationController
-    )
+    "/upcoming",
+    reservationController.findUpcoming
   );
 
-  // Reservations for a specific calendar day
   fastify.get(
     "/day",
     {
@@ -25,7 +22,6 @@ export default async function reservationRoutes(fastify) {
     )
   );
 
-  // Reservation counts for a specific month
   fastify.get(
     "/month",
     {
@@ -36,7 +32,24 @@ export default async function reservationRoutes(fastify) {
     )
   );
 
-  // Single reservation
+  // ====================================================
+  // Dashboard
+  // ====================================================
+
+  fastify.get(
+    "/",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.findUpcomingForRestaurant.bind(
+      reservationController
+    )
+  );
+
+  // ====================================================
+  // Single reservation LAST
+  // ====================================================
+
   fastify.get(
     "/:id",
     {
@@ -47,9 +60,23 @@ export default async function reservationRoutes(fastify) {
     )
   );
 
+  // ====================================================
+  // Other reservation actions
+  // ====================================================
+
   fastify.post(
     "/check-availability",
     reservationController.checkAvailability
+  );
+
+  fastify.post(
+    "/check-availability/restaurant",
+    {
+      preHandler: authenticate,
+    },
+    reservationController.checkAvailabilityForRestaurant.bind(
+      reservationController
+    )
   );
 
   fastify.post(
@@ -101,8 +128,4 @@ export default async function reservationRoutes(fastify) {
     reservationController.rescheduleReservation
   );
 
-  fastify.get(
-    "/upcoming",
-    reservationController.findUpcoming
-  );
 }

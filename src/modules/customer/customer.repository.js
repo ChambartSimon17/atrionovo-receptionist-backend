@@ -78,6 +78,45 @@ class CustomerRepository {
   }
 
   /**
+   * Searches customers by first name or last name
+   * within a restaurant.
+   */
+  async searchByName(
+    restaurantId,
+    query,
+    db = prisma
+  ) {
+    return db.customer.findMany({
+      where: {
+        restaurantId,
+        OR: [
+          {
+            firstName: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            lastName: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      orderBy: [
+        {
+          lastName: "asc",
+        },
+        {
+          firstName: "asc",
+        },
+      ],
+      take: 20,
+    });
+  }
+
+  /**
    * Retrieves a customer by id together with
    * their reservation history.
    *

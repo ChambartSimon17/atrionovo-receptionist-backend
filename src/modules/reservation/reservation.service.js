@@ -47,8 +47,26 @@ class ReservationService {
     restaurantId,
     guestCount,
     startTime,
-    endTime,
   }) {
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    // The backend is responsible for determining
+    // how long a reservation lasts.
+    const endTime = addMinutes(
+      new Date(startTime),
+      restaurant.defaultReservationDurationMinutes
+    );
+
     try {
       await reservationEligibilityService.checkEligibility({
         restaurantId,

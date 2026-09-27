@@ -280,6 +280,28 @@ class CustomerService {
   }
 
   /**
+   * Searches customers by name.
+   *
+   * Used by the authenticated dashboard.
+   */
+  async searchCustomers(
+    restaurantId,
+    query,
+    db
+  ) {
+    await this.#ensureRestaurantExists(
+      restaurantId,
+      db
+    );
+
+    return customerRepository.searchByName(
+      restaurantId,
+      query,
+      db
+    );
+  }
+
+  /**
    * Retrieves a customer together with their
    * reservation history.
    *

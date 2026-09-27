@@ -61,6 +61,20 @@ export const findCustomerSchema = z.object({
 });
 
 // ======================================================
+// Search Customers By Name
+// ======================================================
+//
+// Used by the authenticated dashboard.
+//
+// Searches customers belonging to the authenticated
+// restaurant by first name and/or last name.
+// ======================================================
+
+export const searchCustomersSchema = z.object({
+  query: z.string().trim().min(1),
+});
+
+// ======================================================
 // Caller Profile
 // ======================================================
 //
