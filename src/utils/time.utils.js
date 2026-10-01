@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 // ======================================================
 // Time Utilities
 // ======================================================
@@ -149,4 +151,30 @@ export function getUtcRangeForLocalDay(date, timezone) {
  */
 export function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60_000);
+}
+
+/**
+ * Converts a local restaurant date/time into UTC ISO.
+ *
+ * Example:
+ *
+ * date = "2026-10-02"
+ * time = "19:00"
+ * timezone = "Europe/Brussels"
+ *
+ * => "2026-10-02T17:00:00.000Z"
+ */
+export function localDateTimeToUTC(
+  date,
+  time,
+  timezone
+) {
+  return DateTime.fromISO(
+    `${date}T${time}`,
+    {
+      zone: timezone,
+    }
+  )
+    .toUTC()
+    .toISO();
 }

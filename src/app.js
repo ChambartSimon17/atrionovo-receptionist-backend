@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 
 import healthRoutes from "./system/health.routes.js";
 
@@ -14,6 +15,9 @@ import customerRoutes from "./modules/customer/customer.routes.js";
 
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
 
+import publicBookingRoutes
+  from "./modules/public-booking/public-booking.routes.js";
+
 import assistantRoutes from "./modules/assistant/assistant.routes.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -22,6 +26,12 @@ import errorHandler from "./middleware/error.middleware.js";
 
 const app = Fastify({
   logger: true,
+});
+
+app.register(cors, {
+  origin: [
+    "http://localhost:5173",
+  ],
 });
 
 app.get("/", async () => {
@@ -71,6 +81,10 @@ app.register(customerRoutes, {
 
 app.register(reservationRoutes, {
   prefix: "/reservations",
+});
+
+app.register(publicBookingRoutes, {
+  prefix: "/public/booking",
 });
 
 // ======================================================

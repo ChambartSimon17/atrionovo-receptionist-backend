@@ -1,10 +1,12 @@
 import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationRepository from "../reservation/reservation.repository.js";
 import openingScheduleService from "../restaurant/opening-schedule/opening-schedule.service.js";
+import tableAssignmentService from "../restaurant/table/table-assignment.service.js";
 import { dateToMinutes } from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
+import { DateTime } from "luxon";
 
 // ======================================================
 // Reservation Eligibility Service
@@ -128,6 +130,130 @@ class ReservationEligibilityService {
     });
   }
 
+  async findOpeningPeriodsForDate({
+    restaurantId,
+    date,
+  }) {
+    const restaurant =
+      await this.#getRestaurant(
+        restaurantId
+      );
+
+    const reservationDate =
+      new Date(`${date}T12:00:00`);
+
+    return openingScheduleService.findOpeningPeriods(
+      restaurant,
+      reservationDate
+    );
+  }
+
+  /**
+   * Finds all available reservation start times
+   * for a specific restaurant date and guest count.
+   *
+   * The date and time are interpreted in the
+   * restaurant's timezone.
+   *
+   * Every candidate is checked using the exact same
+   * eligibility rules used when creating a reservation.
+   */
+  async findAvailableSlotsForDate({
+    restaurantId,
+    date,
+    guestCount,
+  }) {
+    const restaurant =
+      await this.#getRestaurant(
+        restaurantId
+      );
+
+    const openingPeriods =
+      await this.findOpeningPeriodsForDate({
+        restaurantId,
+        date,
+      });
+
+    if (openingPeriods.length === 0) {
+      return [];
+    }
+
+    const slots = [];
+
+    const reservationDuration =
+      restaurant.defaultReservationDurationMinutes;
+
+    for (const openingPeriod of openingPeriods) {
+      const firstStart =
+        openingPeriod.opensAtMinutes;
+
+      const lastStart =
+        openingPeriod.closesAtMinutes -
+        reservationDuration;
+
+      for (
+        let minutes = firstStart;
+        minutes <= lastStart;
+        minutes += restaurant.arrivalIntervalMinutes
+      ) {
+        const hour =
+          Math.floor(minutes / 60);
+
+        const minute =
+          minutes % 60;
+
+        const time =
+          `${String(hour).padStart(2, "0")}:${String(
+            minute
+          ).padStart(2, "0")}`;
+
+        const startDateTime =
+          DateTime.fromISO(
+            `${date}T${time}`,
+            {
+              zone: restaurant.timezone,
+            }
+          );
+
+        const endDateTime =
+          startDateTime.plus({
+            minutes:
+              reservationDuration,
+          });
+
+        const startTime =
+          startDateTime.toJSDate();
+
+        const endTime =
+          endDateTime.toJSDate();
+
+        try {
+          await this.checkEligibility({
+            restaurantId,
+            guestCount,
+            startTime,
+            endTime,
+          });
+
+          slots.push({
+            startTime,
+            endTime,
+          });
+        } catch (error) {
+          if (
+            error instanceof ValidationError
+          ) {
+            continue;
+          }
+
+          throw error;
+        }
+      }
+    }
+
+    return slots;
+  }
+
   /**
    * Finds nearby available reservation slots.
    *
@@ -226,6 +352,19 @@ class ReservationEligibilityService {
           endTime: candidate.endTime,
           ignoreReservationId,
         });
+
+        const tableAssignment =
+          await tableAssignmentService.assignTables({
+            restaurantId,
+            guestCount,
+            startTime: candidate.startTime,
+            endTime: candidate.endTime,
+            ignoreReservationId,
+          });
+
+        if (!tableAssignment) {
+          continue;
+        }
 
         alternatives.push({
           startTime:
