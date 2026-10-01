@@ -1,16 +1,10 @@
 import publicBookingService
   from "./public-booking.service.js";
-import restaurantRepository from "../restaurant/restaurant.repository.js";
-import reservationService from "../reservation/reservation.service.js";
 
 import {
   publicAvailabilitySchema,
+  publicReservationSchema,
 } from "./public-booking.validator.js";
-import {
-  createReservationSchema,
-} from "../reservation/reservation.validator.js";
-import NotFoundError from "../../errors/NotFoundError.js";
-import { ErrorCodes } from "../../errors/error-codes.js";
 
 // ======================================================
 // Public Booking Controller
@@ -80,28 +74,16 @@ class PublicBookingController {
     const { slug } =
       request.params;
 
-    const restaurant =
-      await restaurantRepository.findBySlug(slug);
-
-    if (!restaurant) {
-      throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
-      );
-    }
-
     const reservation =
-      createReservationSchema
-        .omit({
-          restaurantId: true,
-        })
-        .parse(request.body);
+      publicReservationSchema.parse(
+        request.body
+      );
 
     const createdReservation =
-      await reservationService.createReservation({
-        ...reservation,
-        restaurantId: restaurant.id,
-      });
+      await publicBookingService.createReservation(
+        slug,
+        reservation
+      );
 
     return reply.status(201).send({
       success: true,

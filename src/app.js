@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 
 import healthRoutes from "./system/health.routes.js";
 
@@ -25,6 +26,12 @@ import errorHandler from "./middleware/error.middleware.js";
 
 const app = Fastify({
   logger: true,
+});
+
+app.register(cors, {
+  origin: [
+    "http://localhost:5173",
+  ],
 });
 
 app.get("/", async () => {

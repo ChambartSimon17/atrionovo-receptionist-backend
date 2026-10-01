@@ -20,9 +20,19 @@ export const publicAvailabilitySchema = z.object({
     .int()
     .positive(),
 
-  startTime: z
-    .iso
-    .datetime(),
+  date: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      "Date must be in YYYY-MM-DD format."
+    ),
+
+  time: z
+    .string()
+    .regex(
+      /^\d{2}:\d{2}$/,
+      "Time must be in HH:mm format."
+    ),
 });
 
 export const publicReservationSchema = z.object({
@@ -47,9 +57,19 @@ export const publicReservationSchema = z.object({
     .int()
     .positive(),
 
-  startTime: z
-    .iso
-    .datetime(),
+  date: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      "Date must be in YYYY-MM-DD format."
+    ),
+
+  time: z
+    .string()
+    .regex(
+      /^\d{2}:\d{2}$/,
+      "Time must be in HH:mm format."
+    ),
 
   notes: z
     .string()

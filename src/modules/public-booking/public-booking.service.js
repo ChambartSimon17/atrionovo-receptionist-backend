@@ -2,6 +2,9 @@ import restaurantRepository from "../restaurant/restaurant.repository.js";
 import reservationService from "../reservation/reservation.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
+import {
+  localDateTimeToUTC,
+} from "../../utils/time.utils.js";
 
 // ======================================================
 // Public Booking Service
@@ -75,6 +78,13 @@ class PublicBookingService {
       );
     }
 
+    const startTime =
+      localDateTimeToUTC(
+        bookingData.date,
+        bookingData.time,
+        restaurant.timezone
+      );
+
     return reservationService.checkAvailability({
       restaurantId:
         restaurant.id,
@@ -82,8 +92,7 @@ class PublicBookingService {
       guestCount:
         bookingData.guestCount,
 
-      startTime:
-        bookingData.startTime,
+      startTime,
     });
   }
 
@@ -109,11 +118,36 @@ class PublicBookingService {
       );
     }
 
+    const startTime =
+      localDateTimeToUTC(
+        reservationData.date,
+        reservationData.time,
+        restaurant.timezone
+      );
+
     return reservationService.createReservation({
       restaurantId:
         restaurant.id,
 
-      ...reservationData,
+      firstName:
+        reservationData.firstName,
+
+      lastName:
+        reservationData.lastName,
+
+      phoneNumber:
+        reservationData.phoneNumber,
+
+      email:
+        reservationData.email,
+
+      guestCount:
+        reservationData.guestCount,
+
+      startTime,
+
+      notes:
+        reservationData.notes,
     });
   }
 }

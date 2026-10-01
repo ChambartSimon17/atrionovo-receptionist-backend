@@ -75,6 +75,21 @@ class ReservationService {
         endTime,
       });
 
+      const tableAssignment =
+        await tableAssignmentService.assignTables({
+          restaurantId,
+          guestCount,
+          startTime,
+          endTime,
+        });
+
+      if (!tableAssignment) {
+        throw new ValidationError(
+          "No available table combination found for this reservation.",
+          ErrorCodes.RESERVATION_NOT_AVAILABLE
+        );
+      }
+
       return {
         available: true,
 
@@ -113,6 +128,91 @@ class ReservationService {
         reason: error.code,
       };
     }
+  }
+
+  /**
+   * Returns all available reservation slots for a
+   * specific local calendar date.
+   *
+   * The date is interpreted in the restaurant's timezone.
+   *
+   * Every generated slot is checked using the same
+   * eligibility rules as a normal availability request.
+   */
+  async findAvailableSlots({
+    restaurantId,
+    date,
+    guestCount,
+  }) {
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    const openingPeriods =
+      await reservationEligibilityService
+        .findOpeningPeriodsForDate({
+          restaurantId,
+          date,
+        });
+
+    const slots = [];
+
+    for (const period of openingPeriods) {
+      let currentMinutes =
+        period.opensAtMinutes;
+
+      while (
+        currentMinutes +
+          restaurant.defaultReservationDurationMinutes <=
+        period.closesAtMinutes
+      ) {
+        const startTime =
+          this.#createLocalSlotISO({
+            date,
+            minutes: currentMinutes,
+            timezone: restaurant.timezone,
+          });
+
+        if (startTime) {
+          const endTime =
+            addMinutes(
+              new Date(startTime),
+              restaurant.defaultReservationDurationMinutes
+            );
+
+          try {
+            await reservationEligibilityService.checkEligibility({
+              restaurantId,
+              guestCount,
+              startTime,
+              endTime,
+            });
+
+            slots.push({
+              startTime,
+              endTime,
+            });
+          } catch (error) {
+            if (!(error instanceof ValidationError)) {
+              throw error;
+            }
+          }
+        }
+
+        currentMinutes +=
+          restaurant.arrivalIntervalMinutes;
+      }
+    }
+
+    return slots;
   }
 
   /**
@@ -908,6 +1008,61 @@ class ReservationService {
     }
 
     return counts;
+  }
+
+  #createLocalSlotISO({
+    date,
+    minutes,
+    timezone,
+  }) {
+    const [year, month, day] =
+      date.split("-").map(Number);
+    const hours = Math.floor(minutes / 60);
+    const minute = minutes % 60;
+    const targetUtc = Date.UTC(
+      year,
+      month - 1,
+      day,
+      hours,
+      minute
+    );
+    const formatter =
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      });
+
+    let candidateUtc = targetUtc;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const parts = formatter.formatToParts(
+        new Date(candidateUtc)
+      );
+      const localParts = Object.fromEntries(
+        parts.map(({ type, value }) => [type, value])
+      );
+      const representedUtc = Date.UTC(
+        Number(localParts.year),
+        Number(localParts.month) - 1,
+        Number(localParts.day),
+        Number(localParts.hour),
+        Number(localParts.minute)
+      );
+      const difference = targetUtc - representedUtc;
+
+      if (difference === 0) {
+        return new Date(candidateUtc).toISOString();
+      }
+
+      candidateUtc += difference;
+    }
+
+    return null;
   }
 }
 
