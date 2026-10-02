@@ -66,7 +66,11 @@ class AuthRepository {
       async (transaction) => {
         const createdRestaurant =
           await transaction.restaurant.create({
-            data: restaurant,
+            data: {
+              name: restaurant.name,
+              slug: restaurant.slug,
+              countryCode: restaurant.countryCode,
+            },
           });
 
         const createdUser =

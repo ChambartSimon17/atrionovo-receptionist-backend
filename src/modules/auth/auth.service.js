@@ -32,6 +32,7 @@ class AuthService {
   async register({
     restaurantName,
     slug,
+    countryCode,
     firstName,
     lastName,
     email,
@@ -63,6 +64,7 @@ class AuthService {
         restaurant: {
           name: restaurantName.trim(),
           slug: normalizedSlug,
+          countryCode: countryCode.trim().toUpperCase(),
         },
 
         user: {
