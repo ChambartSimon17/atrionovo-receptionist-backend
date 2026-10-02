@@ -9,7 +9,7 @@ import "dotenv/config";
 
 const env = {
   // Application
-  port: Number(process.env.PORT),
+  port: Number(process.env.PORT || 3000),
   nodeEnv: process.env.NODE_ENV,
 
   // Database
