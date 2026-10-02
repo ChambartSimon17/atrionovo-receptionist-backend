@@ -19,6 +19,10 @@ export const registerSchema = z.object({
       "Slug must contain only lowercase letters, numbers and hyphens."
     ),
 
+  countryCode: z
+    .string()
+    .length(2),
+
   firstName: z
     .string()
     .trim()
