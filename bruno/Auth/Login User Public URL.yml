@@ -1,0 +1,16 @@
+info:
+  name: Login User Public URL
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: https://atrionovo-receptionist-backend.onrender.com/auth/login
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
