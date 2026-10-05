@@ -15,7 +15,12 @@ export const callerProfileSchema = z.object({
 export const checkAvailabilitySchema =
   z.object({
     guestCount: z.number().int().positive(),
-    startTime: z.coerce.date(),
+    startTime: z
+      .string()
+      .regex(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+        "Start time must be a restaurant-local datetime."
+      ),
   });
 
 // ======================================================
@@ -36,14 +41,16 @@ export const createReservationSchema =
       .optional()
       .or(z.literal("")),
 
-    guestCount:
-      z.number().int().positive(),
+    guestCount: z.number().int().positive(),
 
-    startTime:
-      z.coerce.date(),
+    startTime: z
+      .string()
+      .regex(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+        "Start time must be a restaurant-local datetime."
+      ),
 
-    notes:
-      z.string().optional(),
+    notes: z.string().optional(),
   });
 
 // ======================================================
@@ -54,11 +61,17 @@ export const updateReservationSchema =
   z.object({
     reservationId: z.string().min(1),
 
-    guestCount:
-      z.number().int().positive(),
+    guestCount: z
+      .number()
+      .int()
+      .positive(),
 
-    startTime:
-      z.coerce.date(),
+    startTime: z
+      .string()
+      .regex(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+        "Start time must be a restaurant-local datetime."
+      ),
   });
 
 // ======================================================

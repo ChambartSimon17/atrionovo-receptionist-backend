@@ -178,3 +178,59 @@ export function localDateTimeToUTC(
     .toUTC()
     .toISO();
 }
+
+/**
+ * Converts a restaurant-local ISO datetime into a UTC Date.
+ *
+ * The input must not contain timezone information.
+ *
+ * Example:
+ *
+ * localDateTime = "2026-10-07T18:00:00"
+ * timezone = "Europe/Brussels"
+ *
+ * => Date representing "2026-10-07T16:00:00.000Z"
+ */
+export function localDateTimeStringToUTC(
+  localDateTime,
+  timezone
+) {
+  const dateTime = DateTime.fromISO(
+    localDateTime,
+    {
+      zone: timezone,
+    }
+  );
+
+  if (!dateTime.isValid) {
+    throw new Error(
+      `Invalid local datetime: ${localDateTime}`
+    );
+  }
+
+  return dateTime.toUTC().toJSDate();
+}
+
+/**
+ * Converts a UTC Date into a restaurant-local
+ * ISO datetime without timezone information.
+ *
+ * Example:
+ *
+ * UTC:
+ * 2026-10-07T16:00:00.000Z
+ *
+ * Europe/Brussels:
+ * 2026-10-07T18:00:00
+ */
+export function utcToLocalDateTimeString(
+  date,
+  timezone
+) {
+  return DateTime.fromJSDate(
+    new Date(date),
+    { zone: timezone }
+  ).toFormat(
+    "yyyy-MM-dd'T'HH:mm:ss"
+  );
+}

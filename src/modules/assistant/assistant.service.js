@@ -1,5 +1,12 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
+import restaurantRepository from "../restaurant/restaurant.repository.js";
+import NotFoundError from "../../errors/NotFoundError.js";
+import { ErrorCodes } from "../../errors/error-codes.js";
+import {
+  localDateTimeStringToUTC,
+  utcToLocalDateTimeString,
+} from "../../utils/time.utils.js";
 
 // ======================================================
 // Assistant Service
@@ -75,11 +82,60 @@ class AssistantService {
     guestCount,
     startTime,
   }) {
-    return reservationService.checkAvailability({
-      restaurantId,
-      guestCount,
-      startTime,
-    });
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    const startTimeUTC =
+      localDateTimeStringToUTC(
+        startTime,
+        restaurant.timezone
+      );
+
+    const result =
+      await reservationService.checkAvailability({
+        restaurantId,
+        guestCount,
+        startTime: startTimeUTC,
+      });
+
+    return {
+      ...result,
+
+      requestedSlot: {
+        startTime,
+        endTime:
+          utcToLocalDateTimeString(
+            result.requestedSlot.endTime,
+            restaurant.timezone
+          ),
+      },
+
+      alternativeSlots:
+        result.alternativeSlots.map(
+          (slot) => ({
+            startTime:
+              utcToLocalDateTimeString(
+                slot.startTime,
+                restaurant.timezone
+              ),
+
+            endTime:
+              utcToLocalDateTimeString(
+                slot.endTime,
+                restaurant.timezone
+              ),
+          })
+        ),
+    };
   }
 
   /**
@@ -88,9 +144,30 @@ class AssistantService {
   async createReservation(
     reservationData
   ) {
+    const restaurant =
+      await restaurantRepository.findById(
+        reservationData.restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    const startTimeUTC =
+      localDateTimeStringToUTC(
+        reservationData.startTime,
+        restaurant.timezone
+      );
+
     const reservation =
       await reservationService.createReservation(
-        reservationData
+        {
+          ...reservationData,
+          startTime: startTimeUTC,
+        }
       );
 
     return {
@@ -116,10 +193,16 @@ class AssistantService {
           reservation.id,
 
         startTime:
-          reservation.startTime,
+          utcToLocalDateTimeString(
+            reservation.startTime,
+            restaurant.timezone
+          ),
 
         endTime:
-          reservation.endTime,
+          utcToLocalDateTimeString(
+            reservation.endTime,
+            restaurant.timezone
+          ),
 
         guestCount:
           reservation.guestCount,
@@ -138,11 +221,28 @@ class AssistantService {
     reservationId,
     guestCount,
     startTime,
-    endTime,
   }) {
+    const restaurant =
+      await restaurantRepository.findById(
+        restaurantId
+      );
+
+    if (!restaurant) {
+      throw new NotFoundError(
+        "Restaurant not found.",
+        ErrorCodes.RESTAURANT_NOT_FOUND
+      );
+    }
+
     const existingReservation =
       await reservationService.findById(
         reservationId
+      );
+
+    const startTimeUTC =
+      localDateTimeStringToUTC(
+        startTime,
+        restaurant.timezone
       );
 
     const reservation =
@@ -168,7 +268,7 @@ class AssistantService {
 
           guestCount,
 
-          startTime,
+          startTime: startTimeUTC,
         }
       );
 
@@ -180,10 +280,16 @@ class AssistantService {
         id: reservation.id,
 
         startTime:
-          reservation.startTime,
+          utcToLocalDateTimeString(
+            reservation.startTime,
+            restaurant.timezone
+          ),
 
         endTime:
-          reservation.endTime,
+          utcToLocalDateTimeString(
+            reservation.endTime,
+            restaurant.timezone
+          ),
 
         guestCount:
           reservation.guestCount,
