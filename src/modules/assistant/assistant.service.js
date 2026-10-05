@@ -1,7 +1,5 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
-import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
-import ValidationError from "../../errors/ValidationError.js";
 
 // ======================================================
 // Assistant Service
@@ -76,54 +74,12 @@ class AssistantService {
     restaurantId,
     guestCount,
     startTime,
-    endTime,
   }) {
-    try {
-      await reservationService.checkAvailability({
-        restaurantId,
-        guestCount,
-        startTime,
-        endTime,
-      });
-
-      return {
-        available: true,
-
-        requestedSlot: {
-          startTime,
-          endTime,
-        },
-
-        alternativeSlots: [],
-
-        reason: null,
-      };
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        const alternativeSlots =
-          await reservationEligibilityService.findAlternativeSlots({
-            restaurantId,
-            guestCount,
-            startTime,
-            endTime,
-          });
-
-        return {
-          available: false,
-
-          requestedSlot: {
-            startTime,
-            endTime,
-          },
-
-          alternativeSlots,
-
-          reason: error.code,
-        };
-      }
-
-      throw error;
-    }
+    return reservationService.checkAvailability({
+      restaurantId,
+      guestCount,
+      startTime,
+    });
   }
 
   /**

@@ -13,11 +13,10 @@ export const callerProfileSchema = z.object({
 // ======================================================
 
 export const checkAvailabilitySchema =
-    z.object({
-        guestCount: z.number().int().positive(),
-        startTime: z.coerce.date(),
-        endTime: z.coerce.date(),
-    });
+  z.object({
+    guestCount: z.number().int().positive(),
+    startTime: z.coerce.date(),
+  });
 
 // ======================================================
 // Create Reservation

@@ -8,14 +8,13 @@ http:
   url: "{{baseUrl}}/assistant/check-availability"
   headers:
     - name: x-restaurant-id
-      value: cmscbcxyy000ks0l4jnrhygy5
+      value: cmsx40oy30000s01nzviohyxu
   body:
     type: json
     data: |-
       {
-          "endTime": "2026-08-14T22:00:00",
-          "startTime": "2026-08-14T20:00:00",
-          "guestCount": 2
+        "guestCount": 4,
+        "startTime": "2026-10-06T18:00:00"
       }
   auth: inherit
 
@@ -24,3 +23,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
