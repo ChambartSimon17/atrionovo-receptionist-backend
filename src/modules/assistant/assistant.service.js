@@ -33,6 +33,13 @@ class AssistantService {
         phoneNumber,
       });
 
+    console.log("getCallerProfile lookup result:", {
+      restaurantId,
+      phoneNumber,
+      customerFound: Boolean(customer),
+      customerId: customer?.id ?? null,
+    });
+
     if (!customer) {
       return {
         customerFound: false,
