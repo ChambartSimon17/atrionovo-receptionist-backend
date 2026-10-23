@@ -23,10 +23,20 @@ class AssistantController {
    * Retrieves the caller profile.
    */
   async getCallerProfile(request, reply) {
+    request.log.info(
+      { body: request.body },
+      "getCallerProfile incoming request body"
+    );
+
     const body =
       callerProfileSchema.parse(
         request.body
       );
+
+    request.log.info(
+      { phoneNumber: body.phoneNumber },
+      "getCallerProfile parsed phone number"
+    );
 
     const profile =
       await assistantService.getCallerProfile({
