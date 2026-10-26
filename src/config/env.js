@@ -26,6 +26,9 @@ const env = {
   vapiApiKey:
     process.env.VAPI_API_KEY,
 
+  vapiPhoneNumberId:
+    process.env.VAPI_PHONE_NUMBER_ID,
+
   // Google
   googleClientId:
     process.env.GOOGLE_CLIENT_ID,
