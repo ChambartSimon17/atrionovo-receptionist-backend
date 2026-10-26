@@ -158,6 +158,8 @@ model Restaurant {
   // Restaurant Configuration
   // -------------------------
 
+  voiceAgentEnabled Boolean @default(true)
+
   maxCapacity Int @default(50)
 
   defaultReservationDurationMinutes Int @default(120)
