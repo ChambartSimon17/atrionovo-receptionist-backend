@@ -65,8 +65,14 @@ export async function authenticate(
 
     request.user = {
       userId: payload.userId,
+
+      // Access tokens issued before the rename still carry
+      // restaurantId. They expire after 15 minutes, so this
+      // fallback can be removed shortly after deployment.
       businessId:
-        payload.businessId,
+        payload.businessId ??
+        payload.restaurantId,
+
       role: payload.role,
     };
   } catch (error) {

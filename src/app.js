@@ -24,6 +24,11 @@ import authRoutes from "./modules/auth/auth.routes.js";
 
 import errorHandler from "./middleware/error.middleware.js";
 
+import {
+  LEGACY_RESTAURANT_ROUTE_PREFIX,
+  registerLegacyRestaurantCompat,
+} from "./middleware/legacy-restaurant-compat.js";
+
 const app = Fastify({
   logger: true,
 });
@@ -34,6 +39,10 @@ app.register(cors, {
     "https://booking.atrionovo.com",
   ],
 });
+
+// Must be registered before the routes so every route
+// inherits the hooks.
+registerLegacyRestaurantCompat(app);
 
 app.get("/", async () => {
   return {
@@ -66,6 +75,27 @@ app.register(specialOpeningDayRoutes, {
 
 app.register(tableRoutes, {
   prefix: "/businesses",
+});
+
+// Legacy aliases (temporary).
+//
+// App builds from before the rename still call /restaurants/...
+// See middleware/legacy-restaurant-compat.js.
+
+app.register(businessRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(openingHourRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(specialOpeningDayRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(tableRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
 });
 
 // ======================================================

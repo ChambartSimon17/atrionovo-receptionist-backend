@@ -1,0 +1,7 @@
+info:
+  name: Legacy
+  type: folder
+  seq: 20
+
+request:
+  auth: inherit
