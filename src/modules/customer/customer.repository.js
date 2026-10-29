@@ -8,8 +8,8 @@ import prisma from "../../db/prisma.js";
 // Handle database operations related to customers.
 //
 // Tenant Isolation
-// Dashboard customer operations are restaurant-scoped.
-// ID-based operations therefore require restaurantId.
+// Dashboard customer operations are business-scoped.
+// ID-based operations therefore require businessId.
 //
 // Transaction Support
 // All methods accept an optional Prisma client so they
@@ -31,40 +31,40 @@ class CustomerRepository {
   }
 
   /**
-   * Retrieves a customer by id within a restaurant.
+   * Retrieves a customer by id within a business.
    *
-   * Restaurant scoping prevents a customer belonging
-   * to another restaurant from being accessed.
+   * Business scoping prevents a customer belonging
+   * to another business from being accessed.
    */
   async findById(
     id,
-    restaurantId,
+    businessId,
     db = prisma
   ) {
     return db.customer.findFirst({
       where: {
         id,
-        restaurantId,
+        businessId,
       },
     });
   }
 
   /**
-   * Retrieves all customers belonging to a restaurant.
+   * Retrieves all customers belonging to a business.
    *
    * Customers are ordered alphabetically by last name,
    * then by first name.
    *
-   * Restaurant scoping ensures that customers from
-   * other restaurants are never returned.
+   * Business scoping ensures that customers from
+   * other businesses are never returned.
    */
-  async findAllForRestaurant(
-    restaurantId,
+  async findAllForBusiness(
+    businessId,
     db = prisma
   ) {
     return db.customer.findMany({
       where: {
-        restaurantId,
+        businessId,
       },
       orderBy: [
         {
@@ -79,16 +79,16 @@ class CustomerRepository {
 
   /**
    * Searches customers by first name or last name
-   * within a restaurant.
+   * within a business.
    */
   async searchByName(
-    restaurantId,
+    businessId,
     query,
     db = prisma
   ) {
     return db.customer.findMany({
       where: {
-        restaurantId,
+        businessId,
         OR: [
           {
             firstName: {
@@ -120,20 +120,20 @@ class CustomerRepository {
    * Retrieves a customer by id together with
    * their reservation history.
    *
-   * The customer is scoped to the restaurant so
-   * customers from another restaurant cannot be accessed.
+   * The customer is scoped to the business so
+   * customers from another business cannot be accessed.
    *
    * Reservations are ordered from newest to oldest.
    */
   async findByIdWithReservations(
     id,
-    restaurantId,
+    businessId,
     db = prisma
   ) {
     return db.customer.findFirst({
       where: {
         id,
-        restaurantId,
+        businessId,
       },
       include: {
         reservations: {
@@ -149,14 +149,14 @@ class CustomerRepository {
    * Retrieves a customer by phone number.
    */
   async findByPhoneNumber(
-    restaurantId,
+    businessId,
     phoneNumber,
     db = prisma
   ) {
     return db.customer.findUnique({
       where: {
-        restaurantId_phoneNumber: {
-          restaurantId,
+        businessId_phoneNumber: {
+          businessId,
           phoneNumber,
         },
       },
@@ -168,14 +168,14 @@ class CustomerRepository {
    * upcoming confirmed reservations.
    */
   async findProfileByPhoneNumber(
-    restaurantId,
+    businessId,
     phoneNumber,
     db = prisma
   ) {
     return db.customer.findUnique({
       where: {
-        restaurantId_phoneNumber: {
-          restaurantId,
+        businessId_phoneNumber: {
+          businessId,
           phoneNumber,
         },
       },
@@ -199,34 +199,34 @@ class CustomerRepository {
    * Retrieves a customer by email.
    */
   async findByEmail(
-    restaurantId,
+    businessId,
     email,
     db = prisma
   ) {
     return db.customer.findFirst({
       where: {
-        restaurantId,
+        businessId,
         email,
       },
     });
   }
 
   /**
-   * Updates a customer within a restaurant.
+   * Updates a customer within a business.
    *
-   * Restaurant scoping prevents updates to customers
-   * belonging to another restaurant.
+   * Business scoping prevents updates to customers
+   * belonging to another business.
    */
   async update(
     id,
-    restaurantId,
+    businessId,
     data,
     db = prisma
   ) {
     return db.customer.updateMany({
       where: {
         id,
-        restaurantId,
+        businessId,
       },
       data,
     }).then(async (result) => {
@@ -237,27 +237,27 @@ class CustomerRepository {
       return db.customer.findFirst({
         where: {
           id,
-          restaurantId,
+          businessId,
         },
       });
     });
   }
 
   /**
-   * Deletes a customer within a restaurant.
+   * Deletes a customer within a business.
    *
-   * Restaurant scoping prevents deletion of customers
-   * belonging to another restaurant.
+   * Business scoping prevents deletion of customers
+   * belonging to another business.
    */
   async delete(
     id,
-    restaurantId,
+    businessId,
     db = prisma
   ) {
     return db.customer.deleteMany({
       where: {
         id,
-        restaurantId,
+        businessId,
       },
     });
   }

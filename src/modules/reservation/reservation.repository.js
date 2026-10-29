@@ -4,13 +4,13 @@ import {
 } from "../../utils/time.utils.js";
 
 class ReservationRepository {
-  async findRestaurantById(
-    restaurantId,
+  async findBusinessById(
+    businessId,
     db = prisma
   ) {
-    return db.restaurant.findUnique({
+    return db.business.findUnique({
       where: {
-        id: restaurantId,
+        id: businessId,
       },
     });
   }
@@ -29,33 +29,33 @@ class ReservationRepository {
   /**
    * Finds a reservation by ID while also
    * verifying that it belongs to the
-   * specified restaurant.
+   * specified business.
    *
-   * This is used for restaurant-scoped
+   * This is used for business-scoped
    * reservation operations.
    */
-  async findByIdForRestaurant(
+  async findByIdForBusiness(
     id,
-    restaurantId,
+    businessId,
     db = prisma
   ) {
     return db.reservation.findFirst({
       where: {
         id,
-        restaurantId,
+        businessId,
       },
     });
   }
 
   async findOverlappingReservations(
-    restaurantId,
+    businessId,
     startTime,
     endTime,
     db = prisma
   ) {
     return db.reservation.findMany({
       where: {
-        restaurantId,
+        businessId,
 
         status: {
           in: [
@@ -168,13 +168,13 @@ class ReservationRepository {
   }
 
   async findUpcoming({
-    restaurantId,
+    businessId,
     phoneNumber,
     email,
     lastName,
   }, db = prisma) {
     const where = {
-      restaurantId,
+      businessId,
       status: "CONFIRMED",
       startTime: {
         gte: new Date(),
@@ -201,13 +201,13 @@ class ReservationRepository {
     });
   }
 
-  async findUpcomingForRestaurant(
-    restaurantId,
+  async findUpcomingForBusiness(
+    businessId,
     db = prisma
   ) {
     return db.reservation.findMany({
       where: {
-        restaurantId,
+        businessId,
         status: "CONFIRMED",
         startTime: {
           gte: new Date(),
@@ -221,17 +221,17 @@ class ReservationRepository {
   }
 
   /**
-   * Retrieves all active reservations for a restaurant
+   * Retrieves all active reservations for a business
    * on a specific calendar day.
    *
    * Both CONFIRMED and SEATED reservations are included
    * because seated reservations must remain visible in
-   * the restaurant's operational reservation list.
+   * the business's operational reservation list.
    *
    * Reservations earlier today are included as well.
    */
-  async findForRestaurantByDay(
-    restaurantId,
+  async findForBusinessByDay(
+    businessId,
     date,
     timezone,
     db = prisma
@@ -246,7 +246,7 @@ class ReservationRepository {
 
     return db.reservation.findMany({
       where: {
-        restaurantId,
+        businessId,
 
         status: {
           in: [
@@ -276,7 +276,7 @@ class ReservationRepository {
   }
 
   /**
-   * Retrieves all confirmed reservations for a restaurant
+   * Retrieves all confirmed reservations for a business
    * during a specific calendar month.
    *
    * Converts the local calendar month boundaries to UTC
@@ -297,7 +297,7 @@ class ReservationRepository {
    * => Returns all August 2026 reservations in Brussels time
    */
   async findReservationCountsForMonth(
-    restaurantId,
+    businessId,
     year,
     month,
     timezone,
@@ -341,7 +341,7 @@ class ReservationRepository {
 
     return db.reservation.findMany({
       where: {
-        restaurantId,
+        businessId,
 
         status: "CONFIRMED",
 
@@ -364,7 +364,7 @@ class ReservationRepository {
   /**
    * Marks a reservation as seated.
    *
-   * The restaurant ownership and current
+   * The business ownership and current
    * reservation status are validated by the
    * service before this method is called.
    */
@@ -386,7 +386,7 @@ class ReservationRepository {
   /**
    * Marks a reservation as completed.
    *
-   * The restaurant ownership and current
+   * The business ownership and current
    * reservation status are validated by the
    * service before this method is called.
    */

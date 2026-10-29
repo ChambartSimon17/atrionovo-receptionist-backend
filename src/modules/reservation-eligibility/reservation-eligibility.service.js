@@ -1,7 +1,7 @@
-import restaurantRepository from "../restaurant/restaurant.repository.js";
+import businessRepository from "../business/business.repository.js";
 import reservationRepository from "../reservation/reservation.repository.js";
-import openingScheduleService from "../restaurant/opening-schedule/opening-schedule.service.js";
-import tableAssignmentService from "../restaurant/table/table-assignment.service.js";
+import openingScheduleService from "../business/opening-schedule/opening-schedule.service.js";
+import tableAssignmentService from "../business/table/table-assignment.service.js";
 import { dateToMinutes } from "../../utils/time.utils.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
@@ -15,7 +15,7 @@ import { DateTime } from "luxon";
 // Responsibility
 // Determine whether a reservation can be accepted.
 //
-// This service evaluates restaurant business rules
+// This service evaluates business rules
 // before a reservation is created.
 //
 // Concurrency
@@ -34,12 +34,12 @@ import { DateTime } from "luxon";
 //      creation/update.
 //
 // Current Rules
-// - Restaurant exists
+// - Business exists
 // - Reservation falls within opening hours
 // - Reservation starts on a valid arrival interval
-// - Reservation does not exceed the restaurant's
+// - Reservation does not exceed the business's
 //   maximum reservation size
-// - Restaurant has sufficient capacity
+// - Business has sufficient capacity
 //
 // Alternative Slot Rules
 // - Search nearby valid arrival times
@@ -56,35 +56,35 @@ class ReservationEligibilityService {
    * eligibility rules is violated.
    */
   async checkEligibility({
-    restaurantId,
+    businessId,
     guestCount,
     startTime,
     endTime,
     ignoreReservationId,
   }) {
-    const restaurant =
-      await this.#getRestaurant(
-        restaurantId
+    const business =
+      await this.#getBusiness(
+        businessId
       );
 
     await this.#validateOpeningHours({
-      restaurant,
+      business,
       startTime,
       endTime,
     });
 
     this.#validateArrivalInterval({
-      restaurant,
+      business,
       startTime,
     });
 
     this.#validateReservationSize({
-      restaurant,
+      business,
       guestCount,
     });
 
     await this.#validateCapacity({
-      restaurant,
+      business,
       guestCount,
       startTime,
       endTime,
@@ -97,7 +97,7 @@ class ReservationEligibilityService {
   }
 
   /**
-   * Performs the authoritative restaurant capacity check.
+   * Performs the authoritative business capacity check.
    *
    * This method is intended to run inside the reservation
    * transaction during creation or update.
@@ -107,21 +107,21 @@ class ReservationEligibilityService {
    * as the reservation write.
    */
   async checkCapacity({
-    restaurantId,
+    businessId,
     guestCount,
     startTime,
     endTime,
     ignoreReservationId,
     db,
   }) {
-    const restaurant =
-      await this.#getRestaurant(
-        restaurantId,
+    const business =
+      await this.#getBusiness(
+        businessId,
         db
       );
 
     await this.#validateCapacity({
-      restaurant,
+      business,
       guestCount,
       startTime,
       endTime,
@@ -131,46 +131,46 @@ class ReservationEligibilityService {
   }
 
   async findOpeningPeriodsForDate({
-    restaurantId,
+    businessId,
     date,
   }) {
-    const restaurant =
-      await this.#getRestaurant(
-        restaurantId
+    const business =
+      await this.#getBusiness(
+        businessId
       );
 
     const reservationDate =
       new Date(`${date}T12:00:00`);
 
     return openingScheduleService.findOpeningPeriods(
-      restaurant,
+      business,
       reservationDate
     );
   }
 
   /**
    * Finds all available reservation start times
-   * for a specific restaurant date and guest count.
+   * for a specific business date and guest count.
    *
    * The date and time are interpreted in the
-   * restaurant's timezone.
+   * business's timezone.
    *
    * Every candidate is checked using the exact same
    * eligibility rules used when creating a reservation.
    */
   async findAvailableSlotsForDate({
-    restaurantId,
+    businessId,
     date,
     guestCount,
   }) {
-    const restaurant =
-      await this.#getRestaurant(
-        restaurantId
+    const business =
+      await this.#getBusiness(
+        businessId
       );
 
     const openingPeriods =
       await this.findOpeningPeriodsForDate({
-        restaurantId,
+        businessId,
         date,
       });
 
@@ -181,7 +181,7 @@ class ReservationEligibilityService {
     const slots = [];
 
     const reservationDuration =
-      restaurant.defaultReservationDurationMinutes;
+      business.defaultReservationDurationMinutes;
 
     for (const openingPeriod of openingPeriods) {
       const firstStart =
@@ -194,7 +194,7 @@ class ReservationEligibilityService {
       for (
         let minutes = firstStart;
         minutes <= lastStart;
-        minutes += restaurant.arrivalIntervalMinutes
+        minutes += business.arrivalIntervalMinutes
       ) {
         const hour =
           Math.floor(minutes / 60);
@@ -211,7 +211,7 @@ class ReservationEligibilityService {
           DateTime.fromISO(
             `${date}T${time}`,
             {
-              zone: restaurant.timezone,
+              zone: business.timezone,
             }
           );
 
@@ -229,7 +229,7 @@ class ReservationEligibilityService {
 
         try {
           await this.checkEligibility({
-            restaurantId,
+            businessId,
             guestCount,
             startTime,
             endTime,
@@ -263,7 +263,7 @@ class ReservationEligibilityService {
    * The closest available slots are returned first.
    */
   async findAlternativeSlots({
-    restaurantId,
+    businessId,
     guestCount,
     startTime,
     endTime,
@@ -271,9 +271,9 @@ class ReservationEligibilityService {
     maxResults = 3,
     searchSteps = 6,
   }) {
-    const restaurant =
-      await this.#getRestaurant(
-        restaurantId
+    const business =
+      await this.#getBusiness(
+        businessId
       );
 
     const requestedStart =
@@ -287,7 +287,7 @@ class ReservationEligibilityService {
       requestedStart.getTime();
 
     const intervalMinutes =
-      restaurant.arrivalIntervalMinutes;
+      business.arrivalIntervalMinutes;
 
     const candidates = [];
 
@@ -346,7 +346,7 @@ class ReservationEligibilityService {
     for (const candidate of candidates) {
       try {
         await this.checkEligibility({
-          restaurantId,
+          businessId,
           guestCount,
           startTime: candidate.startTime,
           endTime: candidate.endTime,
@@ -355,7 +355,7 @@ class ReservationEligibilityService {
 
         const tableAssignment =
           await tableAssignmentService.assignTables({
-            restaurantId,
+            businessId,
             guestCount,
             startTime: candidate.startTime,
             endTime: candidate.endTime,
@@ -394,37 +394,37 @@ class ReservationEligibilityService {
   }
 
   /**
-   * Retrieves the restaurant.
+   * Retrieves the business.
    *
    * Uses the provided database client when called
    * from inside a transaction.
    */
-  async #getRestaurant(
-    restaurantId,
+  async #getBusiness(
+    businessId,
     db
   ) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId,
+    const business =
+      await businessRepository.findById(
+        businessId,
         db
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
-    return restaurant;
+    return business;
   }
 
   /**
    * Ensures the reservation fits completely inside
-   * one opening period of the restaurant.
+   * one opening period of the business.
    */
   async #validateOpeningHours({
-    restaurant,
+    business,
     startTime,
     endTime,
   }) {
@@ -436,14 +436,14 @@ class ReservationEligibilityService {
 
     const openingHours =
       await openingScheduleService.findOpeningPeriods(
-        restaurant,
+        business,
         reservationStart
       );
 
     if (openingHours.length === 0) {
       throw new ValidationError(
-        "Restaurant is closed on this day.",
-        ErrorCodes.RESTAURANT_CLOSED
+        "Business is closed on this day.",
+        ErrorCodes.BUSINESS_CLOSED
       );
     }
 
@@ -453,7 +453,7 @@ class ReservationEligibilityService {
         "en-CA",
         {
           timeZone:
-            restaurant.timezone,
+            business.timezone,
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
@@ -480,13 +480,13 @@ class ReservationEligibilityService {
     const startMinutes =
       dateToMinutes(
         reservationStart,
-        restaurant.timezone
+        business.timezone
       );
 
     const endMinutes =
       dateToMinutes(
         reservationEnd,
-        restaurant.timezone
+        business.timezone
       );
 
     const fitsOpeningPeriod =
@@ -508,10 +508,10 @@ class ReservationEligibilityService {
 
   /**
    * Ensures the reservation starts on one of the
-   * restaurant's allowed arrival intervals.
+   * business's allowed arrival intervals.
    */
   #validateArrivalInterval({
-    restaurant,
+    business,
     startTime,
   }) {
     const reservationStart =
@@ -520,16 +520,16 @@ class ReservationEligibilityService {
     const startMinutes =
       dateToMinutes(
         reservationStart,
-        restaurant.timezone
+        business.timezone
       );
 
     if (
       startMinutes %
-        restaurant.arrivalIntervalMinutes !==
+        business.arrivalIntervalMinutes !==
       0
     ) {
       throw new ValidationError(
-        `Reservations must start every ${restaurant.arrivalIntervalMinutes} minutes.`,
+        `Reservations must start every ${business.arrivalIntervalMinutes} minutes.`,
         ErrorCodes.INVALID_ARRIVAL_INTERVAL
       );
     }
@@ -537,25 +537,25 @@ class ReservationEligibilityService {
 
   /**
    * Ensures the reservation does not exceed
-   * the restaurant's maximum reservation size.
+   * the business's maximum reservation size.
    */
   #validateReservationSize({
-    restaurant,
+    business,
     guestCount,
   }) {
     if (
       guestCount >
-      restaurant.maxReservationSize
+      business.maxReservationSize
     ) {
       throw new ValidationError(
-        `Maximum reservation size is ${restaurant.maxReservationSize}.`,
+        `Maximum reservation size is ${business.maxReservationSize}.`,
         ErrorCodes.MAX_RESERVATION_SIZE_EXCEEDED
       );
     }
   }
 
   /**
-   * Ensures the restaurant has enough
+   * Ensures the business has enough
    * remaining capacity.
    *
    * When db is provided, the overlapping reservation
@@ -564,7 +564,7 @@ class ReservationEligibilityService {
    * surrounding SERIALIZABLE transaction.
    */
   async #validateCapacity({
-    restaurant,
+    business,
     guestCount,
     startTime,
     endTime,
@@ -573,7 +573,7 @@ class ReservationEligibilityService {
   }) {
     let reservations =
       await reservationRepository.findOverlappingReservations(
-        restaurant.id,
+        business.id,
         startTime,
         endTime,
         db
@@ -595,7 +595,7 @@ class ReservationEligibilityService {
 
     if (
       occupiedSeats + guestCount >
-      restaurant.maxCapacity
+      business.maxCapacity
     ) {
       throw new ValidationError(
         "Restaurant capacity exceeded.",

@@ -7,8 +7,8 @@ http:
   method: POST
   url: "{{baseUrl}}/reservations/check-availability"
   headers:
-    - name: x-restaurant-id
-      value: "{{restaurantId}}"
+    - name: x-business-id
+      value: "{{businessId}}"
   body:
     type: json
     data: |-
@@ -21,7 +21,7 @@ http:
 
 runtime:
   variables:
-    - name: restaurantId
+    - name: businessId
       value: cmsx40oy30000s01nzviohyxu
 
 settings:

@@ -7,11 +7,11 @@ import { z } from "zod";
 // These validators are used by the website booking widget.
 //
 // Important:
-// restaurantId is intentionally NOT accepted from the
+// businessId is intentionally NOT accepted from the
 // public client.
 //
-// The restaurant is identified by its public slug in the
-// URL and the backend resolves the actual restaurant ID.
+// The business is identified by its public slug in the
+// URL and the backend resolves the actual business ID.
 // ======================================================
 
 export const publicAvailabilitySchema = z.object({

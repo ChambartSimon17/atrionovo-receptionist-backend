@@ -1,6 +1,6 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
-import restaurantRepository from "../restaurant/restaurant.repository.js";
+import businessRepository from "../business/business.repository.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 import {
@@ -24,17 +24,17 @@ class AssistantService {
    * Retrieves the caller profile.
    */
   async getCallerProfile({
-    restaurantId,
+    businessId,
     phoneNumber,
   }) {
     const customer =
       await customerService.findByPhoneNumber({
-        restaurantId,
+        businessId,
         phoneNumber,
       });
 
     console.log("getCallerProfile lookup result:", {
-      restaurantId,
+      businessId,
       phoneNumber,
       customerFound: Boolean(customer),
       customerId: customer?.id ?? null,
@@ -52,7 +52,7 @@ class AssistantService {
 
     const upcomingReservations =
       await reservationService.findUpcoming({
-        restaurantId,
+        businessId,
         phoneNumber,
       });
 
@@ -85,31 +85,31 @@ class AssistantService {
    * Checks reservation availability.
    */
   async checkAvailability({
-    restaurantId,
+    businessId,
     guestCount,
     startTime,
   }) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const startTimeUTC =
       localDateTimeStringToUTC(
         startTime,
-        restaurant.timezone
+        business.timezone
       );
 
     const result =
       await reservationService.checkAvailability({
-        restaurantId,
+        businessId,
         guestCount,
         startTime: startTimeUTC,
       });
@@ -122,7 +122,7 @@ class AssistantService {
         endTime:
           utcToLocalDateTimeString(
             result.requestedSlot.endTime,
-            restaurant.timezone
+            business.timezone
           ),
       },
 
@@ -132,13 +132,13 @@ class AssistantService {
             startTime:
               utcToLocalDateTimeString(
                 slot.startTime,
-                restaurant.timezone
+                business.timezone
               ),
 
             endTime:
               utcToLocalDateTimeString(
                 slot.endTime,
-                restaurant.timezone
+                business.timezone
               ),
           })
         ),
@@ -151,22 +151,22 @@ class AssistantService {
   async createReservation(
     reservationData
   ) {
-    const restaurant =
-      await restaurantRepository.findById(
-        reservationData.restaurantId
+    const business =
+      await businessRepository.findById(
+        reservationData.businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const startTimeUTC =
       localDateTimeStringToUTC(
         reservationData.startTime,
-        restaurant.timezone
+        business.timezone
       );
 
     const reservation =
@@ -202,13 +202,13 @@ class AssistantService {
         startTime:
           utcToLocalDateTimeString(
             reservation.startTime,
-            restaurant.timezone
+            business.timezone
           ),
 
         endTime:
           utcToLocalDateTimeString(
             reservation.endTime,
-            restaurant.timezone
+            business.timezone
           ),
 
         guestCount:
@@ -224,20 +224,20 @@ class AssistantService {
    * Updates an existing reservation.
    */
   async updateReservation({
-    restaurantId,
+    businessId,
     reservationId,
     guestCount,
     startTime,
   }) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
@@ -249,14 +249,14 @@ class AssistantService {
     const startTimeUTC =
       localDateTimeStringToUTC(
         startTime,
-        restaurant.timezone
+        business.timezone
       );
 
     const reservation =
       await reservationService.updateReservation(
         reservationId,
         {
-          restaurantId,
+          businessId,
 
           firstName:
             existingReservation.firstName,
@@ -289,13 +289,13 @@ class AssistantService {
         startTime:
           utcToLocalDateTimeString(
             reservation.startTime,
-            restaurant.timezone
+            business.timezone
           ),
 
         endTime:
           utcToLocalDateTimeString(
             reservation.endTime,
-            restaurant.timezone
+            business.timezone
           ),
 
         guestCount:

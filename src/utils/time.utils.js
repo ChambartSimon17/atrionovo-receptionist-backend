@@ -154,7 +154,7 @@ export function addMinutes(date, minutes) {
 }
 
 /**
- * Converts a local restaurant date/time into UTC ISO.
+ * Converts a local business date/time into UTC ISO.
  *
  * Example:
  *
@@ -180,7 +180,7 @@ export function localDateTimeToUTC(
 }
 
 /**
- * Converts a restaurant-local ISO datetime into a UTC Date.
+ * Converts a business-local ISO datetime into a UTC Date.
  *
  * The input must not contain timezone information.
  *
@@ -212,7 +212,7 @@ export function localDateTimeStringToUTC(
 }
 
 /**
- * Converts a UTC Date into a restaurant-local
+ * Converts a UTC Date into a business-local
  * ISO datetime without timezone information.
  *
  * Example:

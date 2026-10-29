@@ -18,21 +18,21 @@ import {
 class PublicBookingController {
 
   /**
-   * Returns public restaurant configuration
+   * Returns public business configuration
    * required by the booking widget.
    */
-  async getRestaurant(request, reply) {
+  async getBusiness(request, reply) {
     const { slug } =
       request.params;
 
-    const restaurant =
-      await publicBookingService.getRestaurant(
+    const business =
+      await publicBookingService.getBusiness(
         slug
       );
 
     return reply.send({
       success: true,
-      data: restaurant,
+      data: business,
     });
   }
 
@@ -65,7 +65,7 @@ class PublicBookingController {
   }
 
   /**
-   * Creates a reservation from the restaurant website.
+   * Creates a reservation from the business website.
    */
   async createReservation(
     request,

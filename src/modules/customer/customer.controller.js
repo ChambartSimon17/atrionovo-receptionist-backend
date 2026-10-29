@@ -16,7 +16,7 @@ import {
 //
 // Responsibilities
 // - Validate incoming requests
-// - Extract authenticated restaurant context
+// - Extract authenticated business context
 // - Delegate business logic to the service
 // - Return HTTP responses
 //
@@ -24,11 +24,11 @@ import {
 //
 // Authentication
 // Dashboard customer-management endpoints derive
-// restaurantId from request.user rather than from the
+// businessId from request.user rather than from the
 // request body.
 //
 // Receptionist/VAPI endpoints keep their existing
-// restaurantId-based request format.
+// businessId-based request format.
 // ======================================================
 
 class CustomerController {
@@ -36,7 +36,7 @@ class CustomerController {
    * Creates a new customer.
    *
    * Used by internal/customer flows that explicitly
-   * provide the restaurant context.
+   * provide the business context.
    */
   async createCustomer(request, reply) {
     const customer =
@@ -98,12 +98,12 @@ class CustomerController {
 
   /**
    * Retrieves all customers belonging to the
-   * authenticated restaurant.
+   * authenticated business.
    */
   async getCustomers(request, reply) {
     const customers =
       await customerService.getCustomers(
-        request.user.restaurantId
+        request.user.businessId
       );
 
     return reply.send({
@@ -115,7 +115,7 @@ class CustomerController {
   /**
    * Searches customers by name.
    *
-   * Restaurant context comes from the
+   * Business context comes from the
    * authenticated dashboard user.
    */
   async searchCustomers(request, reply) {
@@ -126,7 +126,7 @@ class CustomerController {
 
     const customers =
       await customerService.searchCustomers(
-        request.user.restaurantId,
+        request.user.businessId,
         query.query
       );
 
@@ -146,7 +146,7 @@ class CustomerController {
     const result =
       await customerService.getCustomer(
         id,
-        request.user.restaurantId
+        request.user.businessId
       );
 
     return reply.send({
@@ -158,7 +158,7 @@ class CustomerController {
   /**
    * Updates an existing customer.
    *
-   * Restaurant context is taken from the
+   * Business context is taken from the
    * authenticated user.
    */
   async updateCustomer(request, reply) {
@@ -172,7 +172,7 @@ class CustomerController {
     const updatedCustomer =
       await customerService.updateCustomer(
         id,
-        request.user.restaurantId,
+        request.user.businessId,
         customer
       );
 
@@ -185,7 +185,7 @@ class CustomerController {
   /**
    * Deletes an existing customer.
    *
-   * Restaurant context is taken from the
+   * Business context is taken from the
    * authenticated user.
    */
   async deleteCustomer(request, reply) {
@@ -193,7 +193,7 @@ class CustomerController {
 
     await customerService.deleteCustomer(
       id,
-      request.user.restaurantId
+      request.user.businessId
     );
 
     return reply.status(204).send();

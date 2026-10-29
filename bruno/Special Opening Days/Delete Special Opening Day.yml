@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/restaurants/{{restaurantId}}/special-opening-days/{{specialOpeningDayId}}"
+  url: "{{baseUrl}}/businesses/{{businessId}}/special-opening-days/{{specialOpeningDayId}}"
   auth: inherit
 
 settings:

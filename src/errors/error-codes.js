@@ -1,6 +1,9 @@
+// The values are part of the public API and are intentionally
+// NOT renamed together with the keys: the Vapi assistant and
+// other clients may react to codes such as "RESTAURANT_CLOSED".
 export const ErrorCodes = {
   // Reservation Eligibility
-  RESTAURANT_CLOSED: "RESTAURANT_CLOSED",
+  BUSINESS_CLOSED: "RESTAURANT_CLOSED",
   OUTSIDE_OPENING_HOURS: "OUTSIDE_OPENING_HOURS",
   INVALID_ARRIVAL_INTERVAL: "INVALID_ARRIVAL_INTERVAL",
   MAX_RESERVATION_SIZE_EXCEEDED:
@@ -25,8 +28,8 @@ export const ErrorCodes = {
   CUSTOMER_NOT_FOUND:
     "CUSTOMER_NOT_FOUND",
 
-  // Restaurant
-  RESTAURANT_NOT_FOUND:
+  // Business
+  BUSINESS_NOT_FOUND:
     "RESTAURANT_NOT_FOUND",
 
   // Table

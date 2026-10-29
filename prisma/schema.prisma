@@ -92,15 +92,15 @@ enum TableShape {
 // ------------------------------------------------------
 // User
 // ------------------------------------------------------
-// Represents a user account for an AtrioNovo restaurant.
+// Represents a user account for an AtrioNovo business.
 //
 
 model User {
   id String @id @default(cuid())
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   email        String @unique
   passwordHash String
@@ -113,21 +113,22 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([restaurantId])
+  @@index([businessId])
 }
 
 // ======================================================
-// RESTAURANT DOMAIN
+// BUSINESS DOMAIN
 // ======================================================
 
 // ------------------------------------------------------
-// Restaurant
+// Business
 // ------------------------------------------------------
-// Represents a restaurant using the AtrioNovo platform.
+// Represents a business using the AtrioNovo platform
+// (currently always a restaurant).
 //
 // Responsibilities
-// - Store restaurant information
-// - Define restaurant configuration
+// - Store business information
+// - Define business configuration
 // - Own opening hours
 // - Own reservations
 //
@@ -139,7 +140,7 @@ model User {
 // - Subscription
 // ------------------------------------------------------
 
-model Restaurant {
+model Business {
   // -------------------------
   // Primary Key
   // -------------------------
@@ -155,7 +156,7 @@ model Restaurant {
   countryCode String
 
   // -------------------------
-  // Restaurant Configuration
+  // Business Configuration
   // -------------------------
 
   voiceAgentEnabled Boolean @default(true)
@@ -193,6 +194,17 @@ model Restaurant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Mapping
+  // -------------------------
+  //
+  // The model is called Business, but the physical table keeps
+  // its original name. Together with the @map("restaurantId")
+  // columns on the related models this makes the rename a
+  // code-only change: no migration and no data movement.
+
+  @@map("Restaurant")
 }
 
 model Customer {
@@ -203,12 +215,12 @@ model Customer {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Customer Information
@@ -241,9 +253,9 @@ model Customer {
   // Database Indexes
   // -------------------------
 
-  @@unique([restaurantId, phoneNumber], map: "uq_customer_restaurant_phone")
-  @@index([restaurantId, email], map: "idx_customer_restaurant_email")
-  @@index([restaurantId, lastName], map: "idx_customer_restaurant_last_name")
+  @@unique([businessId, phoneNumber], map: "uq_customer_restaurant_phone")
+  @@index([businessId, email], map: "idx_customer_restaurant_email")
+  @@index([businessId, lastName], map: "idx_customer_restaurant_last_name")
 }
 
 // ======================================================
@@ -279,12 +291,12 @@ model Table {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Table Information
@@ -337,13 +349,13 @@ model Table {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId])
+  @@index([businessId])
 }
 
 // ------------------------------------------------------
 // OpeningHour
 // ------------------------------------------------------
-// Represents one opening period for a restaurant.
+// Represents one opening period for a business.
 //
 // Examples
 //
@@ -354,7 +366,7 @@ model Table {
 // 12:00 → 15:00
 // 17:00 → 22:00
 //
-// A restaurant may have multiple opening
+// A business may have multiple opening
 // periods on the same day.
 // ------------------------------------------------------
 
@@ -366,12 +378,12 @@ model OpeningHour {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Opening Period
@@ -399,13 +411,13 @@ model OpeningHour {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
+  @@index([businessId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
 }
 
 // ------------------------------------------------------
 // SpecialOpeningDay
 // ------------------------------------------------------
-// Represents an exception to the restaurant's
+// Represents an exception to the business's
 // normal weekly opening schedule.
 //
 // Examples
@@ -426,12 +438,12 @@ model SpecialOpeningDay {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Date
@@ -462,7 +474,7 @@ model SpecialOpeningDay {
   // Database Indexes
   // -------------------------
 
-  @@unique([restaurantId, date])
+  @@unique([businessId, date])
 }
 
 // ------------------------------------------------------
@@ -525,7 +537,7 @@ model SpecialOpeningPeriod {
 // Represents one reservation made by a customer.
 //
 // Business Rules
-// - Always belongs to one restaurant
+// - Always belongs to one business
 // - Has a fixed start and end time
 // - Status defaults to CONFIRMED
 // ------------------------------------------------------
@@ -538,12 +550,12 @@ model Reservation {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Customer Relationship
@@ -593,11 +605,11 @@ model Reservation {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId], map: "idx_reservation_restaurant")
+  @@index([businessId], map: "idx_reservation_restaurant")
   @@index([customerId], map: "idx_reservation_customer")
   @@index([startTime], map: "idx_reservation_start_time")
   @@index([endTime], map: "idx_reservation_end_time")
-  @@index([restaurantId, startTime], map: "idx_reservation_restaurant_start")
+  @@index([businessId, startTime], map: "idx_reservation_restaurant_start")
 }
 
 // ======================================================

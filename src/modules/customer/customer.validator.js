@@ -6,13 +6,13 @@ import { z } from "zod";
 //
 // Used when a new customer is created.
 //
-// restaurantId is required here because this schema
+// businessId is required here because this schema
 // is also used by internal customer flows such as
 // reservation synchronization.
 // ======================================================
 
 export const createCustomerSchema = z.object({
-  restaurantId: z.string().min(1),
+  businessId: z.string().min(1),
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
   phoneNumber: z.string().min(1),
@@ -27,8 +27,8 @@ export const createCustomerSchema = z.object({
 //
 // Used for partial customer updates.
 //
-// restaurantId is intentionally NOT accepted here.
-// Dashboard requests derive the restaurant from the
+// businessId is intentionally NOT accepted here.
+// Dashboard requests derive the business from the
 // authenticated user instead.
 //
 // Every field is optional because this schema is used
@@ -50,13 +50,13 @@ export const updateCustomerSchema = z.object({
 //
 // Used by receptionist/VAPI lookup.
 //
-// restaurantId remains part of this schema because
+// businessId remains part of this schema because
 // this endpoint is currently used by the receptionist
 // flow rather than the authenticated dashboard.
 // ======================================================
 
 export const findCustomerSchema = z.object({
-  restaurantId: z.string().min(1),
+  businessId: z.string().min(1),
   phoneNumber: z.string().min(1),
 });
 
@@ -67,7 +67,7 @@ export const findCustomerSchema = z.object({
 // Used by the authenticated dashboard.
 //
 // Searches customers belonging to the authenticated
-// restaurant by first name and/or last name.
+// business by first name and/or last name.
 // ======================================================
 
 export const searchCustomersSchema = z.object({
@@ -83,6 +83,6 @@ export const searchCustomersSchema = z.object({
 // ======================================================
 
 export const callerProfileSchema = z.object({
-  restaurantId: z.string().min(1),
+  businessId: z.string().min(1),
   phoneNumber: z.string().min(1),
 });

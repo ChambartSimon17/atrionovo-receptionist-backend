@@ -8,7 +8,7 @@ import publicBookingController
 // These routes are intentionally NOT protected by
 // authenticate middleware.
 //
-// They are consumed by restaurant websites.
+// They are consumed by business websites.
 // ======================================================
 
 export default async function publicBookingRoutes(
@@ -16,12 +16,12 @@ export default async function publicBookingRoutes(
 ) {
 
   // ----------------------------------------------------
-  // Restaurant information
+  // Business information
   // ----------------------------------------------------
 
   fastify.get(
     "/:slug",
-    publicBookingController.getRestaurant.bind(
+    publicBookingController.getBusiness.bind(
       publicBookingController
     )
   );

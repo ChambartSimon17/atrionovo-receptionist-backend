@@ -5,7 +5,7 @@ import { z } from "zod";
 // ======================================================
 
 export const registerSchema = z.object({
-  restaurantName: z
+  businessName: z
     .string()
     .trim()
     .min(1),

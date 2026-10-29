@@ -1,0 +1,39 @@
+info:
+  name: Create Business
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Kin Khao-test",
+        "slug": "kin-khao-test",
+        "maxCapacity": 50,
+        "timezone": "Europe/Brussels",
+        "language": "nl"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.data.id
+        method: jsonq
+      variable:
+        name: businessId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

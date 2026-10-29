@@ -3,13 +3,13 @@ import cors from "@fastify/cors";
 
 import healthRoutes from "./system/health.routes.js";
 
-import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
+import businessRoutes from "./modules/business/business.routes.js";
 
-import openingHourRoutes from "./modules/restaurant/opening-hours/opening-hour.routes.js";
+import openingHourRoutes from "./modules/business/opening-hours/opening-hour.routes.js";
 
-import specialOpeningDayRoutes from "./modules/restaurant/special-opening-days/special-opening-day.routes.js";
+import specialOpeningDayRoutes from "./modules/business/special-opening-days/special-opening-day.routes.js";
 
-import tableRoutes from "./modules/restaurant/table/table.routes.js";
+import tableRoutes from "./modules/business/table/table.routes.js";
 
 import customerRoutes from "./modules/customer/customer.routes.js";
 
@@ -49,23 +49,23 @@ app.get("/", async () => {
 app.register(healthRoutes);
 
 // ======================================================
-// Restaurant
+// Business
 // ======================================================
 
-app.register(restaurantRoutes, {
-  prefix: "/restaurants",
+app.register(businessRoutes, {
+  prefix: "/businesses",
 });
 
 app.register(openingHourRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
 });
 
 app.register(specialOpeningDayRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
 });
 
 app.register(tableRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
 });
 
 // ======================================================

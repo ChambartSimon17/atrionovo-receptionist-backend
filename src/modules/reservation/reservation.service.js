@@ -1,9 +1,9 @@
-import restaurantRepository from "../restaurant/restaurant.repository.js";
+import businessRepository from "../business/business.repository.js";
 import reservationEligibilityService from "../reservation-eligibility/reservation-eligibility.service.js";
 import reservationRepository from "./reservation.repository.js";
 import customerService from "../customer/customer.service.js";
-import tableRepository from "../restaurant/table/table.repository.js";
-import tableAssignmentService from "../restaurant/table/table-assignment.service.js";
+import tableRepository from "../business/table/table.repository.js";
+import tableAssignmentService from "../business/table/table-assignment.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -17,7 +17,7 @@ import { normalizeEmail } from "../../utils/email.utils.js";
 // ======================================================
 //
 // Responsibility
-// Manage restaurant reservations.
+// Manage business reservations.
 //
 // This service orchestrates reservation-related business
 // operations and delegates eligibility checks to the
@@ -44,19 +44,19 @@ class ReservationService {
    * alternative slots are returned.
    */
   async checkAvailability({
-    restaurantId,
+    businessId,
     guestCount,
     startTime,
   }) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
@@ -64,12 +64,12 @@ class ReservationService {
     // how long a reservation lasts.
     const endTime = addMinutes(
       new Date(startTime),
-      restaurant.defaultReservationDurationMinutes
+      business.defaultReservationDurationMinutes
     );
 
     try {
       await reservationEligibilityService.checkEligibility({
-        restaurantId,
+        businessId,
         guestCount,
         startTime,
         endTime,
@@ -77,7 +77,7 @@ class ReservationService {
 
       const tableAssignment =
         await tableAssignmentService.assignTables({
-          restaurantId,
+          businessId,
           guestCount,
           startTime,
           endTime,
@@ -109,7 +109,7 @@ class ReservationService {
 
       const alternativeSlots =
         await reservationEligibilityService.findAlternativeSlots({
-          restaurantId,
+          businessId,
           guestCount,
           startTime,
           endTime,
@@ -134,32 +134,32 @@ class ReservationService {
    * Returns all available reservation slots for a
    * specific local calendar date.
    *
-   * The date is interpreted in the restaurant's timezone.
+   * The date is interpreted in the business's timezone.
    *
    * Every generated slot is checked using the same
    * eligibility rules as a normal availability request.
    */
   async findAvailableSlots({
-    restaurantId,
+    businessId,
     date,
     guestCount,
   }) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const openingPeriods =
       await reservationEligibilityService
         .findOpeningPeriodsForDate({
-          restaurantId,
+          businessId,
           date,
         });
 
@@ -171,26 +171,26 @@ class ReservationService {
 
       while (
         currentMinutes +
-          restaurant.defaultReservationDurationMinutes <=
+          business.defaultReservationDurationMinutes <=
         period.closesAtMinutes
       ) {
         const startTime =
           this.#createLocalSlotISO({
             date,
             minutes: currentMinutes,
-            timezone: restaurant.timezone,
+            timezone: business.timezone,
           });
 
         if (startTime) {
           const endTime =
             addMinutes(
               new Date(startTime),
-              restaurant.defaultReservationDurationMinutes
+              business.defaultReservationDurationMinutes
             );
 
           try {
             await reservationEligibilityService.checkEligibility({
-              restaurantId,
+              businessId,
               guestCount,
               startTime,
               endTime,
@@ -208,7 +208,7 @@ class ReservationService {
         }
 
         currentMinutes +=
-          restaurant.arrivalIntervalMinutes;
+          business.arrivalIntervalMinutes;
       }
     }
 
@@ -219,7 +219,7 @@ class ReservationService {
    * Creates a new reservation.
    *
    * The reservation end time is automatically calculated
-   * using the restaurant's default reservation duration.
+   * using the business's default reservation duration.
    *
    * The best available table combination is automatically
    * assigned to the reservation.
@@ -229,21 +229,21 @@ class ReservationService {
    * are executed inside one SERIALIZABLE transaction.
    */
   async createReservation(reservationData) {
-    const restaurant =
-      await restaurantRepository.findById(
-        reservationData.restaurantId
+    const business =
+      await businessRepository.findById(
+        reservationData.businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
-      restaurant.defaultReservationDurationMinutes
+      business.defaultReservationDurationMinutes
     );
 
     const completeReservation = {
@@ -267,8 +267,8 @@ class ReservationService {
     // afterwards. Capacity is therefore checked again inside
     // the transaction below.
     await reservationEligibilityService.checkEligibility({
-      restaurantId:
-        completeReservation.restaurantId,
+      businessId:
+        completeReservation.businessId,
 
       guestCount:
         completeReservation.guestCount,
@@ -287,8 +287,8 @@ class ReservationService {
       // decision is made as part of the same transaction
       // that creates the reservation.
       await reservationEligibilityService.checkCapacity({
-        restaurantId:
-          completeReservation.restaurantId,
+        businessId:
+          completeReservation.businessId,
 
         guestCount:
           completeReservation.guestCount,
@@ -304,8 +304,8 @@ class ReservationService {
 
       const tableAssignment =
         await tableAssignmentService.assignTables({
-          restaurantId:
-            completeReservation.restaurantId,
+          businessId:
+            completeReservation.businessId,
 
           guestCount:
             completeReservation.guestCount,
@@ -329,8 +329,8 @@ class ReservationService {
       const customer =
         await customerService.syncCustomer(
           {
-            restaurantId:
-              completeReservation.restaurantId,
+            businessId:
+              completeReservation.businessId,
 
             firstName:
               completeReservation.firstName,
@@ -367,7 +367,7 @@ class ReservationService {
    * Updates an existing reservation.
    *
    * The reservation end time is automatically recalculated
-   * using the restaurant's default reservation duration.
+   * using the business's default reservation duration.
    *
    * The table assignment is recalculated based on the
    * updated reservation details.
@@ -394,21 +394,21 @@ class ReservationService {
       );
     }
 
-    const restaurant =
-      await restaurantRepository.findById(
-        reservationData.restaurantId
+    const business =
+      await businessRepository.findById(
+        reservationData.businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const endTime = addMinutes(
       new Date(reservationData.startTime),
-      restaurant.defaultReservationDurationMinutes
+      business.defaultReservationDurationMinutes
     );
 
     const completeReservation = {
@@ -432,8 +432,8 @@ class ReservationService {
     // afterwards. Capacity is therefore checked again inside
     // the transaction below.
     await reservationEligibilityService.checkEligibility({
-      restaurantId:
-        completeReservation.restaurantId,
+      businessId:
+        completeReservation.businessId,
 
       guestCount:
         completeReservation.guestCount,
@@ -453,8 +453,8 @@ class ReservationService {
       // The current reservation is excluded from the
       // calculation because it is being updated.
       await reservationEligibilityService.checkCapacity({
-        restaurantId:
-          completeReservation.restaurantId,
+        businessId:
+          completeReservation.businessId,
 
         guestCount:
           completeReservation.guestCount,
@@ -472,8 +472,8 @@ class ReservationService {
 
       const tableAssignment =
         await tableAssignmentService.assignTables({
-          restaurantId:
-            completeReservation.restaurantId,
+          businessId:
+            completeReservation.businessId,
 
           guestCount:
             completeReservation.guestCount,
@@ -499,8 +499,8 @@ class ReservationService {
       const customer =
         await customerService.syncCustomer(
           {
-            restaurantId:
-              completeReservation.restaurantId,
+            businessId:
+              completeReservation.businessId,
 
             firstName:
               completeReservation.firstName,
@@ -569,8 +569,8 @@ class ReservationService {
     }
 
     return this.updateReservation(id, {
-      restaurantId:
-        reservation.restaurantId,
+      businessId:
+        reservation.businessId,
 
       firstName:
         reservation.firstName,
@@ -665,16 +665,16 @@ class ReservationService {
    * Marks a confirmed reservation as seated.
    *
    * The reservation must belong to the specified
-   * restaurant and must currently have CONFIRMED status.
+   * business and must currently have CONFIRMED status.
    */
   async seatReservation(
     reservationId,
-    restaurantId
+    businessId
   ) {
     const reservation =
-      await reservationRepository.findByIdForRestaurant(
+      await reservationRepository.findByIdForBusiness(
         reservationId,
-        restaurantId
+        businessId
       );
 
     if (!reservation) {
@@ -710,12 +710,12 @@ class ReservationService {
    */
   async completeReservation(
     reservationId,
-    restaurantId
+    businessId
   ) {
     const reservation =
-      await reservationRepository.findByIdForRestaurant(
+      await reservationRepository.findByIdForBusiness(
         reservationId,
-        restaurantId
+        businessId
       );
 
     if (!reservation) {
@@ -744,15 +744,15 @@ class ReservationService {
    * Finds upcoming reservations.
    */
   async findUpcoming(search) {
-    const restaurant =
-      await restaurantRepository.findById(
-        search.restaurantId
+    const business =
+      await businessRepository.findById(
+        search.businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
@@ -791,53 +791,53 @@ class ReservationService {
   }
 
   /**
-   * Finds upcoming reservations for a specific restaurant.
+   * Finds upcoming reservations for a specific business.
    */
-  async findUpcomingForRestaurant(
-    restaurantId
+  async findUpcomingForBusiness(
+    businessId
   ) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
-    return reservationRepository.findUpcomingForRestaurant(
-      restaurantId
+    return reservationRepository.findUpcomingForBusiness(
+      businessId
     );
   }
 
   /**
    * Finds all confirmed and seated reservations
-   * for a specific restaurant on a specific
+   * for a specific business on a specific
    * calendar day.
    */
-  async findForRestaurantByDay(
-    restaurantId,
+  async findForBusinessByDay(
+    businessId,
     date
   ) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
-    return reservationRepository.findForRestaurantByDay(
-      restaurantId,
+    return reservationRepository.findForBusinessByDay(
+      businessId,
       date,
-      restaurant.timezone
+      business.timezone
     );
   }
 
@@ -859,9 +859,9 @@ class ReservationService {
   }
 
   /**
-   * Finds a reservation by ID for a specific restaurant.
+   * Finds a reservation by ID for a specific business.
    */
-  async findByIdForRestaurant(id, restaurantId) {
+  async findByIdForBusiness(id, businessId) {
     const reservation =
       await reservationRepository.findById(id);
 
@@ -873,7 +873,7 @@ class ReservationService {
     }
 
     if (
-      reservation.restaurantId !== restaurantId
+      reservation.businessId !== businessId
     ) {
       throw new NotFoundError(
         "Reservation not found.",
@@ -886,11 +886,11 @@ class ReservationService {
 
   /**
    * Updates an existing reservation
-   * for a specific restaurant.
+   * for a specific business.
    */
-  async updateReservationForRestaurant(
+  async updateReservationForBusiness(
     id,
-    restaurantId,
+    businessId,
     reservationData
   ) {
     const existingReservation =
@@ -904,8 +904,8 @@ class ReservationService {
     }
 
     if (
-      existingReservation.restaurantId !==
-      restaurantId
+      existingReservation.businessId !==
+      businessId
     ) {
       throw new NotFoundError(
         "Reservation not found.",
@@ -917,7 +917,7 @@ class ReservationService {
       id,
       {
         ...reservationData,
-        restaurantId,
+        businessId,
       }
     );
   }
@@ -927,7 +927,7 @@ class ReservationService {
    * during a specific month.
    *
    * Aggregates confirmed reservations by local calendar date,
-   * respecting the restaurant's timezone to ensure accurate
+   * respecting the business's timezone to ensure accurate
    * month boundaries. Returns a map of YYYY-MM-DD strings to
    * reservation counts for that day.
    *
@@ -935,28 +935,28 @@ class ReservationService {
    * and booking overview displays.
    */
   async findReservationCountsForMonth(
-    restaurantId,
+    businessId,
     year,
     month
   ) {
-    const restaurant =
-      await restaurantRepository.findById(
-        restaurantId
+    const business =
+      await businessRepository.findById(
+        businessId
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     const reservations =
       await reservationRepository.findReservationCountsForMonth(
-        restaurantId,
+        businessId,
         year,
         month,
-        restaurant.timezone
+        business.timezone
       );
 
     const counts = {};
@@ -972,7 +972,7 @@ class ReservationService {
           "en-CA",
           {
             timeZone:
-              restaurant.timezone,
+              business.timezone,
             year: "numeric",
             month: "2-digit",
             day: "2-digit",

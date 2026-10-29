@@ -40,8 +40,8 @@ class AssistantController {
 
     const profile =
       await assistantService.getCallerProfile({
-        restaurantId:
-          request.headers["x-restaurant-id"],
+        businessId:
+          request.headers["x-business-id"],
         ...body,
       });
 
@@ -62,8 +62,8 @@ class AssistantController {
 
     const result =
       await assistantService.checkAvailability({
-        restaurantId:
-          request.headers["x-restaurant-id"],
+        businessId:
+          request.headers["x-business-id"],
         ...body,
       });
 
@@ -87,8 +87,8 @@ class AssistantController {
       
     const reservation =
       await assistantService.createReservation({
-        restaurantId:
-          request.headers["x-restaurant-id"],
+        businessId:
+          request.headers["x-business-id"],
         ...body,
       });
       
@@ -109,8 +109,8 @@ class AssistantController {
 
     const result =
       await assistantService.updateReservation({
-        restaurantId:
-          request.headers["x-restaurant-id"],
+        businessId:
+          request.headers["x-business-id"],
         ...body,
       });
 

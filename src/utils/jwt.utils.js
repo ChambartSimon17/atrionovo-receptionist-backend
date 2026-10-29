@@ -19,13 +19,13 @@ import env from "../config/env.js";
 
 export function createAccessToken({
   userId,
-  restaurantId,
+  businessId,
   role,
 }) {
   return jwt.sign(
     {
       userId,
-      restaurantId,
+      businessId,
       role,
     },
     env.jwtAccessSecret,

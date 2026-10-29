@@ -5,7 +5,7 @@ info:
 
 http:
   method: PUT
-  url: "{{baseUrl}}/restaurants/{{restaurantId}}/opening-hours"
+  url: "{{baseUrl}}/businesses/{{businessId}}/opening-hours"
   body:
     type: json
     data: |-

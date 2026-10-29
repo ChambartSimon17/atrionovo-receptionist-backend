@@ -1,4 +1,4 @@
-import restaurantRepository from "../restaurant/restaurant.repository.js";
+import businessRepository from "../business/business.repository.js";
 import reservationService from "../reservation/reservation.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -11,7 +11,7 @@ import {
 // ======================================================
 //
 // Responsibility
-// Handle booking operations coming from restaurant
+// Handle booking operations coming from business
 // websites.
 //
 // This service is intentionally thin.
@@ -23,39 +23,39 @@ import {
 class PublicBookingService {
 
   /**
-   * Finds a restaurant by its public slug and returns
+   * Finds a business by its public slug and returns
    * only information that is safe for the website widget.
    */
-  async getRestaurant(slug) {
-    const restaurant =
-      await restaurantRepository.findBySlug(
+  async getBusiness(slug) {
+    const business =
+      await businessRepository.findBySlug(
         slug
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
     return {
-      name: restaurant.name,
+      name: business.name,
 
-      slug: restaurant.slug,
+      slug: business.slug,
 
-      timezone: restaurant.timezone,
+      timezone: business.timezone,
 
-      language: restaurant.language,
+      language: business.language,
 
       maxReservationSize:
-        restaurant.maxReservationSize,
+        business.maxReservationSize,
 
       arrivalIntervalMinutes:
-        restaurant.arrivalIntervalMinutes,
+        business.arrivalIntervalMinutes,
 
       defaultReservationDurationMinutes:
-        restaurant.defaultReservationDurationMinutes,
+        business.defaultReservationDurationMinutes,
     };
   }
 
@@ -66,15 +66,15 @@ class PublicBookingService {
     slug,
     bookingData
   ) {
-    const restaurant =
-      await restaurantRepository.findBySlug(
+    const business =
+      await businessRepository.findBySlug(
         slug
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
@@ -82,12 +82,12 @@ class PublicBookingService {
       localDateTimeToUTC(
         bookingData.date,
         bookingData.time,
-        restaurant.timezone
+        business.timezone
       );
 
     return reservationService.checkAvailability({
-      restaurantId:
-        restaurant.id,
+      businessId:
+        business.id,
 
       guestCount:
         bookingData.guestCount,
@@ -99,22 +99,22 @@ class PublicBookingService {
   /**
    * Creates a reservation from a public website.
    *
-   * The restaurant ID is resolved server-side from
-   * the restaurant slug.
+   * The business ID is resolved server-side from
+   * the business slug.
    */
   async createReservation(
     slug,
     reservationData
   ) {
-    const restaurant =
-      await restaurantRepository.findBySlug(
+    const business =
+      await businessRepository.findBySlug(
         slug
       );
 
-    if (!restaurant) {
+    if (!business) {
       throw new NotFoundError(
-        "Restaurant not found.",
-        ErrorCodes.RESTAURANT_NOT_FOUND
+        "Business not found.",
+        ErrorCodes.BUSINESS_NOT_FOUND
       );
     }
 
@@ -122,12 +122,12 @@ class PublicBookingService {
       localDateTimeToUTC(
         reservationData.date,
         reservationData.time,
-        restaurant.timezone
+        business.timezone
       );
 
     return reservationService.createReservation({
-      restaurantId:
-        restaurant.id,
+      businessId:
+        business.id,
 
       firstName:
         reservationData.firstName,

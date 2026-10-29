@@ -34,8 +34,8 @@ class ReservationController {
 
     const result =
       await reservationService.checkAvailability({
-        restaurantId:
-          request.headers["x-restaurant-id"],
+        businessId:
+          request.headers["x-business-id"],
 
         ...body,
       });
@@ -48,9 +48,9 @@ class ReservationController {
 
   /**
    * Checks whether a reservation can be accepted
-   * for the authenticated restaurant.
+   * for the authenticated business.
    */
-  async checkAvailabilityForRestaurant(
+  async checkAvailabilityForBusiness(
     request,
     reply
   ) {
@@ -61,8 +61,8 @@ class ReservationController {
 
     const result =
       await reservationService.checkAvailability({
-        restaurantId:
-          request.user.restaurantId,
+        businessId:
+          request.user.businessId,
 
         ...body,
       });
@@ -168,14 +168,14 @@ class ReservationController {
    */
   async seatReservation(request, reply) {
     const {
-      restaurantId,
+      businessId,
       reservationId,
     } = request.params;
 
     const reservation =
       await reservationService.seatReservation(
         reservationId,
-        restaurantId
+        businessId
       );
 
     return reply.send(reservation);
@@ -186,14 +186,14 @@ class ReservationController {
    */
   async completeReservation(request, reply) {
     const {
-      restaurantId,
+      businessId,
       reservationId,
     } = request.params;
 
     const reservation =
       await reservationService.completeReservation(
         reservationId,
-        restaurantId
+        businessId
       );
 
     return reply.send(reservation);
@@ -221,15 +221,15 @@ class ReservationController {
 
   /**
    * Finds upcoming reservations for
-   * the authenticated restaurant.
+   * the authenticated business.
    */
-  async findUpcomingForRestaurant(
+  async findUpcomingForBusiness(
     request,
     reply
   ) {
     const reservations =
-      await reservationService.findUpcomingForRestaurant(
-        request.user.restaurantId
+      await reservationService.findUpcomingForBusiness(
+        request.user.businessId
       );
 
     return reply.send({
@@ -240,17 +240,17 @@ class ReservationController {
 
   /**
    * Finds all confirmed reservations for the
-   * authenticated restaurant on a specific day.
+   * authenticated business on a specific day.
    */
-  async findForRestaurantByDay(
+  async findForBusinessByDay(
     request,
     reply
   ) {
     const { date } = request.query;
 
     const reservations =
-      await reservationService.findForRestaurantByDay(
-        request.user.restaurantId,
+      await reservationService.findForBusinessByDay(
+        request.user.businessId,
         date
       );
 
@@ -261,15 +261,15 @@ class ReservationController {
   }
 
   /**
-   * Finds a reservation by ID for the authenticated restaurant.
+   * Finds a reservation by ID for the authenticated business.
    */
-  async findByIdForRestaurant(request, reply) {
+  async findByIdForBusiness(request, reply) {
     const { id } = request.params;
 
     const reservation =
-      await reservationService.findByIdForRestaurant(
+      await reservationService.findByIdForBusiness(
         id,
-        request.user.restaurantId
+        request.user.businessId
       );
 
     return reply.send({
@@ -280,9 +280,9 @@ class ReservationController {
 
   /**
    * Updates an existing reservation
-   * for the authenticated restaurant.
+   * for the authenticated business.
    */
-  async updateReservationForRestaurant(request, reply) {
+  async updateReservationForBusiness(request, reply) {
     const { id } = request.params;
 
     const reservation =
@@ -291,9 +291,9 @@ class ReservationController {
       );
 
     const updatedReservation =
-      await reservationService.updateReservationForRestaurant(
+      await reservationService.updateReservationForBusiness(
         id,
-        request.user.restaurantId,
+        request.user.businessId,
         reservation
       );
 
@@ -346,7 +346,7 @@ class ReservationController {
 
     const counts =
       await reservationService.findReservationCountsForMonth(
-        request.user.restaurantId,
+        request.user.businessId,
         parsedYear,
         parsedMonth
       );

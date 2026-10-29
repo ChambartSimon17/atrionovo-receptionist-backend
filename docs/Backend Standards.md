@@ -82,7 +82,7 @@ Examples:
 - Reservation rules
 - Capacity checks
 - Opening hour validation
-- Restaurant policies
+- Business policies
 
 The service orchestrates repositories.
 
@@ -127,12 +127,12 @@ Never validate inside repositories.
 ## Reservations
 
 - Stored as UTC DateTime values.
-- Converted to the restaurant's timezone before applying business rules.
+- Converted to the business's timezone before applying business rules.
 
 ## Opening hours
 
 - Stored as minutes since midnight.
-- Represent local restaurant time.
+- Represent local business time.
 - Never converted to UTC.
 
 ---
@@ -269,13 +269,13 @@ Relations stay on one line.
 
 Example
 
-@relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+@relation(fields: [businessId], references: [id], onDelete: Cascade)
 
 Indexes stay on one line.
 
 Example
 
-@@index([restaurantId], map: "idx_restaurant")
+@@index([businessId], map: "idx_business")
 
 Reason:
 
@@ -374,7 +374,7 @@ Small improvements compound over time.
 
 Prefer this
 
-if (!restaurant) {
+if (!business) {
 throw new NotFoundError(...);
 }
 

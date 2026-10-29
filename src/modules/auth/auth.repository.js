@@ -13,16 +13,16 @@ import prisma from "../../db/prisma.js";
 
 class AuthRepository {
   /**
-   * Finds a user by email within a restaurant.
+   * Finds a user by email within a business.
    */
   async findUserByEmail({
-    restaurantId,
+    businessId,
     email,
   }) {
     return prisma.user.findUnique({
       where: {
-        restaurantId_email: {
-          restaurantId,
+        businessId_email: {
+          businessId,
           email,
         },
       },
@@ -38,16 +38,16 @@ class AuthRepository {
         id,
       },
       include: {
-        restaurant: true,
+        business: true,
       },
     });
   }
 
   /**
-   * Finds a restaurant by slug.
+   * Finds a business by slug.
    */
-  async findRestaurantBySlug(slug) {
-    return prisma.restaurant.findUnique({
+  async findBusinessBySlug(slug) {
+    return prisma.business.findUnique({
       where: {
         slug,
       },
@@ -55,21 +55,21 @@ class AuthRepository {
   }
 
   /**
-   * Creates a restaurant and its owner account
+   * Creates a business and its owner account
    * in a single database transaction.
    */
-  async createRestaurantWithOwner({
-    restaurant,
+  async createBusinessWithOwner({
+    business,
     user,
   }) {
     return prisma.$transaction(
       async (transaction) => {
-        const createdRestaurant =
-          await transaction.restaurant.create({
+        const createdBusiness =
+          await transaction.business.create({
             data: {
-              name: restaurant.name,
-              slug: restaurant.slug,
-              countryCode: restaurant.countryCode,
+              name: business.name,
+              slug: business.slug,
+              countryCode: business.countryCode,
             },
           });
 
@@ -77,13 +77,13 @@ class AuthRepository {
           await transaction.user.create({
             data: {
               ...user,
-              restaurantId:
-                createdRestaurant.id,
+              businessId:
+                createdBusiness.id,
             },
           });
 
         return {
-          restaurant: createdRestaurant,
+          business: createdBusiness,
           user: createdUser,
         };
       }
@@ -99,7 +99,7 @@ class AuthRepository {
         email,
       },
       include: {
-        restaurant: true,
+        business: true,
       },
     });
   }

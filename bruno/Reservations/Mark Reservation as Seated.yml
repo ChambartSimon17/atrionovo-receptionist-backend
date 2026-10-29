@@ -5,12 +5,12 @@ info:
 
 http:
   method: PATCH
-  url: "{{baseUrl}}/reservations/{{restaurantId}}/cmu70sh6a0001s0i2y9wtnr40/seat"
+  url: "{{baseUrl}}/reservations/{{businessId}}/cmu70sh6a0001s0i2y9wtnr40/seat"
   auth: inherit
 
 runtime:
   variables:
-    - name: restaurantId
+    - name: businessId
       value: cmsx40oy30000s01nzviohyxu
 
 settings:

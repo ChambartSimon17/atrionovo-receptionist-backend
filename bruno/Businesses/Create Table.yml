@@ -1,0 +1,34 @@
+info:
+  name: Create Table
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses/{{businessId}}/tables"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "T10",
+        "capacity": 4,
+        "shape": "ROUND",
+        "x": 250,
+        "y": 150,
+        "width": 100,
+        "height": 100,
+        "rotation": 0
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: cmsx40oy30000s01nzviohyxu
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -16,7 +16,7 @@ import {
 // On success:
 // request.user = {
 //   userId,
-//   restaurantId,
+//   businessId,
 //   role,
 // }
 //
@@ -65,8 +65,8 @@ export async function authenticate(
 
     request.user = {
       userId: payload.userId,
-      restaurantId:
-        payload.restaurantId,
+      businessId:
+        payload.businessId,
       role: payload.role,
     };
   } catch (error) {
