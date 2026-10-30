@@ -1,0 +1,29 @@
+info:
+  name: Update Massage Service
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/businesses/{{businessId}}/massage-services/{{serviceId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "priceCents": 6000
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+    - name: serviceId
+      value: REPLACE_WITH_SERVICE_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -23,6 +23,12 @@ export const registerSchema = z.object({
     .string()
     .length(2),
 
+  // A business is exactly one type. Clients that do not
+  // send it (older app builds) register a restaurant.
+  businessType: z
+    .enum(["RESTAURANT", "MASSAGE"])
+    .default("RESTAURANT"),
+
   firstName: z
     .string()
     .trim()

@@ -1,0 +1,29 @@
+info:
+  name: Register Massage Business
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "businessName": "Test Massage Studio",
+        "businessType": "MASSAGE",
+        "slug": "test-massage-studio",
+        "countryCode": "BE",
+        "firstName": "Test",
+        "lastName": "Owner",
+        "email": "owner@test-massage.example",
+        "password": "testpassword123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

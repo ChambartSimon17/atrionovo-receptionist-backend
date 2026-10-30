@@ -11,6 +11,8 @@ import specialOpeningDayRoutes from "./modules/business/special-opening-days/spe
 
 import tableRoutes from "./modules/business/table/table.routes.js";
 
+import massageServiceRoutes from "./modules/massage-service/massage-service.routes.js";
+
 import customerRoutes from "./modules/customer/customer.routes.js";
 
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
@@ -74,6 +76,10 @@ app.register(specialOpeningDayRoutes, {
 });
 
 app.register(tableRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(massageServiceRoutes, {
   prefix: "/businesses",
 });
 

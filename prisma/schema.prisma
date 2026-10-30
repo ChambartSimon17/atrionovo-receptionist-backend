@@ -85,6 +85,22 @@ enum TableShape {
   RECTANGLE
 }
 
+// ------------------------------------------------------
+// Business types
+// ------------------------------------------------------
+// A business is exactly one type and the type never
+// changes after registration. The type decides which
+// dashboard the app shows and which features exist.
+//
+// RESTAURANT - Tables, party size, dining reservations.
+// MASSAGE    - Massage services, therapists, treatment rooms.
+// ------------------------------------------------------
+
+enum BusinessType {
+  RESTAURANT
+  MASSAGE
+}
+
 // ======================================================
 // USER DOMAIN
 // ======================================================
@@ -155,6 +171,9 @@ model Business {
   slug        String @unique
   countryCode String
 
+  // Fixed at registration. Existing rows are restaurants.
+  businessType BusinessType @default(RESTAURANT)
+
   // -------------------------
   // Business Configuration
   // -------------------------
@@ -187,6 +206,7 @@ model Business {
   customers          Customer[]
   users              User[]
   tables             Table[]
+  massageServices    MassageService[]
 
   // -------------------------
   // Metadata
@@ -645,4 +665,62 @@ model ReservationTable {
 
   @@id([reservationId, tableId])
   @@index([tableId])
+}
+
+// ======================================================
+// MASSAGE DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// MassageService
+// ------------------------------------------------------
+// A massage a customer can book at a MASSAGE business,
+// for example "Relaxation massage, 60 minutes, 55.00".
+//
+// Prices are stored in cents to avoid rounding errors.
+// Services are deactivated instead of deleted, so
+// existing appointments keep pointing to them.
+// ------------------------------------------------------
+
+model MassageService {
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Business Relationship
+  // -------------------------
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Service Information
+  // -------------------------
+
+  name        String
+  description String?
+
+  durationMinutes Int
+
+  priceCents Int
+  currency   String @default("EUR")
+
+  isActive Boolean @default(true)
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@unique([businessId, name])
 }

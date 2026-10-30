@@ -35,4 +35,14 @@ export const ErrorCodes = {
   // Table
   TABLE_NOT_FOUND:
     "TABLE_NOT_FOUND",
+
+  // Business type
+  WRONG_BUSINESS_TYPE:
+    "WRONG_BUSINESS_TYPE",
+
+  // Massage service
+  MASSAGE_SERVICE_NOT_FOUND:
+    "MASSAGE_SERVICE_NOT_FOUND",
+  MASSAGE_SERVICE_ALREADY_EXISTS:
+    "MASSAGE_SERVICE_ALREADY_EXISTS",
 };

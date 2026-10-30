@@ -70,6 +70,7 @@ class AuthRepository {
               name: business.name,
               slug: business.slug,
               countryCode: business.countryCode,
+              businessType: business.businessType,
             },
           });
 

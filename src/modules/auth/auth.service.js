@@ -33,6 +33,7 @@ class AuthService {
     businessName,
     slug,
     countryCode,
+    businessType,
     firstName,
     lastName,
     email,
@@ -65,6 +66,7 @@ class AuthService {
           name: businessName.trim(),
           slug: normalizedSlug,
           countryCode: countryCode.trim().toUpperCase(),
+          businessType,
         },
 
         user: {
@@ -106,6 +108,7 @@ class AuthService {
         id: result.business.id,
         name: result.business.name,
         slug: result.business.slug,
+        businessType: result.business.businessType,
       },
     };
   }
@@ -185,6 +188,7 @@ class AuthService {
         id: user.business.id,
         name: user.business.name,
         slug: user.business.slug,
+        businessType: user.business.businessType,
       },
     };
   }
@@ -269,6 +273,7 @@ class AuthService {
         id: user.business.id,
         name: user.business.name,
         slug: user.business.slug,
+        businessType: user.business.businessType,
       },
     };
   }
