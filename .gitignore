@@ -4,3 +4,4 @@ dist
 coverage
 .vscode/settings.json
 /src/generated/prisma
+.DS_Store
