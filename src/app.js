@@ -17,6 +17,8 @@ import therapistRoutes from "./modules/therapist/therapist.routes.js";
 
 import treatmentRoomRoutes from "./modules/treatment-room/treatment-room.routes.js";
 
+import massageAppointmentRoutes from "./modules/massage-appointment/massage-appointment.routes.js";
+
 import customerRoutes from "./modules/customer/customer.routes.js";
 
 import reservationRoutes from "./modules/reservation/reservation.routes.js";
@@ -92,6 +94,10 @@ app.register(therapistRoutes, {
 });
 
 app.register(treatmentRoomRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(massageAppointmentRoutes, {
   prefix: "/businesses",
 });
 

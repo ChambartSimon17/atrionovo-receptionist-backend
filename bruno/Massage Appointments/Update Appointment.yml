@@ -1,0 +1,29 @@
+info:
+  name: Update Appointment
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/businesses/{{businessId}}/appointments/{{appointmentId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "COMPLETED"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+    - name: appointmentId
+      value: REPLACE_WITH_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -101,6 +101,26 @@ enum BusinessType {
   MASSAGE
 }
 
+// ------------------------------------------------------
+// Appointment lifecycle (massage)
+// ------------------------------------------------------
+//
+// CONFIRMED - Appointment is accepted.
+// COMPLETED - The massage took place.
+// CANCELLED - Appointment was cancelled.
+// NO_SHOW   - The customer never arrived.
+//
+// Only CONFIRMED and COMPLETED appointments occupy their
+// therapist and room.
+// ------------------------------------------------------
+
+enum AppointmentStatus {
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 // ======================================================
 // USER DOMAIN
 // ======================================================
@@ -214,6 +234,7 @@ model Business {
   massageServices    MassageService[]
   therapists         Therapist[]
   treatmentRooms     TreatmentRoom[]
+  appointments       Appointment[]
 
   // -------------------------
   // Metadata
@@ -272,6 +293,7 @@ model Customer {
   // -------------------------
 
   reservations Reservation[]
+  appointments  Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -728,6 +750,8 @@ model MassageService {
   therapistLinks TherapistMassageService[]
   roomLinks      RoomMassageService[]
 
+  appointments Appointment[]
+
   // -------------------------
   // Metadata
   // -------------------------
@@ -769,6 +793,8 @@ model Therapist {
 
   // Weekly working hours (several periods per day allowed).
   workingHours TherapistWorkingHour[]
+
+  appointments Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -838,6 +864,8 @@ model TreatmentRoom {
   // Massages that can be performed in this room.
   services RoomMassageService[]
 
+  appointments Appointment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -854,5 +882,99 @@ model RoomMassageService {
   massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Cascade)
 
   @@id([roomId, massageServiceId])
+  @@index([massageServiceId])
+}
+
+// ------------------------------------------------------
+// Appointment
+// ------------------------------------------------------
+// A booked massage at a MASSAGE business.
+//
+// The system assigns a therapist and a room when the
+// appointment is made; customers do not choose them.
+//
+// Customer details, massage name, duration and price are
+// copied onto the appointment (snapshot), so later changes
+// to the customer or the massage do not alter history.
+//
+// Therapists, rooms and massages cannot be deleted while
+// appointments use them (they are deactivated instead).
+// ------------------------------------------------------
+
+model Appointment {
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Business Relationship
+  // -------------------------
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Customer
+  // -------------------------
+
+  customerId String?
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  firstName String
+  lastName  String
+
+  phoneNumber String
+  email       String?
+
+  // -------------------------
+  // Massage (snapshot)
+  // -------------------------
+
+  massageServiceId String
+
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Restrict)
+
+  serviceName     String
+  durationMinutes Int
+  priceCents      Int
+
+  // -------------------------
+  // Assigned resources
+  // -------------------------
+
+  therapistId String
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Restrict)
+
+  roomId String
+
+  room TreatmentRoom @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  // -------------------------
+  // Time and status
+  // -------------------------
+
+  startTime DateTime
+  endTime   DateTime
+
+  status AppointmentStatus @default(CONFIRMED)
+
+  notes String?
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([businessId, startTime])
+  @@index([therapistId, startTime])
+  @@index([roomId, startTime])
+  @@index([customerId])
   @@index([massageServiceId])
 }
