@@ -88,6 +88,26 @@ class MassageAppointmentRepository {
     });
   }
 
+  /**
+   * Number of future confirmed appointments of a phone
+   * number (normalized) at the business. Used to limit
+   * bookings made through the public widget.
+   */
+  async countUpcomingByPhone(
+    businessId,
+    phoneNumber,
+    from
+  ) {
+    return prisma.appointment.count({
+      where: {
+        businessId,
+        phoneNumber,
+        status: "CONFIRMED",
+        startTime: { gt: from },
+      },
+    });
+  }
+
   async findAllInRange(
     businessId,
     rangeStart,

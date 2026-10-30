@@ -44,6 +44,9 @@ class PublicBookingService {
 
       slug: business.slug,
 
+      // Lets the widget show the right booking flow.
+      businessType: business.businessType,
+
       timezone: business.timezone,
 
       language: business.language,

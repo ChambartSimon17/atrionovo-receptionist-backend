@@ -54,4 +54,29 @@ export default async function publicBookingRoutes(
       publicBookingController
     )
   );
+
+  // ----------------------------------------------------
+  // Massage businesses
+  // ----------------------------------------------------
+
+  fastify.get(
+    "/:slug/massage-services",
+    publicBookingController.getMassageServices.bind(
+      publicBookingController
+    )
+  );
+
+  fastify.get(
+    "/:slug/massage-availability",
+    publicBookingController.getMassageAvailability.bind(
+      publicBookingController
+    )
+  );
+
+  fastify.post(
+    "/:slug/massage-appointments",
+    publicBookingController.createMassageAppointment.bind(
+      publicBookingController
+    )
+  );
 }

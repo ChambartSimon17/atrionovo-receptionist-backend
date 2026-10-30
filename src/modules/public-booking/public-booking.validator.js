@@ -75,3 +75,16 @@ export const publicReservationSchema = z.object({
     .string()
     .optional(),
 });
+
+// ======================================================
+// Massage businesses
+// ======================================================
+//
+// The same rules as the dashboard, without the business id
+// (it comes from the slug in the URL).
+// ======================================================
+
+export {
+  availabilityQuerySchema as publicMassageAvailabilitySchema,
+  createAppointmentSchema as publicMassageAppointmentSchema,
+} from "../massage-appointment/massage-appointment.validator.js";
