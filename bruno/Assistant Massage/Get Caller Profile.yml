@@ -1,0 +1,24 @@
+info:
+  name: Get Caller Profile
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/caller-profile"
+  headers:
+    - name: x-business-id
+      value: PUT-MASSAGE-BUSINESS-ID-HERE
+  body:
+    type: json
+    data: |-
+      {
+        "phoneNumber": "+32470123456"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,29 @@
+info:
+  name: Create Appointment
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/create-appointment"
+  headers:
+    - name: x-business-id
+      value: PUT-MASSAGE-BUSINESS-ID-HERE
+  body:
+    type: json
+    data: |-
+      {
+        "massageServiceId": "PUT-SERVICE-ID-HERE",
+        "startTime": "2026-11-03T14:00:00",
+        "firstName": "Simon",
+        "lastName": "Chambart",
+        "phoneNumber": "+32470123456",
+        "notes": "Last in de nek"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

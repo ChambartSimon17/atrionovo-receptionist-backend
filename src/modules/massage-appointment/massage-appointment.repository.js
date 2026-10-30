@@ -108,6 +108,27 @@ class MassageAppointmentRepository {
     });
   }
 
+  /**
+   * Future confirmed appointments of a phone number
+   * (normalized), soonest first.
+   */
+  async findUpcomingByPhone(
+    businessId,
+    phoneNumber,
+    from
+  ) {
+    return prisma.appointment.findMany({
+      where: {
+        businessId,
+        phoneNumber,
+        status: "CONFIRMED",
+        startTime: { gt: from },
+      },
+      include: LIST_INCLUDE,
+      orderBy: { startTime: "asc" },
+    });
+  }
+
   async findAllInRange(
     businessId,
     rangeStart,
@@ -126,8 +147,8 @@ class MassageAppointmentRepository {
     });
   }
 
-  async findById(id, businessId) {
-    return prisma.appointment.findFirst({
+  async findById(id, businessId, db = prisma) {
+    return db.appointment.findFirst({
       where: { id, businessId },
       include: LIST_INCLUDE,
     });
@@ -140,8 +161,8 @@ class MassageAppointmentRepository {
     });
   }
 
-  async update(id, data) {
-    return prisma.appointment.update({
+  async update(id, data, db = prisma) {
+    return db.appointment.update({
       where: { id },
       data,
       include: LIST_INCLUDE,

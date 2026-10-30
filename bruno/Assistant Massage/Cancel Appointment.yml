@@ -1,0 +1,25 @@
+info:
+  name: Cancel Appointment
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/cancel-appointment"
+  headers:
+    - name: x-business-id
+      value: PUT-MASSAGE-BUSINESS-ID-HERE
+  body:
+    type: json
+    data: |-
+      {
+        "appointmentId": "PUT-APPOINTMENT-ID-HERE",
+        "phoneNumber": "+32470123456"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

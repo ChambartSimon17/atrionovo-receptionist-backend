@@ -191,6 +191,96 @@ class MassageAppointmentService {
     return toDto(updated);
   }
 
+  /**
+   * Moves a confirmed appointment to another start time.
+   *
+   * The same rules as a new booking apply: the new time must
+   * be free for a therapist and a room. The appointment's
+   * own old time does not block the new one. The massage,
+   * duration and price stay as they were booked; the
+   * therapist and room are chosen again.
+   */
+  async reschedule(businessId, appointmentId, startTimeInput) {
+    const business = await this.#getBusiness(businessId);
+
+    const startTime = new Date(startTimeInput);
+
+    const updated = await runTransaction(async (tx) => {
+      const appointment =
+        await massageAppointmentRepository.findById(
+          appointmentId,
+          businessId,
+          tx
+        );
+
+      if (!appointment) {
+        throw new NotFoundError(
+          "Appointment not found.",
+          ErrorCodes.APPOINTMENT_NOT_FOUND
+        );
+      }
+
+      if (appointment.status !== "CONFIRMED") {
+        throw new ValidationError(
+          "Only a confirmed appointment can be moved.",
+          ErrorCodes.APPOINTMENT_NOT_CONFIRMED
+        );
+      }
+
+      const service =
+        await massageAvailabilityService.getBookableService(
+          businessId,
+          appointment.massageServiceId
+        );
+
+      const date = localDateOf(
+        startTime,
+        business.timezone
+      );
+
+      const slots =
+        await massageAvailabilityService.computeSlots({
+          business,
+          service: {
+            ...service,
+            // The duration the customer booked.
+            durationMinutes: appointment.durationMinutes,
+          },
+          date,
+          db: tx,
+          excludeAppointmentId: appointment.id,
+        });
+
+      const slot = slots.find(
+        (candidate) =>
+          candidate.startMs === startTime.getTime()
+      );
+
+      if (!slot) {
+        throw new ConflictError(
+          "This time is not available.",
+          ErrorCodes.APPOINTMENT_NOT_AVAILABLE
+        );
+      }
+
+      return massageAppointmentRepository.update(
+        appointment.id,
+        {
+          therapistId: slot.therapist.id,
+          roomId: slot.room.id,
+          startTime,
+          endTime: new Date(
+            startTime.getTime() +
+              appointment.durationMinutes * 60_000
+          ),
+        },
+        tx
+      );
+    });
+
+    return toDto(updated);
+  }
+
   async #getBusiness(businessId) {
     const business =
       await businessRepository.findById(businessId);

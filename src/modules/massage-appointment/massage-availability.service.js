@@ -67,12 +67,17 @@ class MassageAvailabilityService {
    * when the result is used to create an appointment, so
    * the appointments read here are protected from
    * concurrent bookings.
+   *
+   * excludeAppointmentId leaves one appointment out of the
+   * calculation. Used when moving an appointment, so its
+   * own old time does not block the new one.
    */
   async computeSlots({
     business,
     service,
     date,
     db,
+    excludeAppointmentId,
     nowMs = Date.now(),
   }) {
     const timezone = business.timezone;
@@ -136,7 +141,12 @@ class MassageAvailabilityService {
         db
       );
 
-    const appointments = existing.map((appointment) => ({
+    const appointments = existing
+      .filter(
+        (appointment) =>
+          appointment.id !== excludeAppointmentId
+      )
+      .map((appointment) => ({
       therapistId: appointment.therapistId,
       roomId: appointment.roomId,
       startMs: appointment.startTime.getTime(),
