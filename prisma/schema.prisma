@@ -193,6 +193,11 @@ model Business {
 
   arrivalIntervalMinutes Int @default(15)
 
+  // MASSAGE businesses: minutes blocked for the therapist
+  // and the room after every appointment (cleaning, rest).
+
+  appointmentBufferMinutes Int @default(0)
+
   timezone String @default("Europe/Brussels")
   language String @default("nl")
 
@@ -207,6 +212,8 @@ model Business {
   users              User[]
   tables             Table[]
   massageServices    MassageService[]
+  therapists         Therapist[]
+  treatmentRooms     TreatmentRoom[]
 
   // -------------------------
   // Metadata
@@ -712,6 +719,16 @@ model MassageService {
   isActive Boolean @default(true)
 
   // -------------------------
+  // Who and where
+  // -------------------------
+  //
+  // Which therapists can perform this massage and in
+  // which treatment rooms it can take place.
+
+  therapistLinks TherapistMassageService[]
+  roomLinks      RoomMassageService[]
+
+  // -------------------------
   // Metadata
   // -------------------------
 
@@ -723,4 +740,119 @@ model MassageService {
   // -------------------------
 
   @@unique([businessId, name])
+}
+
+// ------------------------------------------------------
+// Therapist
+// ------------------------------------------------------
+// A massage therapist working for a MASSAGE business.
+//
+// Customers cannot choose a therapist. The system picks
+// a free therapist who can perform the chosen massage.
+//
+// Deactivated instead of deleted, so that existing
+// appointments keep their therapist.
+// ------------------------------------------------------
+
+model Therapist {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  // Massages this therapist can perform.
+  services TherapistMassageService[]
+
+  // Weekly working hours (several periods per day allowed).
+  workingHours TherapistWorkingHour[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+}
+
+// Which massages a therapist can perform.
+
+model TherapistMassageService {
+  therapistId      String
+  massageServiceId String
+
+  therapist      Therapist      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Cascade)
+
+  @@id([therapistId, massageServiceId])
+  @@index([massageServiceId])
+}
+
+// ------------------------------------------------------
+// TherapistWorkingHour
+// ------------------------------------------------------
+// One working period of a therapist on a weekday.
+// Times are minutes after midnight (09:00 -> 540), like
+// OpeningHour. Periods of one day may not overlap.
+// ------------------------------------------------------
+
+model TherapistWorkingHour {
+  id String @id @default(cuid())
+
+  therapistId String
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  dayOfWeek DayOfWeek
+
+  startMinutes Int
+  endMinutes   Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([therapistId, dayOfWeek])
+}
+
+// ------------------------------------------------------
+// TreatmentRoom
+// ------------------------------------------------------
+// A room where massages take place. Each room lists the
+// massages that can be performed in it.
+//
+// Two appointments can only run at the same time when
+// they are in different rooms.
+// ------------------------------------------------------
+
+model TreatmentRoom {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  // Massages that can be performed in this room.
+  services RoomMassageService[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+}
+
+// Which massages can be performed in a room.
+
+model RoomMassageService {
+  roomId           String
+  massageServiceId String
+
+  room           TreatmentRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, massageServiceId])
+  @@index([massageServiceId])
 }

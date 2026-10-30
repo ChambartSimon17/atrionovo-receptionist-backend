@@ -43,6 +43,25 @@ class MassageServiceRepository {
     });
   }
 
+  /**
+   * Retrieves the services with the given ids that belong
+   * to the business. Ids of other businesses are ignored,
+   * so callers can compare the counts to detect them.
+   */
+  async findManyByIds(businessId, ids) {
+    return prisma.massageService.findMany({
+      where: {
+        businessId,
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
   async findByName(businessId, name) {
     return prisma.massageService.findUnique({
       where: {

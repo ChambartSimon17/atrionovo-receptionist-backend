@@ -1,0 +1,23 @@
+info:
+  name: Deactivate Treatment Room
+  type: http
+  seq: 4
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/businesses/{{businessId}}/treatment-rooms/{{roomId}}"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+    - name: roomId
+      value: REPLACE_WITH_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

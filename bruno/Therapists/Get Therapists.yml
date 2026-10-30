@@ -1,0 +1,21 @@
+info:
+  name: Get Therapists
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/businesses/{{businessId}}/therapists"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
