@@ -13,20 +13,20 @@ Voor ELKE tool hieronder geldt:
 
 | Tool-naam            | URL                                   | Parameters (door de AI ingevuld)                                  |
 |----------------------|---------------------------------------|-------------------------------------------------------------------|
-| getCallerProfile     | `/assistant/massage/caller-profile`   | geen                                                              |
-| getServices          | `/assistant/massage/services`         | geen                                                              |
-| checkAvailability    | `/assistant/massage/check-availability` | `massageServiceId` (string), `date` (string, YYYY-MM-DD), `time` (string, HH:mm, optioneel) |
-| createAppointment    | `/assistant/massage/create-appointment` | `massageServiceId` (string), `startTime` (string, YYYY-MM-DDTHH:mm:00), `firstName` (string), `lastName` (string), `notes` (string, optioneel) |
-| rescheduleAppointment| `/assistant/massage/reschedule-appointment` | `appointmentId` (string), `startTime` (string, YYYY-MM-DDTHH:mm:00) |
-| cancelAppointment    | `/assistant/massage/cancel-appointment` | `appointmentId` (string)                                          |
+| Massage_getCallerProfile     | `/assistant/massage/caller-profile`   | geen                                                              |
+| Massage_getServices          | `/assistant/massage/services`         | geen                                                              |
+| Massage_checkAvailability    | `/assistant/massage/check-availability` | `massageServiceId` (string), `date` (string, YYYY-MM-DD), `time` (string, HH:mm, optioneel) |
+| Massage_createAppointment    | `/assistant/massage/create-appointment` | `massageServiceId` (string), `startTime` (string, YYYY-MM-DDTHH:mm:00), `firstName` (string), `lastName` (string), `notes` (string, optioneel) |
+| Massage_rescheduleAppointment| `/assistant/massage/reschedule-appointment` | `appointmentId` (string), `startTime` (string, YYYY-MM-DDTHH:mm:00) |
+| Massage_cancelAppointment    | `/assistant/massage/cancel-appointment` | `appointmentId` (string)                                          |
 
 `send_text_tool` en `end_call_tool` kan je ongewijzigd hergebruiken.
 
 Beschrijvingen die je in Vapi per parameter kan invullen:
 
-- `massageServiceId`: "Het id van de gekozen massage, uit het resultaat van getServices."
+- `massageServiceId`: "Het id van de gekozen massage, uit het resultaat van Massage_getServices."
 - `date`: "De gewenste dag in het formaat YYYY-MM-DD."
 - `time`: "De gewenste tijd in 24 uur, HH:mm. Laat leeg als de klant nog geen tijd koos."
 - `startTime`: "Lokaal begin van de afspraak, YYYY-MM-DDTHH:mm:00, zonder tijdzone."
-- `appointmentId`: "Het id van de afspraak, uit upcomingAppointments van getCallerProfile."
+- `appointmentId`: "Het id van de afspraak, uit upcomingAppointments van Massage_getCallerProfile."
 - `notes`: "Optionele opmerking van de klant voor de masseur."
