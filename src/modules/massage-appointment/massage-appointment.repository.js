@@ -147,6 +147,29 @@ class MassageAppointmentRepository {
     });
   }
 
+  /**
+   * Start times of the appointments that count on the
+   * calendar (confirmed and completed) in
+   * [rangeStart, rangeEnd).
+   */
+  async findStartTimesInRange(
+    businessId,
+    rangeStart,
+    rangeEnd
+  ) {
+    return prisma.appointment.findMany({
+      where: {
+        businessId,
+        status: { in: OCCUPYING_STATUSES },
+        startTime: {
+          gte: rangeStart,
+          lt: rangeEnd,
+        },
+      },
+      select: { startTime: true },
+    });
+  }
+
   async findById(id, businessId, db = prisma) {
     return db.appointment.findFirst({
       where: { id, businessId },

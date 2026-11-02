@@ -141,6 +141,22 @@ class CustomerRepository {
             startTime: "desc",
           },
         },
+
+        // Massage appointments (empty for restaurants).
+        appointments: {
+          orderBy: {
+            startTime: "desc",
+          },
+          select: {
+            id: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            serviceName: true,
+            durationMinutes: true,
+            priceCents: true,
+          },
+        },
       },
     });
   }
