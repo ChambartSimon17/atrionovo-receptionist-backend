@@ -8,18 +8,18 @@ http:
   url: "{{baseUrl}}/assistant/massage/cancel-appointment"
   headers:
     - name: x-business-id
-      value: PUT-MASSAGE-BUSINESS-ID-HERE
+      value: cmvv1fygo0006s08f5vgsgid9
   body:
     type: json
     data: |-
       {
-        "appointmentId": "PUT-APPOINTMENT-ID-HERE",
-        "phoneNumber": "+32470123456"
+        "appointmentId": "cmvv3s84z0003s0zltx9z22xo",
+        "phoneNumber": "+32479427465"
       }
-  auth: none
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

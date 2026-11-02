@@ -8,17 +8,17 @@ http:
   url: "{{baseUrl}}/assistant/massage/caller-profile"
   headers:
     - name: x-business-id
-      value: PUT-MASSAGE-BUSINESS-ID-HERE
+      value: cmvv1fygo0006s08f5vgsgid9
   body:
     type: json
     data: |-
       {
-        "phoneNumber": "+32470123456"
+        "phoneNumber": "+32470235145"
       }
-  auth: none
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

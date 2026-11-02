@@ -8,22 +8,22 @@ http:
   url: "{{baseUrl}}/assistant/massage/create-appointment"
   headers:
     - name: x-business-id
-      value: PUT-MASSAGE-BUSINESS-ID-HERE
+      value: cmvv1fygo0006s08f5vgsgid9
   body:
     type: json
     data: |-
       {
-        "massageServiceId": "PUT-SERVICE-ID-HERE",
+        "massageServiceId": "cmvv1honi000bs08frt7tey8h",
         "startTime": "2026-11-03T14:00:00",
         "firstName": "Simon",
         "lastName": "Chambart",
         "phoneNumber": "+32470123456",
         "notes": "Last in de nek"
       }
-  auth: none
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
