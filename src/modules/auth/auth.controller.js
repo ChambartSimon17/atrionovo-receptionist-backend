@@ -22,7 +22,7 @@ import {
 
 class AuthController {
   /**
-   * Registers a new restaurant and owner account.
+   * Registers a new business and owner account.
    */
   async register(request, reply) {
     const body =

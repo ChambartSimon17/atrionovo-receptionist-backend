@@ -1,0 +1,33 @@
+info:
+  name: Create Appointment
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses/{{businessId}}/appointments"
+  body:
+    type: json
+    data: |-
+      {
+        "massageServiceId": "REPLACE_WITH_SERVICE_ID",
+        "startTime": "2026-11-02T09:00:00.000Z",
+        "firstName": "Test",
+        "lastName": "Customer",
+        "phoneNumber": "0470123456",
+        "email": "customer@example.com",
+        "notes": "Prefers Anna if possible."
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

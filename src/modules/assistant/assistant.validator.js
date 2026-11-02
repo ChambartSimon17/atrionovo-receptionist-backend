@@ -19,7 +19,7 @@ export const checkAvailabilitySchema =
       .string()
       .regex(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-        "Start time must be a restaurant-local datetime."
+        "Start time must be a business-local datetime."
       ),
   });
 
@@ -47,7 +47,7 @@ export const createReservationSchema =
       .string()
       .regex(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-        "Start time must be a restaurant-local datetime."
+        "Start time must be a business-local datetime."
       ),
 
     notes: z.string().optional(),
@@ -70,7 +70,7 @@ export const updateReservationSchema =
       .string()
       .regex(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-        "Start time must be a restaurant-local datetime."
+        "Start time must be a business-local datetime."
       ),
   });
 

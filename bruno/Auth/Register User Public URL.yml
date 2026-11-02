@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "restaurantName": "Refter2",
+        "businessName": "Refter2",
         "slug": "refter2",
         "countryCode": "BE",
         "firstName": "Louis",

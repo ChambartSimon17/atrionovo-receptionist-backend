@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createReservationSchema = z.object({
-  restaurantId: z.string().min(1),
+  businessId: z.string().min(1),
 
   firstName: z.string().min(1),
 
@@ -30,7 +30,7 @@ export const checkAvailabilitySchema = z.object({
 
 export const findUpcomingReservationsSchema = z
   .object({
-    restaurantId: z.string().min(1),
+    businessId: z.string().min(1),
 
     phoneNumber: z.string().optional(),
 
@@ -50,7 +50,7 @@ export const findUpcomingReservationsSchema = z
   );
 
   export const updateReservationSchema = z.object({
-  restaurantId: z.string().min(1),
+  businessId: z.string().min(1),
 
   firstName: z.string().min(1),
 

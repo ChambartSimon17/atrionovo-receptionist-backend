@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/restaurants/{{restaurantId}}/special-opening-days"
+  url: "{{baseUrl}}/businesses/{{businessId}}/special-opening-days"
   body:
     type: json
     data: |-

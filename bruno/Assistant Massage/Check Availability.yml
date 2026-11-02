@@ -1,0 +1,26 @@
+info:
+  name: Check Availability
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/check-availability"
+  headers:
+    - name: x-business-id
+      value: cmvv1fygo0006s08f5vgsgid9
+  body:
+    type: json
+    data: |-
+      {
+        "massageServiceId": "cmvv1honi000bs08frt7tey8h",
+        "date": "2026-11-02",
+        "time": "19:00"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

@@ -10,20 +10,20 @@ http:
     type: json
     data: |-
       {
-        "restaurantId": "{{restaurantId}}",
+        "businessId": "{{businessId}}",
         "firstName": "Rollback",
         "lastName": "Test",
         "phoneNumber": "+32470999999",
         "email": "rollback@test.com",
         "guestCount": 2,
-        "startTime": "2026-09-21T16:15:00.000Z",
+        "startTime": "2026-11-03T16:15:00.000Z",
         "notes": "test transaction"
       }
   auth: inherit
 
 runtime:
   variables:
-    - name: restaurantId
+    - name: businessId
       value: cmsx40oy30000s01nzviohyxu
   scripts:
     - type: tests

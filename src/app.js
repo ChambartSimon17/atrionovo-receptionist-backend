@@ -3,13 +3,21 @@ import cors from "@fastify/cors";
 
 import healthRoutes from "./system/health.routes.js";
 
-import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
+import businessRoutes from "./modules/business/business.routes.js";
 
-import openingHourRoutes from "./modules/restaurant/opening-hours/opening-hour.routes.js";
+import openingHourRoutes from "./modules/business/opening-hours/opening-hour.routes.js";
 
-import specialOpeningDayRoutes from "./modules/restaurant/special-opening-days/special-opening-day.routes.js";
+import specialOpeningDayRoutes from "./modules/business/special-opening-days/special-opening-day.routes.js";
 
-import tableRoutes from "./modules/restaurant/table/table.routes.js";
+import tableRoutes from "./modules/business/table/table.routes.js";
+
+import massageServiceRoutes from "./modules/massage-service/massage-service.routes.js";
+
+import therapistRoutes from "./modules/therapist/therapist.routes.js";
+
+import treatmentRoomRoutes from "./modules/treatment-room/treatment-room.routes.js";
+
+import massageAppointmentRoutes from "./modules/massage-appointment/massage-appointment.routes.js";
 
 import customerRoutes from "./modules/customer/customer.routes.js";
 
@@ -24,6 +32,11 @@ import authRoutes from "./modules/auth/auth.routes.js";
 
 import errorHandler from "./middleware/error.middleware.js";
 
+import {
+  LEGACY_RESTAURANT_ROUTE_PREFIX,
+  registerLegacyRestaurantCompat,
+} from "./middleware/legacy-restaurant-compat.js";
+
 const app = Fastify({
   logger: true,
 });
@@ -34,6 +47,10 @@ app.register(cors, {
     "https://booking.atrionovo.com",
   ],
 });
+
+// Must be registered before the routes so every route
+// inherits the hooks.
+registerLegacyRestaurantCompat(app);
 
 app.get("/", async () => {
   return {
@@ -49,23 +66,60 @@ app.get("/", async () => {
 app.register(healthRoutes);
 
 // ======================================================
-// Restaurant
+// Business
 // ======================================================
 
-app.register(restaurantRoutes, {
-  prefix: "/restaurants",
+app.register(businessRoutes, {
+  prefix: "/businesses",
 });
 
 app.register(openingHourRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
 });
 
 app.register(specialOpeningDayRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
 });
 
 app.register(tableRoutes, {
-  prefix: "/restaurants",
+  prefix: "/businesses",
+});
+
+app.register(massageServiceRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(therapistRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(treatmentRoomRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(massageAppointmentRoutes, {
+  prefix: "/businesses",
+});
+
+// Legacy aliases (temporary).
+//
+// App builds from before the rename still call /restaurants/...
+// See middleware/legacy-restaurant-compat.js.
+
+app.register(businessRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(openingHourRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(specialOpeningDayRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
+});
+
+app.register(tableRoutes, {
+  prefix: LEGACY_RESTAURANT_ROUTE_PREFIX,
 });
 
 // ======================================================

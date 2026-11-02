@@ -18,7 +18,7 @@ import {
 // This service:
 // - Validates registration rules
 // - Hashes passwords
-// - Creates restaurant owner accounts
+// - Creates business owner accounts
 // - Authenticates users
 // - Creates authentication tokens
 //
@@ -27,12 +27,13 @@ import {
 
 class AuthService {
   /**
-   * Registers a new restaurant and its owner account.
+   * Registers a new business and its owner account.
    */
   async register({
-    restaurantName,
+    businessName,
     slug,
     countryCode,
+    businessType,
     firstName,
     lastName,
     email,
@@ -44,14 +45,14 @@ class AuthService {
     const normalizedSlug =
       slug.trim().toLowerCase();
 
-    const existingRestaurant =
-      await this.#findRestaurantBySlug(
+    const existingBusiness =
+      await this.#findBusinessBySlug(
         normalizedSlug
       );
 
-    if (existingRestaurant) {
+    if (existingBusiness) {
       throw new ConflictError(
-        "A restaurant with this slug already exists.",
+        "A business with this slug already exists.",
         "RESTAURANT_SLUG_ALREADY_EXISTS"
       );
     }
@@ -60,11 +61,12 @@ class AuthService {
       await bcrypt.hash(password, 12);
 
     const result =
-      await authRepository.createRestaurantWithOwner({
-        restaurant: {
-          name: restaurantName.trim(),
+      await authRepository.createBusinessWithOwner({
+        business: {
+          name: businessName.trim(),
           slug: normalizedSlug,
           countryCode: countryCode.trim().toUpperCase(),
+          businessType,
         },
 
         user: {
@@ -81,7 +83,7 @@ class AuthService {
     const accessToken =
       createAccessToken({
         userId: user.id,
-        restaurantId: user.restaurantId,
+        businessId: user.businessId,
         role: user.role,
       });
 
@@ -102,22 +104,23 @@ class AuthService {
         role: user.role,
       },
 
-      restaurant: {
-        id: result.restaurant.id,
-        name: result.restaurant.name,
-        slug: result.restaurant.slug,
+      business: {
+        id: result.business.id,
+        name: result.business.name,
+        slug: result.business.slug,
+        businessType: result.business.businessType,
       },
     };
   }
 
   /**
-   * Finds a restaurant by slug.
+   * Finds a business by slug.
    *
    * This is kept inside the service temporarily because
-   * registration needs to prevent duplicate restaurant slugs.
+   * registration needs to prevent duplicate business slugs.
    */
-  async #findRestaurantBySlug(slug) {
-    return authRepository.findRestaurantBySlug(
+  async #findBusinessBySlug(slug) {
+    return authRepository.findBusinessBySlug(
       slug
     );
   }
@@ -160,7 +163,7 @@ class AuthService {
     const accessToken =
       createAccessToken({
         userId: user.id,
-        restaurantId: user.restaurantId,
+        businessId: user.businessId,
         role: user.role,
       });
 
@@ -181,10 +184,11 @@ class AuthService {
         role: user.role,
       },
 
-      restaurant: {
-        id: user.restaurant.id,
-        name: user.restaurant.name,
-        slug: user.restaurant.slug,
+      business: {
+        id: user.business.id,
+        name: user.business.name,
+        slug: user.business.slug,
+        businessType: user.business.businessType,
       },
     };
   }
@@ -223,7 +227,7 @@ class AuthService {
     const accessToken =
       createAccessToken({
         userId: user.id,
-        restaurantId: user.restaurantId,
+        businessId: user.businessId,
         role: user.role,
       });
 
@@ -261,14 +265,15 @@ class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        restaurantId:
-          user.restaurantId,
+        businessId:
+          user.businessId,
       },
 
-      restaurant: {
-        id: user.restaurant.id,
-        name: user.restaurant.name,
-        slug: user.restaurant.slug,
+      business: {
+        id: user.business.id,
+        name: user.business.name,
+        slug: user.business.slug,
+        businessType: user.business.businessType,
       },
     };
   }

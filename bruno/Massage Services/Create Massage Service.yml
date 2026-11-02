@@ -1,0 +1,30 @@
+info:
+  name: Create Massage Service
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses/{{businessId}}/massage-services"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Relaxation massage",
+        "description": "Slow, calming full-body massage.",
+        "durationMinutes": 60,
+        "priceCents": 5500
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

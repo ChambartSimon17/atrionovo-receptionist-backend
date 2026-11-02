@@ -17,7 +17,7 @@ export default async function reservationRoutes(fastify) {
     {
       preHandler: authenticate,
     },
-    reservationController.findForRestaurantByDay.bind(
+    reservationController.findForBusinessByDay.bind(
       reservationController
     )
   );
@@ -41,7 +41,7 @@ export default async function reservationRoutes(fastify) {
     {
       preHandler: authenticate,
     },
-    reservationController.findUpcomingForRestaurant.bind(
+    reservationController.findUpcomingForBusiness.bind(
       reservationController
     )
   );
@@ -55,7 +55,7 @@ export default async function reservationRoutes(fastify) {
     {
       preHandler: authenticate,
     },
-    reservationController.findByIdForRestaurant.bind(
+    reservationController.findByIdForBusiness.bind(
       reservationController
     )
   );
@@ -70,11 +70,11 @@ export default async function reservationRoutes(fastify) {
   );
 
   fastify.post(
-    "/check-availability/restaurant",
+    "/check-availability/business",
     {
       preHandler: authenticate,
     },
-    reservationController.checkAvailabilityForRestaurant.bind(
+    reservationController.checkAvailabilityForBusiness.bind(
       reservationController
     )
   );
@@ -94,7 +94,7 @@ export default async function reservationRoutes(fastify) {
     {
       preHandler: authenticate,
     },
-    reservationController.updateReservationForRestaurant.bind(
+    reservationController.updateReservationForBusiness.bind(
       reservationController
     )
   );
@@ -110,14 +110,14 @@ export default async function reservationRoutes(fastify) {
   );
 
   fastify.patch(
-    "/:restaurantId/:reservationId/seat",
+    "/:businessId/:reservationId/seat",
     reservationController.seatReservation.bind(
       reservationController
     )
   );
 
   fastify.patch(
-    "/:restaurantId/:reservationId/complete",
+    "/:businessId/:reservationId/complete",
     reservationController.completeReservation.bind(
       reservationController
     )

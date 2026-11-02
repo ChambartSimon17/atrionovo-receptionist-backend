@@ -28,11 +28,11 @@ export default async function incomingCallRoutes(fastify) {
       });
     }
 
-    // Temporary safeguard: don't guess which restaurant
+    // Temporary safeguard: don't guess which business
     // owns a number. We must add an explicit number mapping.
     fastify.log.warn(
       { calledNumber: normalizedNumber },
-      "Incoming-call routing needs a phone-number-to-restaurant mapping"
+      "Incoming-call routing needs a phone-number-to-business mapping"
     );
 
     return reply

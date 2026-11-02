@@ -1,0 +1,28 @@
+info:
+  name: Create Massage Appointment
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/public/booking/test-massage-studio/massage-appointments"
+  body:
+    type: json
+    data: |-
+      {
+        "massageServiceId": "REPLACE_WITH_SERVICE_ID",
+        "startTime": "2026-11-02T09:00:00.000Z",
+        "firstName": "Test",
+        "lastName": "Customer",
+        "phoneNumber": "0470123456",
+        "email": "customer@example.com",
+        "notes": "Liefst bij Anna."
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

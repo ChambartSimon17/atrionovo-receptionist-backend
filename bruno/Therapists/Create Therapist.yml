@@ -1,0 +1,33 @@
+info:
+  name: Create Therapist
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses/{{businessId}}/therapists"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Anna",
+        "serviceIds": ["REPLACE_WITH_SERVICE_ID"],
+        "workingHours": [
+          { "dayOfWeek": "MONDAY", "startMinutes": 540, "endMinutes": 720 },
+          { "dayOfWeek": "MONDAY", "startMinutes": 780, "endMinutes": 1020 },
+          { "dayOfWeek": "TUESDAY", "startMinutes": 540, "endMinutes": 1020 }
+        ]
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

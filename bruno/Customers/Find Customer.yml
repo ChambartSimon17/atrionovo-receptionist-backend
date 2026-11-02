@@ -5,10 +5,10 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/customers/search?restaurantId={{restaurantId}}&phoneNumber={{phoneNumber}}"
+  url: "{{baseUrl}}/customers/search?businessId={{businessId}}&phoneNumber={{phoneNumber}}"
   params:
-    - name: restaurantId
-      value: "{{restaurantId}}"
+    - name: businessId
+      value: "{{businessId}}"
       type: query
     - name: phoneNumber
       value: "{{phoneNumber}}"

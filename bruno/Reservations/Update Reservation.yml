@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "restaurantId": "{{restaurantId}}",
+        "businessId": "{{businessId}}",
         "firstName": "Simon",
         "lastName": "Chambart",
         "phoneNumber": "+32470123456",
@@ -23,7 +23,7 @@ http:
 
 runtime:
   variables:
-    - name: restaurantId
+    - name: businessId
       value: cmsx40oy30000s01nzviohyxu
 
 settings:

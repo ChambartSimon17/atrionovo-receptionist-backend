@@ -1,0 +1,21 @@
+info:
+  name: Get Services
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/services"
+  headers:
+    - name: x-business-id
+      value: cmvv1fygo0006s08f5vgsgid9
+  body:
+    type: json
+    data: "{}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

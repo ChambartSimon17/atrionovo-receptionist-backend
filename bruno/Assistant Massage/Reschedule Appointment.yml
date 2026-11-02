@@ -1,0 +1,26 @@
+info:
+  name: Reschedule Appointment
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assistant/massage/reschedule-appointment"
+  headers:
+    - name: x-business-id
+      value: cmvv1fygo0006s08f5vgsgid9
+  body:
+    type: json
+    data: |-
+      {
+        "appointmentId": "cmvv5u4g50003s0jpjdq971r2",
+        "phoneNumber": "+32470123456",
+        "startTime": "2026-11-02T11:00:00"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

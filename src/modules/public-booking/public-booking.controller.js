@@ -1,8 +1,13 @@
 import publicBookingService
   from "./public-booking.service.js";
 
+import publicMassageBookingService
+  from "./public-massage-booking.service.js";
+
 import {
   publicAvailabilitySchema,
+  publicMassageAppointmentSchema,
+  publicMassageAvailabilitySchema,
   publicReservationSchema,
 } from "./public-booking.validator.js";
 
@@ -18,21 +23,21 @@ import {
 class PublicBookingController {
 
   /**
-   * Returns public restaurant configuration
+   * Returns public business configuration
    * required by the booking widget.
    */
-  async getRestaurant(request, reply) {
+  async getBusiness(request, reply) {
     const { slug } =
       request.params;
 
-    const restaurant =
-      await publicBookingService.getRestaurant(
+    const business =
+      await publicBookingService.getBusiness(
         slug
       );
 
     return reply.send({
       success: true,
-      data: restaurant,
+      data: business,
     });
   }
 
@@ -65,7 +70,7 @@ class PublicBookingController {
   }
 
   /**
-   * Creates a reservation from the restaurant website.
+   * Creates a reservation from the business website.
    */
   async createReservation(
     request,
@@ -88,6 +93,68 @@ class PublicBookingController {
     return reply.status(201).send({
       success: true,
       data: createdReservation,
+    });
+  }
+
+  // ----------------------------------------------------
+  // Massage businesses
+  // ----------------------------------------------------
+
+  /**
+   * Active massages with prices.
+   */
+  async getMassageServices(request, reply) {
+    const services =
+      await publicMassageBookingService.getServices(
+        request.params.slug
+      );
+
+    return reply.send({
+      success: true,
+      data: services,
+    });
+  }
+
+  /**
+   * Free times of a day for one massage.
+   * ?date=2026-11-02&serviceId=...
+   */
+  async getMassageAvailability(request, reply) {
+    const query =
+      publicMassageAvailabilitySchema.parse(
+        request.query
+      );
+
+    const availability =
+      await publicMassageBookingService.getAvailability(
+        request.params.slug,
+        query
+      );
+
+    return reply.send({
+      success: true,
+      data: availability,
+    });
+  }
+
+  /**
+   * Books a massage.
+   */
+  async createMassageAppointment(request, reply) {
+    const data =
+      publicMassageAppointmentSchema.parse(
+        request.body
+      );
+
+    const appointment =
+      await publicMassageBookingService.createAppointment(
+        request.params.slug,
+        data
+      );
+
+    return reply.status(201).send({
+      success: true,
+      data: appointment,
     });
   }
 }

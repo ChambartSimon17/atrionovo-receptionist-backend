@@ -5,10 +5,10 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/reservations/upcoming?restaurantId={{restaurantId}}&phoneNumber=+32470123456"
+  url: "{{baseUrl}}/reservations/upcoming?businessId={{businessId}}&phoneNumber=+32470123456"
   params:
-    - name: restaurantId
-      value: "{{restaurantId}}"
+    - name: businessId
+      value: "{{businessId}}"
       type: query
     - name: phoneNumber
       value: "+32470123456"
@@ -17,7 +17,7 @@ http:
 
 runtime:
   variables:
-    - name: restaurantId
+    - name: businessId
       value: cmsx40oy30000s01nzviohyxu
 
 settings:

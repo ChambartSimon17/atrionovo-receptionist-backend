@@ -10,12 +10,13 @@ http:
     type: json
     data: |-
       {
-        "restaurantName": "Refter2",
-        "slug": "refter2",
+        "businessName": "Test Massage Studio",
+        "businessType": "MASSAGE",
+        "slug": "test-massage-studio",
         "countryCode": "BE",
-        "firstName": "Louis",
-        "lastName": "Vanhecke",
-        "email": "louisvanhecke@refter.com",
+        "firstName": "Test",
+        "lastName": "Owner",
+        "email": "owner@test-massage.example",
         "password": "testpassword123"
       }
   auth: inherit

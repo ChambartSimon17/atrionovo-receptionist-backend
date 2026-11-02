@@ -1,0 +1,16 @@
+info:
+  name: Get Massage Availability
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/public/booking/test-massage-studio/massage-availability?date=2026-11-02&serviceId=REPLACE_WITH_SERVICE_ID"
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

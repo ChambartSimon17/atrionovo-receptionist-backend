@@ -10,7 +10,7 @@ import AppError from "./AppError.js";
 // of the application.
 //
 // Examples
-// - Restaurant slug already exists
+// - Business slug already exists
 // - Reservation already exists
 // - Customer email already exists
 // ======================================================

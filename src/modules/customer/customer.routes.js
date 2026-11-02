@@ -12,10 +12,10 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 //
 // Dashboard
 // - Requires authentication
-// - Restaurant is derived from request.user
+// - Business is derived from request.user
 //
 // Receptionist / VAPI
-// - Uses the restaurantId supplied by the caller
+// - Uses the businessId supplied by the caller
 // - Kept separate from dashboard customer management
 // ======================================================
 

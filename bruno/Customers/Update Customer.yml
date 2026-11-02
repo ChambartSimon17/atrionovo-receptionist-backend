@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "restaurantId": "{{restaurantId}}",
+        "businessId": "{{businessId}}",
         "firstName": "Simon",
         "lastName": "Chambart",
         "phoneNumber": "0470123456",

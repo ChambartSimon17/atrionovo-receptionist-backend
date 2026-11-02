@@ -1,0 +1,28 @@
+info:
+  name: Create Treatment Room
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/businesses/{{businessId}}/treatment-rooms"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Room 1",
+        "serviceIds": ["REPLACE_WITH_SERVICE_ID"]
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: businessId
+      value: REPLACE_WITH_MASSAGE_BUSINESS_ID
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

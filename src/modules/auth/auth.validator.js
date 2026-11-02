@@ -5,7 +5,7 @@ import { z } from "zod";
 // ======================================================
 
 export const registerSchema = z.object({
-  restaurantName: z
+  businessName: z
     .string()
     .trim()
     .min(1),
@@ -22,6 +22,12 @@ export const registerSchema = z.object({
   countryCode: z
     .string()
     .length(2),
+
+  // A business is exactly one type. Clients that do not
+  // send it (older app builds) register a restaurant.
+  businessType: z
+    .enum(["RESTAURANT", "MASSAGE"])
+    .default("RESTAURANT"),
 
   firstName: z
     .string()

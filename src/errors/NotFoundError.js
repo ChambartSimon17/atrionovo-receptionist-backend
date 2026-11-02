@@ -8,7 +8,7 @@ import AppError from "./AppError.js";
 // Indicates that the requested resource does not exist.
 //
 // Examples
-// - Restaurant not found
+// - Business not found
 // - Reservation not found
 // - Customer not found
 // ======================================================

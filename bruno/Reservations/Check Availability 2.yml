@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}//reservations/check-availability/restaurant"
+  url: "{{baseUrl}}//reservations/check-availability/business"
   auth: inherit
 
 settings:

@@ -85,6 +85,42 @@ enum TableShape {
   RECTANGLE
 }
 
+// ------------------------------------------------------
+// Business types
+// ------------------------------------------------------
+// A business is exactly one type and the type never
+// changes after registration. The type decides which
+// dashboard the app shows and which features exist.
+//
+// RESTAURANT - Tables, party size, dining reservations.
+// MASSAGE    - Massage services, therapists, treatment rooms.
+// ------------------------------------------------------
+
+enum BusinessType {
+  RESTAURANT
+  MASSAGE
+}
+
+// ------------------------------------------------------
+// Appointment lifecycle (massage)
+// ------------------------------------------------------
+//
+// CONFIRMED - Appointment is accepted.
+// COMPLETED - The massage took place.
+// CANCELLED - Appointment was cancelled.
+// NO_SHOW   - The customer never arrived.
+//
+// Only CONFIRMED and COMPLETED appointments occupy their
+// therapist and room.
+// ------------------------------------------------------
+
+enum AppointmentStatus {
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 // ======================================================
 // USER DOMAIN
 // ======================================================
@@ -92,15 +128,15 @@ enum TableShape {
 // ------------------------------------------------------
 // User
 // ------------------------------------------------------
-// Represents a user account for an AtrioNovo restaurant.
+// Represents a user account for an AtrioNovo business.
 //
 
 model User {
   id String @id @default(cuid())
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   email        String @unique
   passwordHash String
@@ -113,21 +149,22 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([restaurantId])
+  @@index([businessId])
 }
 
 // ======================================================
-// RESTAURANT DOMAIN
+// BUSINESS DOMAIN
 // ======================================================
 
 // ------------------------------------------------------
-// Restaurant
+// Business
 // ------------------------------------------------------
-// Represents a restaurant using the AtrioNovo platform.
+// Represents a business using the AtrioNovo platform
+// (currently always a restaurant).
 //
 // Responsibilities
-// - Store restaurant information
-// - Define restaurant configuration
+// - Store business information
+// - Define business configuration
 // - Own opening hours
 // - Own reservations
 //
@@ -139,7 +176,7 @@ model User {
 // - Subscription
 // ------------------------------------------------------
 
-model Restaurant {
+model Business {
   // -------------------------
   // Primary Key
   // -------------------------
@@ -154,8 +191,11 @@ model Restaurant {
   slug        String @unique
   countryCode String
 
+  // Fixed at registration. Existing rows are restaurants.
+  businessType BusinessType @default(RESTAURANT)
+
   // -------------------------
-  // Restaurant Configuration
+  // Business Configuration
   // -------------------------
 
   voiceAgentEnabled Boolean @default(true)
@@ -173,6 +213,11 @@ model Restaurant {
 
   arrivalIntervalMinutes Int @default(15)
 
+  // MASSAGE businesses: minutes blocked for the therapist
+  // and the room after every appointment (cleaning, rest).
+
+  appointmentBufferMinutes Int @default(0)
+
   timezone String @default("Europe/Brussels")
   language String @default("nl")
 
@@ -186,6 +231,10 @@ model Restaurant {
   customers          Customer[]
   users              User[]
   tables             Table[]
+  massageServices    MassageService[]
+  therapists         Therapist[]
+  treatmentRooms     TreatmentRoom[]
+  appointments       Appointment[]
 
   // -------------------------
   // Metadata
@@ -193,6 +242,17 @@ model Restaurant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Mapping
+  // -------------------------
+  //
+  // The model is called Business, but the physical table keeps
+  // its original name. Together with the @map("restaurantId")
+  // columns on the related models this makes the rename a
+  // code-only change: no migration and no data movement.
+
+  @@map("Restaurant")
 }
 
 model Customer {
@@ -203,12 +263,12 @@ model Customer {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Customer Information
@@ -233,6 +293,7 @@ model Customer {
   // -------------------------
 
   reservations Reservation[]
+  appointments  Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -241,9 +302,9 @@ model Customer {
   // Database Indexes
   // -------------------------
 
-  @@unique([restaurantId, phoneNumber], map: "uq_customer_restaurant_phone")
-  @@index([restaurantId, email], map: "idx_customer_restaurant_email")
-  @@index([restaurantId, lastName], map: "idx_customer_restaurant_last_name")
+  @@unique([businessId, phoneNumber], map: "uq_customer_restaurant_phone")
+  @@index([businessId, email], map: "idx_customer_restaurant_email")
+  @@index([businessId, lastName], map: "idx_customer_restaurant_last_name")
 }
 
 // ======================================================
@@ -279,12 +340,12 @@ model Table {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Table Information
@@ -337,13 +398,13 @@ model Table {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId])
+  @@index([businessId])
 }
 
 // ------------------------------------------------------
 // OpeningHour
 // ------------------------------------------------------
-// Represents one opening period for a restaurant.
+// Represents one opening period for a business.
 //
 // Examples
 //
@@ -354,7 +415,7 @@ model Table {
 // 12:00 → 15:00
 // 17:00 → 22:00
 //
-// A restaurant may have multiple opening
+// A business may have multiple opening
 // periods on the same day.
 // ------------------------------------------------------
 
@@ -366,12 +427,12 @@ model OpeningHour {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Opening Period
@@ -399,13 +460,13 @@ model OpeningHour {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
+  @@index([businessId, dayOfWeek], map: "idx_opening_hour_restaurant_day")
 }
 
 // ------------------------------------------------------
 // SpecialOpeningDay
 // ------------------------------------------------------
-// Represents an exception to the restaurant's
+// Represents an exception to the business's
 // normal weekly opening schedule.
 //
 // Examples
@@ -426,12 +487,12 @@ model SpecialOpeningDay {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Date
@@ -462,7 +523,7 @@ model SpecialOpeningDay {
   // Database Indexes
   // -------------------------
 
-  @@unique([restaurantId, date])
+  @@unique([businessId, date])
 }
 
 // ------------------------------------------------------
@@ -525,7 +586,7 @@ model SpecialOpeningPeriod {
 // Represents one reservation made by a customer.
 //
 // Business Rules
-// - Always belongs to one restaurant
+// - Always belongs to one business
 // - Has a fixed start and end time
 // - Status defaults to CONFIRMED
 // ------------------------------------------------------
@@ -538,12 +599,12 @@ model Reservation {
   id String @id @default(cuid())
 
   // -------------------------
-  // Restaurant Relationship
+  // Business Relationship
   // -------------------------
 
-  restaurantId String
+  businessId String @map("restaurantId")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // -------------------------
   // Customer Relationship
@@ -593,11 +654,11 @@ model Reservation {
   // Database Indexes
   // -------------------------
 
-  @@index([restaurantId], map: "idx_reservation_restaurant")
+  @@index([businessId], map: "idx_reservation_restaurant")
   @@index([customerId], map: "idx_reservation_customer")
   @@index([startTime], map: "idx_reservation_start_time")
   @@index([endTime], map: "idx_reservation_end_time")
-  @@index([restaurantId, startTime], map: "idx_reservation_restaurant_start")
+  @@index([businessId, startTime], map: "idx_reservation_restaurant_start")
 }
 
 // ======================================================
@@ -633,4 +694,287 @@ model ReservationTable {
 
   @@id([reservationId, tableId])
   @@index([tableId])
+}
+
+// ======================================================
+// MASSAGE DOMAIN
+// ======================================================
+
+// ------------------------------------------------------
+// MassageService
+// ------------------------------------------------------
+// A massage a customer can book at a MASSAGE business,
+// for example "Relaxation massage, 60 minutes, 55.00".
+//
+// Prices are stored in cents to avoid rounding errors.
+// Services are deactivated instead of deleted, so
+// existing appointments keep pointing to them.
+// ------------------------------------------------------
+
+model MassageService {
+  // -------------------------
+  // Primary Key
+  // -------------------------
+
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Business Relationship
+  // -------------------------
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Service Information
+  // -------------------------
+
+  name        String
+  description String?
+
+  durationMinutes Int
+
+  priceCents Int
+  currency   String @default("EUR")
+
+  isActive Boolean @default(true)
+
+  // -------------------------
+  // Who and where
+  // -------------------------
+  //
+  // Which therapists can perform this massage and in
+  // which treatment rooms it can take place.
+
+  therapistLinks TherapistMassageService[]
+  roomLinks      RoomMassageService[]
+
+  appointments Appointment[]
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@unique([businessId, name])
+}
+
+// ------------------------------------------------------
+// Therapist
+// ------------------------------------------------------
+// A massage therapist working for a MASSAGE business.
+//
+// Customers cannot choose a therapist. The system picks
+// a free therapist who can perform the chosen massage.
+//
+// Deactivated instead of deleted, so that existing
+// appointments keep their therapist.
+// ------------------------------------------------------
+
+model Therapist {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  // Massages this therapist can perform.
+  services TherapistMassageService[]
+
+  // Weekly working hours (several periods per day allowed).
+  workingHours TherapistWorkingHour[]
+
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+}
+
+// Which massages a therapist can perform.
+
+model TherapistMassageService {
+  therapistId      String
+  massageServiceId String
+
+  therapist      Therapist      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Cascade)
+
+  @@id([therapistId, massageServiceId])
+  @@index([massageServiceId])
+}
+
+// ------------------------------------------------------
+// TherapistWorkingHour
+// ------------------------------------------------------
+// One working period of a therapist on a weekday.
+// Times are minutes after midnight (09:00 -> 540), like
+// OpeningHour. Periods of one day may not overlap.
+// ------------------------------------------------------
+
+model TherapistWorkingHour {
+  id String @id @default(cuid())
+
+  therapistId String
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  dayOfWeek DayOfWeek
+
+  startMinutes Int
+  endMinutes   Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([therapistId, dayOfWeek])
+}
+
+// ------------------------------------------------------
+// TreatmentRoom
+// ------------------------------------------------------
+// A room where massages take place. Each room lists the
+// massages that can be performed in it.
+//
+// Two appointments can only run at the same time when
+// they are in different rooms.
+// ------------------------------------------------------
+
+model TreatmentRoom {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  // Massages that can be performed in this room.
+  services RoomMassageService[]
+
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+}
+
+// Which massages can be performed in a room.
+
+model RoomMassageService {
+  roomId           String
+  massageServiceId String
+
+  room           TreatmentRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, massageServiceId])
+  @@index([massageServiceId])
+}
+
+// ------------------------------------------------------
+// Appointment
+// ------------------------------------------------------
+// A booked massage at a MASSAGE business.
+//
+// The system assigns a therapist and a room when the
+// appointment is made; customers do not choose them.
+//
+// Customer details, massage name, duration and price are
+// copied onto the appointment (snapshot), so later changes
+// to the customer or the massage do not alter history.
+//
+// Therapists, rooms and massages cannot be deleted while
+// appointments use them (they are deactivated instead).
+// ------------------------------------------------------
+
+model Appointment {
+  id String @id @default(cuid())
+
+  // -------------------------
+  // Business Relationship
+  // -------------------------
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // -------------------------
+  // Customer
+  // -------------------------
+
+  customerId String?
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  firstName String
+  lastName  String
+
+  phoneNumber String
+  email       String?
+
+  // -------------------------
+  // Massage (snapshot)
+  // -------------------------
+
+  massageServiceId String
+
+  massageService MassageService @relation(fields: [massageServiceId], references: [id], onDelete: Restrict)
+
+  serviceName     String
+  durationMinutes Int
+  priceCents      Int
+
+  // -------------------------
+  // Assigned resources
+  // -------------------------
+
+  therapistId String
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Restrict)
+
+  roomId String
+
+  room TreatmentRoom @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  // -------------------------
+  // Time and status
+  // -------------------------
+
+  startTime DateTime
+  endTime   DateTime
+
+  status AppointmentStatus @default(CONFIRMED)
+
+  notes String?
+
+  // -------------------------
+  // Metadata
+  // -------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // -------------------------
+  // Database Indexes
+  // -------------------------
+
+  @@index([businessId, startTime])
+  @@index([therapistId, startTime])
+  @@index([roomId, startTime])
+  @@index([customerId])
+  @@index([massageServiceId])
 }

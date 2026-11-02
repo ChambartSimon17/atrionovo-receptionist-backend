@@ -8,7 +8,7 @@ const reservationAId =
 const reservationBId =
   "cmu70t6vr0003s0i227in3i9o";
 
-const restaurantId =
+const businessId =
   "cmsx40oy30000s01nzviohyxu";
 
 const newStartTime =
@@ -26,7 +26,7 @@ const updateReservation = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        restaurantId,
+        businessId,
 
         firstName:
           `Update${number}`,

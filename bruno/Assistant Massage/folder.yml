@@ -1,0 +1,7 @@
+info:
+  name: Assistant Massage
+  type: folder
+  seq: 17
+
+request:
+  auth: none
