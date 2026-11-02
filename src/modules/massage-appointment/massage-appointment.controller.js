@@ -4,6 +4,7 @@ import {
   availabilityQuerySchema,
   createAppointmentSchema,
   listAppointmentsQuerySchema,
+  monthQuerySchema,
   updateAppointmentSchema,
 } from "./massage-appointment.validator.js";
 
@@ -46,6 +47,28 @@ class MassageAppointmentController {
     return reply.send({
       success: true,
       data: appointments,
+    });
+  }
+
+  /**
+   * GET /businesses/:businessId/appointments/month
+   *     ?year=2026&month=11
+   *
+   * Appointments per local day, for the calendar.
+   */
+  async countsForMonth(request, reply) {
+    const query = monthQuerySchema.parse(request.query);
+
+    const counts =
+      await massageAppointmentService.countsForMonth(
+        request.params.businessId,
+        query.year,
+        query.month
+      );
+
+    return reply.send({
+      success: true,
+      data: counts,
     });
   }
 

@@ -1,5 +1,6 @@
 import massageAppointmentRepository from "./massage-appointment.repository.js";
 import massageAvailabilityService from "./massage-availability.service.js";
+import { DateTime } from "luxon";
 import businessRepository from "../business/business.repository.js";
 import customerService from "../customer/customer.service.js";
 import { localDateOf } from "./local-time.js";
@@ -75,6 +76,40 @@ class MassageAppointmentService {
       );
 
     return appointments.map(toDto);
+  }
+
+  /**
+   * Number of appointments per local calendar day of a
+   * month, like { "2026-11-02": 3, "2026-11-05": 1 }.
+   * Days without appointments are left out.
+   */
+  async countsForMonth(businessId, year, month) {
+    const business = await this.#getBusiness(businessId);
+
+    const first = DateTime.fromObject(
+      { year, month, day: 1 },
+      { zone: business.timezone }
+    ).startOf("day");
+
+    const appointments =
+      await massageAppointmentRepository.findStartTimesInRange(
+        businessId,
+        first.toJSDate(),
+        first.plus({ months: 1 }).toJSDate()
+      );
+
+    const counts = {};
+
+    for (const appointment of appointments) {
+      const date = localDateOf(
+        appointment.startTime,
+        business.timezone
+      );
+
+      counts[date] = (counts[date] || 0) + 1;
+    }
+
+    return counts;
   }
 
   async create(businessId, data) {

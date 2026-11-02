@@ -40,6 +40,14 @@ export default async function massageAppointmentRoutes(
     )
   );
 
+  fastify.get(
+    "/:businessId/appointments/month",
+    { preHandler },
+    massageAppointmentController.countsForMonth.bind(
+      massageAppointmentController
+    )
+  );
+
   fastify.post(
     "/:businessId/appointments",
     { preHandler },

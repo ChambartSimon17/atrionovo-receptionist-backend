@@ -329,12 +329,14 @@ class CustomerService {
 
     const {
       reservations,
+      appointments,
       ...customerData
     } = customer;
 
     return {
       customer: customerData,
       reservations,
+      appointments,
     };
   }
 
