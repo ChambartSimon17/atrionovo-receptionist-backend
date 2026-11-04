@@ -1,6 +1,7 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
 import businessRepository from "../business/business.repository.js";
+import pushService from "../insights/push.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 import {
@@ -174,8 +175,26 @@ class AssistantService {
         {
           ...reservationData,
           startTime: startTimeUTC,
+          source: "AI",
         }
       );
+
+    await pushService.notifyBusiness(
+      business.id,
+      {
+        title: "Nieuwe reservatie via de AI",
+        body: `${reservation.firstName} ${reservation.lastName} · ${reservation.guestCount} pers. · ${utcToLocalDateTimeString(
+          reservation.startTime,
+          business.timezone
+        )
+          .slice(0, 16)
+          .replace("T", " ")}`,
+        data: {
+          type: "reservation",
+          reservationId: reservation.id,
+        },
+      }
+    );
 
     return {
       message:

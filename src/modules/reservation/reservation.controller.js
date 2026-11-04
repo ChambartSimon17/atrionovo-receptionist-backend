@@ -246,12 +246,16 @@ class ReservationController {
     request,
     reply
   ) {
-    const { date } = request.query;
+    const { date, all } = request.query;
 
+    // all=true also returns completed, cancelled and
+    // no-show reservations, so the app can show and undo
+    // them. Without it the answer stays as before.
     const reservations =
       await reservationService.findForBusinessByDay(
         request.user.businessId,
-        date
+        date,
+        all === "true" || all === "1"
       );
 
     return reply.send({

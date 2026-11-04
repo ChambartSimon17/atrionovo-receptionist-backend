@@ -1,5 +1,6 @@
 import reservationController from "./reservation.controller.js";
 import { authenticate } from "../../middleware/auth.middleware.js";
+import { requireBusinessOwnership } from "../../middleware/business-ownership.middleware.js";
 
 export default async function reservationRoutes(fastify) {
 
@@ -111,6 +112,9 @@ export default async function reservationRoutes(fastify) {
 
   fastify.patch(
     "/:businessId/:reservationId/seat",
+    {
+      preHandler: [authenticate, requireBusinessOwnership],
+    },
     reservationController.seatReservation.bind(
       reservationController
     )
@@ -118,6 +122,9 @@ export default async function reservationRoutes(fastify) {
 
   fastify.patch(
     "/:businessId/:reservationId/complete",
+    {
+      preHandler: [authenticate, requireBusinessOwnership],
+    },
     reservationController.completeReservation.bind(
       reservationController
     )

@@ -151,6 +151,8 @@ class PublicBookingService {
 
       notes:
         reservationData.notes,
+
+      source: "WEB",
     });
   }
 }

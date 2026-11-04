@@ -30,6 +30,14 @@ import assistantRoutes from "./modules/assistant/assistant.routes.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 
+import floorOperationsRoutes from "./modules/floor-operations/floor-operations.routes.js";
+
+import {
+  callEventRoutes,
+  insightsBusinessRoutes,
+  pushTokenRoutes,
+} from "./modules/insights/insights.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -101,6 +109,14 @@ app.register(massageAppointmentRoutes, {
   prefix: "/businesses",
 });
 
+app.register(floorOperationsRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(insightsBusinessRoutes, {
+  prefix: "/businesses",
+});
+
 // Legacy aliases (temporary).
 //
 // App builds from before the rename still call /restaurants/...
@@ -150,11 +166,19 @@ app.register(assistantRoutes, {
   prefix: "/assistant",
 });
 
+app.register(callEventRoutes, {
+  prefix: "/assistant",
+});
+
 // ======================================================
 // Authentication
 // ======================================================
 
 app.register(authRoutes, {
+  prefix: "/auth",
+});
+
+app.register(pushTokenRoutes, {
   prefix: "/auth",
 });
 

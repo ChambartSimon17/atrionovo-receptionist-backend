@@ -820,7 +820,8 @@ class ReservationService {
    */
   async findForBusinessByDay(
     businessId,
-    date
+    date,
+    includeAllStatuses = false
   ) {
     const business =
       await businessRepository.findById(
@@ -837,7 +838,9 @@ class ReservationService {
     return reservationRepository.findForBusinessByDay(
       businessId,
       date,
-      business.timezone
+      business.timezone,
+      undefined,
+      includeAllStatuses
     );
   }
 

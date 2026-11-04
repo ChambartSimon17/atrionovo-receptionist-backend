@@ -234,7 +234,8 @@ class ReservationRepository {
     businessId,
     date,
     timezone,
-    db = prisma
+    db = prisma,
+    includeAllStatuses = false
   ) {
     const {
       start,
@@ -248,12 +249,14 @@ class ReservationRepository {
       where: {
         businessId,
 
-        status: {
-          in: [
-            "CONFIRMED",
-            "SEATED",
-          ],
-        },
+        status: includeAllStatuses
+          ? undefined
+          : {
+              in: [
+                "CONFIRMED",
+                "SEATED",
+              ],
+            },
 
         startTime: {
           gte: start,

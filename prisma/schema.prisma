@@ -146,6 +146,8 @@ model User {
 
   role UserRole @default(STAFF)
 
+  pushTokens PushToken[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -235,6 +237,9 @@ model Business {
   therapists         Therapist[]
   treatmentRooms     TreatmentRoom[]
   appointments       Appointment[]
+  floorAreas         FloorArea[]
+  floorElements      FloorElement[]
+  calls              CallLog[]
 
   // -------------------------
   // Metadata
@@ -371,6 +376,15 @@ model Table {
   height Float @default(60)
 
   rotation Float @default(0)
+
+  // The room of the floor plan the table stands in
+  // (Binnen, Terras). Null: the first room.
+  areaId String?
+
+  area FloorArea? @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  // Shown to the public booking widget and the AI.
+  isOnlineBookable Boolean @default(true)
 
   // -------------------------
   // Status
@@ -635,6 +649,9 @@ model Reservation {
 
   status ReservationStatus @default(CONFIRMED)
 
+  // Who made the booking.
+  source BookingSource @default(APP)
+
   notes String?
 
   // -------------------------
@@ -866,6 +883,9 @@ model TreatmentRoom {
 
   appointments Appointment[]
 
+  // Where the room is drawn on the floor plan.
+  floorElements FloorElement[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -959,6 +979,9 @@ model Appointment {
 
   status AppointmentStatus @default(CONFIRMED)
 
+  // Who made the booking.
+  source BookingSource @default(APP)
+
   notes String?
 
   // -------------------------
@@ -977,4 +1000,188 @@ model Appointment {
   @@index([roomId, startTime])
   @@index([customerId])
   @@index([massageServiceId])
+}
+
+// ======================================================
+// BOOKING SOURCE
+// ======================================================
+//
+// APP      - Made by staff in the receptionist app.
+// AI       - Made by the AI receptionist on the phone.
+// WEB      - Made through the public booking widget.
+// WALK_IN  - Guests without a booking, seated directly.
+// ======================================================
+
+enum BookingSource {
+  APP
+  AI
+  WEB
+  WALK_IN
+}
+
+// ======================================================
+// FLOOR PLAN
+// ======================================================
+//
+// A business draws its floor plan in rooms (restaurant:
+// Binnen, Terras) or floors (massage: Gelijkvloers).
+// Tables keep their own position on the Table model;
+// everything else on the plan is a FloorElement: walls,
+// the bar, doors, plants, and for massage businesses the
+// rooms themselves. A ROOM element linked to a treatment
+// room shows that room's live status.
+//
+// Coordinates are in centimetres from the top left of
+// the area, so the plan is independent of screen size.
+// ======================================================
+
+enum FloorElementType {
+  WALL
+  DOOR
+  WINDOW
+  BAR
+  PLANT
+  KITCHEN
+  LABEL
+  ROOM
+  RECEPTION
+  WAITING
+  CHANGING
+  SAUNA
+  SHOWER
+  STAIRS
+  TOILET
+  CORRIDOR
+}
+
+model FloorArea {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name      String
+  sortOrder Int    @default(0)
+
+  // Size of the drawing in centimetres.
+  width  Float @default(1200)
+  height Float @default(1000)
+
+  tables   Table[]
+  elements FloorElement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+}
+
+model FloorElement {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  areaId String
+
+  area FloorArea @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  type FloorElementType
+
+  label String?
+
+  x        Float @default(0)
+  y        Float @default(0)
+  width    Float @default(100)
+  height   Float @default(100)
+  rotation Float @default(0)
+
+  // ROOM only: the bookable treatment room.
+  treatmentRoomId String?
+
+  treatmentRoom TreatmentRoom? @relation(fields: [treatmentRoomId], references: [id], onDelete: SetNull)
+
+  // ROOM only: number of massage tables drawn.
+  beds Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([areaId])
+}
+
+// ======================================================
+// CALL LOG
+// ======================================================
+//
+// One phone call answered by the AI receptionist, stored
+// from the Vapi end-of-call report.
+//
+// BOOKED          - A reservation or appointment was made.
+// CHANGED         - A booking was moved or cancelled.
+// INFORMATION     - The caller only had a question.
+// NEEDS_CALLBACK  - The AI could not help; call back.
+// ======================================================
+
+enum CallOutcome {
+  BOOKED
+  CHANGED
+  INFORMATION
+  NEEDS_CALLBACK
+}
+
+model CallLog {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  externalId String @unique
+
+  callerNumber String?
+  callerName   String?
+
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int       @default(0)
+
+  outcome CallOutcome @default(INFORMATION)
+
+  summary      String?
+  transcript   String?
+  recordingUrl String?
+  endedReason  String?
+
+  // Marked when someone called the guest back.
+  handledAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([businessId, startedAt])
+}
+
+// ======================================================
+// PUSH TOKENS
+// ======================================================
+//
+// Expo push tokens of the phones a user is logged in on.
+// ======================================================
+
+model PushToken {
+  id String @id @default(cuid())
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

@@ -182,6 +182,7 @@ class MassageAppointmentService {
                 service.durationMinutes * 60_000
             ),
             notes: data.notes ?? null,
+            source: data.source ?? "APP",
           },
           tx
         );

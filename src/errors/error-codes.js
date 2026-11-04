@@ -73,4 +73,10 @@ export const ErrorCodes = {
   // Shared
   INVALID_MASSAGE_SERVICES:
     "INVALID_MASSAGE_SERVICES",
+
+  // Floor plan
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+
+  // Calls
+  CALL_NOT_FOUND: "CALL_NOT_FOUND",
 };

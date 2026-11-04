@@ -4,6 +4,7 @@ import massageServiceRepository from "../massage-service/massage-service.reposit
 import massageAppointmentRepository from "../massage-appointment/massage-appointment.repository.js";
 import massageAppointmentService from "../massage-appointment/massage-appointment.service.js";
 import massageAvailabilityService from "../massage-appointment/massage-availability.service.js";
+import pushService from "../insights/push.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -220,8 +221,23 @@ class AssistantMassageService {
         lastName,
         phoneNumber,
         notes,
+        source: "AI",
       }
     );
+
+    await pushService.notifyBusiness(businessId, {
+      title: "Nieuwe afspraak via de AI",
+      body: `${appointment.firstName} ${appointment.lastName} · ${appointment.serviceName} · ${utcToLocalDateTimeString(
+        appointment.startTime,
+        business.timezone
+      )
+        .slice(0, 16)
+        .replace("T", " ")}`,
+      data: {
+        type: "appointment",
+        appointmentId: appointment.id,
+      },
+    });
 
     return {
       message: "Appointment created successfully.",
