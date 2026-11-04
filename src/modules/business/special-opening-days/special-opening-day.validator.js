@@ -29,6 +29,8 @@ export const openingPeriodSchema = z.object({
 export const specialOpeningDaySchema = z.object({
   date: z.iso.date(),
 
+  name: z.string().trim().max(60).nullish(),
+
   isClosed: z.boolean(),
 
   openingPeriods: z.array(openingPeriodSchema),

@@ -80,6 +80,7 @@ class SpecialOpeningDayRepository {
   async createSpecialOpeningDay({
     businessId,
     date,
+    name,
     isClosed,
     openingPeriods,
   }) {
@@ -87,6 +88,7 @@ class SpecialOpeningDayRepository {
       data: {
         businessId,
         date,
+        name: name || null,
         isClosed,
 
         openingPeriods: {
@@ -110,6 +112,7 @@ class SpecialOpeningDayRepository {
     id,
     {
       date,
+      name,
       isClosed,
       openingPeriods,
     }
@@ -127,6 +130,7 @@ class SpecialOpeningDayRepository {
         },
         data: {
           date,
+          name: name || null,
           isClosed,
         },
       });

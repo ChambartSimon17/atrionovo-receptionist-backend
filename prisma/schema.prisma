@@ -514,6 +514,9 @@ model SpecialOpeningDay {
 
   date DateTime
 
+  // Shown in the app, for example "Kerstmis".
+  name String?
+
   // -------------------------
   // Configuration
   // -------------------------
