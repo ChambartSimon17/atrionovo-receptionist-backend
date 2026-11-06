@@ -22,6 +22,18 @@ const LIST_INCLUDE = {
   room: {
     select: { name: true },
   },
+  payments: {
+    where: { status: "PAID" },
+    select: {
+      id: true,
+      method: true,
+      amountCents: true,
+      tipCents: true,
+      paidAt: true,
+    },
+    orderBy: { paidAt: "desc" },
+    take: 1,
+  },
 };
 
 class MassageAppointmentRepository {
@@ -47,12 +59,15 @@ class MassageAppointmentRepository {
 
   /**
    * Active therapists who can perform the massage, with
-   * their working hours of the given weekday.
+   * their working hours of the given weekday, and the
+   * schedule day and absences of the date (a Date at UTC
+   * midnight, see therapist/schedule.js).
    */
   async findTherapistsForService(
     businessId,
     massageServiceId,
-    dayOfWeek
+    dayOfWeek,
+    date
   ) {
     return prisma.therapist.findMany({
       where: {
@@ -65,6 +80,15 @@ class MassageAppointmentRepository {
       include: {
         workingHours: {
           where: { dayOfWeek },
+        },
+        scheduleDays: {
+          where: { date },
+        },
+        absences: {
+          where: {
+            startDate: { lte: date },
+            endDate: { gte: date },
+          },
         },
       },
     });

@@ -53,6 +53,19 @@ function toDto(appointment) {
     notes: appointment.notes,
     therapistName: appointment.therapist.name,
     roomName: appointment.room.name,
+    therapistId: appointment.therapistId,
+    roomId: appointment.roomId,
+    payment: appointment.payments?.[0]
+      ? {
+          id: appointment.payments[0].id,
+          method: appointment.payments[0].method,
+          totalCents:
+            appointment.payments[0].amountCents +
+            appointment.payments[0].tipCents,
+          tipCents: appointment.payments[0].tipCents,
+          paidAt: appointment.payments[0].paidAt?.toISOString() ?? null,
+        }
+      : null,
   };
 }
 

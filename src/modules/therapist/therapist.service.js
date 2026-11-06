@@ -28,6 +28,7 @@ function toDto(therapist) {
     id: therapist.id,
     name: therapist.name,
     isActive: therapist.isActive,
+    hasPin: Boolean(therapist.pinHash),
     serviceIds: therapist.services.map(
       (link) => link.massageServiceId
     ),

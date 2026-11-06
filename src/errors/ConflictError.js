@@ -1,23 +1,14 @@
 import AppError from "./AppError.js";
 
-// ======================================================
-// Conflict Error
-// ======================================================
-//
-// Responsibility
-// Indicates that a valid request cannot be completed
-// because it conflicts with the current state
-// of the application.
-//
-// Examples
-// - Business slug already exists
-// - Reservation already exists
-// - Customer email already exists
-// ======================================================
 
 class ConflictError extends AppError {
-  constructor(message = "Conflict detected.") {
+  constructor(
+    message = "Conflict detected.",
+    code = null
+  ) {
     super(message, 409);
+
+    this.code = code;
   }
 }
 

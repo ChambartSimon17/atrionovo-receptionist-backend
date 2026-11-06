@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.13.10",
     "luxon": "^3.7.2",
+    "stripe": "^23.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

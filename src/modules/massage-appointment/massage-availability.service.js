@@ -10,6 +10,10 @@ import {
 import {
   localMinutesToMs,
 } from "./local-time.js";
+import {
+  resolveDay,
+  toDbDate,
+} from "../therapist/schedule.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -108,7 +112,8 @@ class MassageAvailabilityService {
       massageAppointmentRepository.findTherapistsForService(
         business.id,
         service.id,
-        dayOfWeek
+        dayOfWeek,
+        toDbDate(date)
       ),
       massageAppointmentRepository.findRoomsForService(
         business.id,
@@ -176,7 +181,11 @@ class MassageAvailabilityService {
       therapists: therapists.map((therapist) => ({
         id: therapist.id,
         name: therapist.name,
-        windows: therapist.workingHours.map(
+        windows: resolveDay({
+          weekly: therapist.workingHours,
+          scheduleDay: therapist.scheduleDays[0] ?? null,
+          absences: therapist.absences,
+        }).periods.map(
           (period) => ({
             startMs: localMinutesToMs(
               date,

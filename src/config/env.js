@@ -42,6 +42,17 @@ const env = {
 
   twilioAuthToken:
     process.env.TWILIO_AUTH_TOKEN,
+
+  // Stripe (payments; without a key only cash and
+  // terminal payments work)
+  stripeSecretKey:
+    process.env.STRIPE_SECRET_KEY,
+
+  // Public address of this backend, for the pages Stripe
+  // sends customers and owners back to.
+  publicBaseUrl:
+    process.env.PUBLIC_BASE_URL ||
+    "https://atrionovo-receptionist-backend.onrender.com",
 };
 
 // Named export

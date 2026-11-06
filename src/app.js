@@ -38,6 +38,13 @@ import {
   pushTokenRoutes,
 } from "./modules/insights/insights.routes.js";
 
+import teamRoutes from "./modules/team/team.routes.js";
+
+import {
+  paymentBusinessRoutes,
+  paymentPageRoutes,
+} from "./modules/payment/payment.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -115,6 +122,18 @@ app.register(floorOperationsRoutes, {
 
 app.register(insightsBusinessRoutes, {
   prefix: "/businesses",
+});
+
+app.register(teamRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(paymentBusinessRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(paymentPageRoutes, {
+  prefix: "/payments",
 });
 
 // Legacy aliases (temporary).
