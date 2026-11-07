@@ -47,6 +47,8 @@ import {
 
 import invoicingRoutes from "./modules/invoicing/invoicing.routes.js";
 
+import websiteRoutes from "./modules/website/website.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -62,6 +64,9 @@ app.register(cors, {
   origin: [
     "http://localhost:5173",
     "https://booking.atrionovo.com",
+    "https://atrionovo.com",
+    "https://www.atrionovo.com",
+    "http://localhost:4321",
   ],
 });
 
@@ -177,6 +182,10 @@ app.register(customerRoutes, {
 
 app.register(reservationRoutes, {
   prefix: "/reservations",
+});
+
+app.register(websiteRoutes, {
+  prefix: "/public",
 });
 
 app.register(publicBookingRoutes, {

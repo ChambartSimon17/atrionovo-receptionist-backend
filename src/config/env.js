@@ -55,6 +55,10 @@ const env = {
   mailFrom:
     process.env.MAIL_FROM || "facturen@mail.atrionovo.com",
 
+  // Where demo requests from atrionovo.com are mailed.
+  demoInbox:
+    process.env.DEMO_INBOX || "simon@atrionovo.com",
+
   // Peppol (e-invoice.be)
   einvoiceApiKey:
     process.env.EINVOICE_API_KEY,
