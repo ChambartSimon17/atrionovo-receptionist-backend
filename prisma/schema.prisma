@@ -243,6 +243,29 @@ model Business {
   timeEntries        TimeEntry[]
   payments           Payment[]
 
+  // -------------------------
+  // Invoicing
+  // -------------------------
+  //
+  // The business's own details on its receipts and
+  // invoices. Each business invoices in its own name.
+
+  invoiceLegalName  String?
+  invoiceVatNumber  String?
+  invoiceStreet     String?
+  invoicePostalCode String?
+  invoiceCity       String?
+  invoiceCountry    String  @default("BE")
+  invoiceIban       String?
+  invoiceEmail      String?
+
+  // Small-business exemption (art. 56bis WBTW): no VAT
+  // on the documents, with the legal mention instead.
+  vatExempt Boolean @default(false)
+  vatRate   Int     @default(21)
+
+  documents SalesDocument[]
+
   // Stripe Connect: the business's own Stripe account.
   // Card and QR payments go straight to that account.
   stripeAccountId      String?
@@ -299,6 +322,23 @@ model Customer {
   notes String?
 
   isVip Boolean @default(false)
+
+  // -------------------------
+  // Billing (for invoices)
+  // -------------------------
+  //
+  // Filled when the customer asks for an invoice, so the
+  // next invoice is ready with one tap.
+
+  billingName       String?
+  billingVatNumber  String?
+  billingStreet     String?
+  billingPostalCode String?
+  billingCity       String?
+  billingCountry    String?
+  billingEmail      String?
+
+  documents SalesDocument[]
 
   // -------------------------
   // Metadata
@@ -1380,9 +1420,95 @@ model Payment {
 
   paidAt DateTime?
 
+  documents SalesDocument[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([businessId, createdAt])
   @@index([appointmentId])
+}
+
+// ======================================================
+// SALES DOCUMENTS
+// ======================================================
+//
+// What the customer gets for a payment.
+//
+// RECEIPT      kasticket (T2026-0001)
+// INVOICE      factuur, with the customer's company and
+//              VAT number (F2026-0001)
+// CREDIT_NOTE  creditnota that cancels an invoice
+//              (C2026-0001)
+//
+// Every kind has its own gapless series per year. A
+// document is never changed or deleted: a mistake on an
+// invoice is corrected with a credit note.
+//
+// seller and buyer are copies of the details at the
+// moment of issuing; lines and totals likewise.
+// ======================================================
+
+enum SalesDocumentKind {
+  RECEIPT
+  INVOICE
+  CREDIT_NOTE
+}
+
+model SalesDocument {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  paymentId String?
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  customerId String?
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  kind SalesDocumentKind
+
+  year     Int
+  sequence Int
+  number   String
+
+  issuedAt    DateTime @default(now())
+  serviceDate DateTime
+
+  seller Json
+  buyer  Json?
+
+  // [{ name, quantity, unitCents (incl. VAT), vatRate }]
+  lines Json
+
+  netCents   Int
+  vatCents   Int
+  grossCents Int
+  tipCents   Int @default(0)
+
+  paymentMethod String?
+
+  // A credit note points at the invoice it cancels; a
+  // receipt turned into an invoice points at that invoice.
+  relatedDocumentId String?
+
+  emailTo    String?
+  emailedAt  DateTime?
+  emailError String?
+
+  // NOT_REQUIRED, PENDING, SENT, DELIVERED, FAILED
+  peppolStatus String?
+  peppolId     String?
+  peppolError  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, kind, year, sequence])
+  @@index([businessId, issuedAt])
+  @@index([paymentId])
 }

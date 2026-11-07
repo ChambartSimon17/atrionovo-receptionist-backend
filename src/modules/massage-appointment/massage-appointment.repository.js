@@ -22,6 +22,17 @@ const LIST_INCLUDE = {
   room: {
     select: { name: true },
   },
+  customer: {
+    select: {
+      billingName: true,
+      billingVatNumber: true,
+      billingStreet: true,
+      billingPostalCode: true,
+      billingCity: true,
+      billingCountry: true,
+      billingEmail: true,
+    },
+  },
   payments: {
     where: { status: "PAID" },
     select: {
@@ -30,6 +41,10 @@ const LIST_INCLUDE = {
       amountCents: true,
       tipCents: true,
       paidAt: true,
+      documents: {
+        select: { id: true, kind: true, number: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
     orderBy: { paidAt: "desc" },
     take: 1,

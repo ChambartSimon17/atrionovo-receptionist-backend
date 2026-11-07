@@ -64,6 +64,18 @@ function toDto(appointment) {
             appointment.payments[0].tipCents,
           tipCents: appointment.payments[0].tipCents,
           paidAt: appointment.payments[0].paidAt?.toISOString() ?? null,
+          documents: appointment.payments[0].documents ?? [],
+        }
+      : null,
+    billing: appointment.customer?.billingName
+      ? {
+          name: appointment.customer.billingName,
+          vatNumber: appointment.customer.billingVatNumber,
+          street: appointment.customer.billingStreet,
+          postalCode: appointment.customer.billingPostalCode,
+          city: appointment.customer.billingCity,
+          country: appointment.customer.billingCountry,
+          email: appointment.customer.billingEmail,
         }
       : null,
   };

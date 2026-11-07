@@ -45,6 +45,8 @@ import {
   paymentPageRoutes,
 } from "./modules/payment/payment.routes.js";
 
+import invoicingRoutes from "./modules/invoicing/invoicing.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -129,6 +131,10 @@ app.register(teamRoutes, {
 });
 
 app.register(paymentBusinessRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(invoicingRoutes, {
   prefix: "/businesses",
 });
 

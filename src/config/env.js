@@ -48,6 +48,17 @@ const env = {
   stripeSecretKey:
     process.env.STRIPE_SECRET_KEY,
 
+  // Mail (Resend): kastickets and invoices
+  resendApiKey:
+    process.env.RESEND_API_KEY,
+
+  mailFrom:
+    process.env.MAIL_FROM || "facturen@mail.atrionovo.com",
+
+  // Peppol (e-invoice.be)
+  einvoiceApiKey:
+    process.env.EINVOICE_API_KEY,
+
   // Public address of this backend, for the pages Stripe
   // sends customers and owners back to.
   publicBaseUrl:
