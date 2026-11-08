@@ -19,7 +19,7 @@ import { getUtcRangeForLocalDay } from "../../utils/time.utils.js";
 // registered: they are PAID at once.
 //
 // Stripe (STRIPE_LINK): every business connects its own
-// Stripe account (Stripe Connect, Express). The app shows
+// Stripe account (Stripe Connect). The app shows
 // a QR code of a Stripe Checkout page; the customer pays
 // with Bancontact, Apple Pay or a card. The payment is
 // made on the business's own account (a direct charge):
@@ -129,13 +129,15 @@ class PaymentService {
     if (!accountId) {
       // Stripe collects the details and carries the risk;
       // the business pays its own Stripe fees and manages
-      // its account in the Express Dashboard.
+      // its account in the full Stripe Dashboard. (Stripe
+      // only allows the Express Dashboard when the platform
+      // carries the risk.)
       const account = await client.accounts.create({
         controller: {
           fees: { payer: "account" },
           losses: { payments: "stripe" },
           requirement_collection: "stripe",
-          stripe_dashboard: { type: "express" },
+          stripe_dashboard: { type: "full" },
         },
         country: "BE",
         email: email || undefined,
