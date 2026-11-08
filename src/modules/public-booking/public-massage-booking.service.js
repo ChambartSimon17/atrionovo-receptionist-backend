@@ -5,6 +5,7 @@ import massageServiceRepository from "../massage-service/massage-service.reposit
 import massageAppointmentRepository from "../massage-appointment/massage-appointment.repository.js";
 import massageAppointmentService from "../massage-appointment/massage-appointment.service.js";
 import massageAvailabilityService from "../massage-appointment/massage-availability.service.js";
+import pushService from "../insights/push.service.js";
 import { localDateOf } from "../massage-appointment/local-time.js";
 import ConflictError from "../../errors/ConflictError.js";
 import NotFoundError from "../../errors/NotFoundError.js";
@@ -121,8 +122,14 @@ class PublicMassageBookingService {
     const appointment =
       await massageAppointmentService.create(
         business.id,
-        data
+        { ...data, source: "WEB" }
       );
+
+    void pushService.notifyNewAppointment(
+      business,
+      appointment,
+      "WEB"
+    );
 
     return {
       id: appointment.id,

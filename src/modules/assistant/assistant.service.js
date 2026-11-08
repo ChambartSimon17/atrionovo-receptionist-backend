@@ -179,21 +179,10 @@ class AssistantService {
         }
       );
 
-    await pushService.notifyBusiness(
-      business.id,
-      {
-        title: "Nieuwe reservatie via de AI",
-        body: `${reservation.firstName} ${reservation.lastName} · ${reservation.guestCount} pers. · ${utcToLocalDateTimeString(
-          reservation.startTime,
-          business.timezone
-        )
-          .slice(0, 16)
-          .replace("T", " ")}`,
-        data: {
-          type: "reservation",
-          reservationId: reservation.id,
-        },
-      }
+    void pushService.notifyNewReservation(
+      business,
+      reservation,
+      "AI"
     );
 
     return {

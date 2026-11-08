@@ -225,19 +225,11 @@ class AssistantMassageService {
       }
     );
 
-    await pushService.notifyBusiness(businessId, {
-      title: "Nieuwe afspraak via de AI",
-      body: `${appointment.firstName} ${appointment.lastName} · ${appointment.serviceName} · ${utcToLocalDateTimeString(
-        appointment.startTime,
-        business.timezone
-      )
-        .slice(0, 16)
-        .replace("T", " ")}`,
-      data: {
-        type: "appointment",
-        appointmentId: appointment.id,
-      },
-    });
+    void pushService.notifyNewAppointment(
+      business,
+      appointment,
+      "AI"
+    );
 
     return {
       message: "Appointment created successfully.",

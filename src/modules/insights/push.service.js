@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 import prisma from "../../db/prisma.js";
 
 // ======================================================
@@ -11,6 +13,24 @@ import prisma from "../../db/prisma.js";
 // ======================================================
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+const SOURCE_LABELS = {
+  AI: "via de AI",
+  WEB: "online",
+};
+
+function fullName({ firstName, lastName }) {
+  return [firstName, lastName].filter(Boolean).join(" ");
+}
+
+// "vr 13 nov · 19:30", in the time zone of the business.
+function formatWhen(startTime, timezone) {
+  return DateTime.fromJSDate(new Date(startTime))
+    .setZone(timezone)
+    .setLocale("nl-BE")
+    .toFormat("ccc d LLL · HH:mm")
+    .replace(/\./g, "");
+}
 
 class PushService {
   async registerToken(userId, token) {
@@ -32,6 +52,45 @@ class PushService {
     await prisma.pushToken.deleteMany({
       where: { userId, token },
     });
+  }
+
+  /**
+   * A reservation made by the AI or on the booking page.
+   * Not awaited by the caller's response: a slow push
+   * service never delays a phone call or a booking.
+   */
+  notifyNewReservation(business, reservation, source, log) {
+    return this.notifyBusiness(
+      business.id,
+      {
+        title: `Nieuwe reservatie ${SOURCE_LABELS[source]}`,
+        body: `${fullName(reservation)} · ${reservation.guestCount} pers. · ${formatWhen(reservation.startTime, business.timezone)}`,
+        data: {
+          type: "reservation",
+          reservationId: reservation.id,
+        },
+      },
+      log
+    );
+  }
+
+  /**
+   * A massage appointment made by the AI or on the
+   * booking page.
+   */
+  notifyNewAppointment(business, appointment, source, log) {
+    return this.notifyBusiness(
+      business.id,
+      {
+        title: `Nieuwe afspraak ${SOURCE_LABELS[source]}`,
+        body: `${fullName(appointment)} · ${appointment.serviceName} · ${formatWhen(appointment.startTime, business.timezone)}${appointment.therapistName ? ` · ${appointment.therapistName}` : ""}`,
+        data: {
+          type: "appointment",
+          appointmentId: appointment.id,
+        },
+      },
+      log
+    );
   }
 
   /**

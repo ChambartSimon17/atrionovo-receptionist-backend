@@ -1,5 +1,6 @@
 import businessRepository from "../business/business.repository.js";
 import reservationService from "../reservation/reservation.service.js";
+import pushService from "../insights/push.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 import {
@@ -128,7 +129,8 @@ class PublicBookingService {
         business.timezone
       );
 
-    return reservationService.createReservation({
+    const reservation =
+      await reservationService.createReservation({
       businessId:
         business.id,
 
@@ -154,6 +156,14 @@ class PublicBookingService {
 
       source: "WEB",
     });
+
+    void pushService.notifyNewReservation(
+      business,
+      reservation,
+      "WEB"
+    );
+
+    return reservation;
   }
 }
 
