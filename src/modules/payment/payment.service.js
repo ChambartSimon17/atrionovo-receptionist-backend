@@ -21,8 +21,10 @@ import { getUtcRangeForLocalDay } from "../../utils/time.utils.js";
 // Stripe (STRIPE_LINK): every business connects its own
 // Stripe account (Stripe Connect, Express). The app shows
 // a QR code of a Stripe Checkout page; the customer pays
-// with Bancontact, Apple Pay or a card, and the money goes
-// to the business's account (a destination charge). The
+// with Bancontact, Apple Pay or a card. The payment is
+// made on the business's own account (a direct charge):
+// the business is the seller, its name is on the bank
+// statement, and refunds and disputes are its own. The
 // app asks for the status until Stripe reports it paid,
 // so no webhook is needed.
 //
@@ -125,8 +127,16 @@ class PaymentService {
     let accountId = business.stripeAccountId;
 
     if (!accountId) {
+      // Stripe collects the details and carries the risk;
+      // the business pays its own Stripe fees and manages
+      // its account in the Express Dashboard.
       const account = await client.accounts.create({
-        type: "express",
+        controller: {
+          fees: { payer: "account" },
+          losses: { payments: "stripe" },
+          requirement_collection: "stripe",
+          stripe_dashboard: { type: "express" },
+        },
         country: "BE",
         email: email || undefined,
         business_profile: { name: business.name },
@@ -253,17 +263,18 @@ class PaymentService {
         },
       }));
 
-    const session = await client.checkout.sessions.create({
-      mode: "payment",
-      line_items: lineItems,
-      success_url: `${env.publicBaseUrl}/payments/done`,
-      payment_intent_data: {
-        on_behalf_of: business.stripeAccountId,
-        transfer_data: { destination: business.stripeAccountId },
+    const session = await client.checkout.sessions.create(
+      {
+        mode: "payment",
+        line_items: lineItems,
+        success_url: `${env.publicBaseUrl}/payments/done`,
+        payment_intent_data: {
+          metadata: { paymentId: payment.id, businessId },
+        },
         metadata: { paymentId: payment.id, businessId },
       },
-      metadata: { paymentId: payment.id, businessId },
-    });
+      { stripeAccount: business.stripeAccountId }
+    );
 
     const updated = await prisma.payment.update({
       where: { id: payment.id },
@@ -290,7 +301,8 @@ class PaymentService {
 
     const session = await stripe.checkout.sessions.retrieve(
       payment.stripeSessionId,
-      { expand: ["payment_intent.payment_method"] }
+      { expand: ["payment_intent.payment_method"] },
+      { stripeAccount: await this.#stripeAccountId(businessId) }
     );
 
     if (session.payment_status === "paid") {
@@ -333,7 +345,9 @@ class PaymentService {
 
     if (payment.stripeSessionId && stripe) {
       await stripe.checkout.sessions
-        .expire(payment.stripeSessionId)
+        .expire(payment.stripeSessionId, undefined, {
+          stripeAccount: await this.#stripeAccountId(businessId),
+        })
         .catch(() => {});
     }
 
@@ -403,6 +417,16 @@ class PaymentService {
       where: { id: business.id },
       data: { stripeChargesEnabled: Boolean(account.charges_enabled) },
     });
+  }
+
+  // Checkout sessions live on the business's own account.
+  async #stripeAccountId(businessId) {
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { stripeAccountId: true },
+    });
+
+    return business?.stripeAccountId ?? undefined;
   }
 
   #stripe() {
