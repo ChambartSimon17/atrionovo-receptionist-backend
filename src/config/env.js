@@ -59,6 +59,27 @@ const env = {
   demoInbox:
     process.env.DEMO_INBOX || "simon@atrionovo.com",
 
+  // Live demo on atrionovo.com: Google Places finds the
+  // business, Twilio sends the confirmation text. Without
+  // a Google key the demo is switched off.
+  googleMapsApiKey:
+    process.env.GOOGLE_MAPS_API_KEY,
+
+  twilioSmsFrom:
+    process.env.TWILIO_SMS_FROM || "AtrioNovo",
+
+  // The Vapi number the demo calls from. Best a number of
+  // its own, so demo callers never call back into a real
+  // business. Falls back to VAPI_PHONE_NUMBER_ID.
+  liveDemoPhoneNumberId:
+    process.env.LIVE_DEMO_PHONE_NUMBER_ID || process.env.VAPI_PHONE_NUMBER_ID,
+
+  liveDemoModel:
+    process.env.LIVE_DEMO_MODEL || "gpt-4o",
+
+  liveDemoDailyCalls:
+    Number(process.env.LIVE_DEMO_DAILY_CALLS || 40),
+
   // Peppol (e-invoice.be)
   einvoiceApiKey:
     process.env.EINVOICE_API_KEY,

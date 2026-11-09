@@ -49,6 +49,8 @@ import invoicingRoutes from "./modules/invoicing/invoicing.routes.js";
 
 import websiteRoutes from "./modules/website/website.routes.js";
 
+import liveDemoRoutes from "./modules/live-demo/live-demo.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -186,6 +188,10 @@ app.register(reservationRoutes, {
 
 app.register(websiteRoutes, {
   prefix: "/public",
+});
+
+app.register(liveDemoRoutes, {
+  prefix: "/public/live-demo",
 });
 
 app.register(publicBookingRoutes, {
