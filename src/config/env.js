@@ -75,7 +75,7 @@ const env = {
     process.env.LIVE_DEMO_PHONE_NUMBER_ID || process.env.VAPI_PHONE_NUMBER_ID,
 
   liveDemoModel:
-    process.env.LIVE_DEMO_MODEL || "gpt-4o",
+    process.env.LIVE_DEMO_MODEL || "gpt-4.1",
 
   liveDemoDailyCalls:
     Number(process.env.LIVE_DEMO_DAILY_CALLS || 40),

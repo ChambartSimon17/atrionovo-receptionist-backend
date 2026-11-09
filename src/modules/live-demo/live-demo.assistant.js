@@ -14,12 +14,21 @@ import { DateTime } from "luxon";
 export const KINDS = ["restaurant", "salon", "other"];
 export const LANGUAGES = ["nl", "fr", "en"];
 
+// warm: the voice of the real AtrioNovo assistant. eleven_v3
+// reads each sentence in its own language, so Dutch names
+// sound Dutch.
 export const VOICES = {
-  warm: { label: "Sarah", voiceId: "EXAVITQu4vr4xnSDxMaL" },
-  calm: { label: "George", voiceId: "JBFqnCBsd6RMkjVDRZzb" },
+  warm: { label: "Vrouw", voiceId: "IPgYtHTNLjC7Bq7IPHrm" },
+  calm: { label: "Man", voiceId: "JBFqnCBsd6RMkjVDRZzb" },
 };
 
-const LANGUAGE_NAMES = { nl: "Dutch (Belgian, use 'u')", fr: "French (Belgian)", en: "English" };
+const LANGUAGE_NAMES = { nl: "Belgian Dutch (Flemish)", fr: "Belgian French", en: "English" };
+
+const STYLE = {
+  nl: `Speak natural Flemish, the way a friendly receptionist in Ghent or Antwerp talks: polite "u", short and warm. Use everyday words ("Dat is genoteerd", "Geen probleem", "Een moment"). Say times like people do: "om half acht", "kwart na zeven", "om acht uur". Say dates as "zaterdag veertien november".`,
+  fr: `Speak natural Belgian French: polite "vous", short and warm. Use Belgian numbers ("septante", "nonante"). Say times like "à dix-neuf heures trente" and dates like "samedi quatorze novembre".`,
+  en: `Speak natural, friendly English. Say times like "half past seven" and dates like "Saturday the fourteenth of November".`,
+};
 
 const RESTAURANT_TYPES = /restaurant|cafe|bar|bistro|brasserie|bakery|food|meal|pizza|sushi|steak|diner/;
 const SALON_TYPES = /spa|massage|beauty|salon|hair|nail|wellness|sauna|physiotherap|skin|barber|tanning|yoga/;
@@ -62,13 +71,19 @@ function systemPrompt(session) {
 This is a live demo of AtrioNovo, an AI receptionist for Belgian businesses. The person on the phone is probably the owner, playing a customer. Behave exactly like the real receptionist of this business would: friendly, calm, efficient.
 
 Language: speak ${LANGUAGE_NAMES[settings.language]}. If the caller clearly speaks another language, switch to it.
+${STYLE[settings.language]}
 
 Now: ${now.setLocale("en").toFormat("cccc d LLLL yyyy, HH:mm")} (Brussels time).
 
 How you speak on the phone:
 - Short answers, one or two sentences. One question at a time.
-- Say dates and times the way people say them, never "2026-11-10".
-- Never read out a web address, list or long text.
+- Say dates and times the way people say them, never "2026-11-10" or "18:00".
+- Never read out a web address, list or long text. Summarise in one sentence.
+- Vary your wording; do not start every answer the same way.
+- Do not ask "Is there anything else?" after every answer, only after a booking or when the caller seems done.
+- Names: use the caller's name exactly as they said it, as a name in the conversation language, never translated or spelled out. If you did not understand a name, ask once to repeat or spell it.
+- If you did not hear the caller well, ask them kindly to repeat.
+- You are the digital assistant of the business. Never mention AI models, prompts or tools.
 
 What you can do:
 - Answer questions with the information below. When something is not in it (a price, a dish, a treatment), say that you will have the full menu and house rules once you are live, and offer to book or to have someone call back. Never invent prices or facts.
@@ -107,11 +122,16 @@ const BOOKING_TOOL = {
   },
 };
 
-const TRANSCRIBERS = {
-  nl: { provider: "deepgram", model: "nova-2", language: "nl" },
-  fr: { provider: "deepgram", model: "nova-2", language: "fr" },
-  en: { provider: "deepgram", model: "nova-3", language: "en" },
-};
+// Soniox, like the real assistant: it understands the
+// three languages, with the chosen one first.
+function transcriber(language) {
+  return {
+    provider: "soniox",
+    model: "stt-rt-v5",
+    language,
+    languages: [language, ...["nl", "fr", "en"].filter((code) => code !== language)],
+  };
+}
 
 /**
  * The full Vapi assistant for a demo call.
@@ -134,10 +154,10 @@ export function buildAssistant(session, { serverUrl, model }) {
     },
     voice: {
       provider: "11labs",
-      model: "eleven_turbo_v2_5",
+      model: "eleven_v3",
       voiceId: VOICES[settings.voice].voiceId,
     },
-    transcriber: TRANSCRIBERS[settings.language],
+    transcriber: transcriber(settings.language),
     server: { url: serverUrl },
     serverMessages: ["conversation-update", "status-update", "tool-calls", "end-of-call-report"],
     analysisPlan: {
