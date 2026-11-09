@@ -12,8 +12,15 @@ import env from "../../config/env.js";
 
 const BASE = "https://places.googleapis.com/v1";
 
-// Search in the countries AtrioNovo serves first.
+// Search in the countries AtrioNovo serves, Belgium first.
 const REGIONS = ["be", "nl", "lu", "fr"];
+
+const BELGIUM = {
+  rectangle: {
+    low: { latitude: 49.49, longitude: 2.54 },
+    high: { latitude: 51.51, longitude: 6.41 },
+  },
+};
 
 const DETAIL_FIELDS = [
   "id",
@@ -78,6 +85,9 @@ export async function autocomplete(input, { language, sessionToken }) {
       input,
       languageCode: language,
       includedRegionCodes: REGIONS,
+      includedPrimaryTypes: ["establishment"],
+      locationBias: BELGIUM,
+      regionCode: "be",
       includeQueryPredictions: false,
       sessionToken,
     },
