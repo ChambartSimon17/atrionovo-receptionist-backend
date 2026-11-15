@@ -371,6 +371,11 @@ class LiveDemoService {
         if (message.status === "ended") {
           call.endedAt ??= new Date().toISOString();
           call.endedReason ??= message.endedReason ?? null;
+
+          // The report normally comes with the end-of-call
+          // report. If that never arrives, still mail the
+          // number that was called.
+          setTimeout(() => void this.#reportToTeam(session, log), 60 * 1000).unref();
         }
 
         return { ok: true };
@@ -433,7 +438,7 @@ class LiveDemoService {
       text: [
         `Naam: ${name || "-"}`,
         `E-mail: ${email}`,
-        `Telefoon (demo): ${session.phone ?? "-"}`,
+        `Gebeld naar (demo): ${session.phone ?? "-"}`,
         "",
         `Zaak: ${session.place.name}`,
         `Adres: ${session.place.address}`,
@@ -500,14 +505,20 @@ class LiveDemoService {
     session.call.reported = true;
 
     try {
+      const digits = session.phone.replace(/\D/g, "");
+
       await sendMail({
         fromName: "AtrioNovo live demo",
         to: env.demoInbox,
-        subject: `Live demo: ${session.place.name}`,
+        subject: `Live demo: ${session.place.name} (gebeld naar ${session.phone})`,
         text: [
-          `${session.place.name}, ${session.place.address}`,
+          `Gebeld naar (nummer van de bezoeker): ${session.phone}`,
+          `WhatsApp: https://wa.me/${digits}`,
+          `SMS: sms:${session.phone}`,
+          "",
+          `Zaak: ${session.place.name}, ${session.place.address}`,
+          `Telefoon van de zaak (Google): ${session.place.phone ?? "-"}`,
           `Website: ${session.place.website ?? "-"}`,
-          `Gebeld naar: ${session.phone}`,
           `Taal: ${session.settings.language}, type: ${session.settings.kind}`,
           `Geboekt: ${session.call.booking ? "ja" : "nee"}`,
           "",
