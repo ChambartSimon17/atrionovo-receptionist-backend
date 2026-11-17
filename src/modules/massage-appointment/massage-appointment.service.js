@@ -3,6 +3,7 @@ import massageAvailabilityService from "./massage-availability.service.js";
 import { DateTime } from "luxon";
 import businessRepository from "../business/business.repository.js";
 import customerService from "../customer/customer.service.js";
+import calendarSyncService from "../calendar-sync/calendar-sync.service.js";
 import { localDateOf } from "./local-time.js";
 import ConflictError from "../../errors/ConflictError.js";
 import NotFoundError from "../../errors/NotFoundError.js";
@@ -31,6 +32,13 @@ import { runTransaction } from "../../utils/transaction.utils.js";
 // Status changes
 // A CONFIRMED appointment can become COMPLETED, CANCELLED
 // or NO_SHOW. Other statuses are final.
+//
+// External calendars
+// Before a booking or a move is confirmed, the business's
+// external calendars are re-read live for that day, so a
+// fresh event there cannot be double-booked. Afterwards the
+// appointment is copied into the business's own calendar
+// in the background (removed again when cancelled).
 // ======================================================
 
 /**
@@ -153,6 +161,9 @@ class MassageAppointmentService {
       business.timezone
     );
 
+    // Network call: before the transaction, not inside it.
+    await calendarSyncService.checkDayLive(business, date);
+
     const appointment = await runTransaction(
       async (tx) => {
         const slots =
@@ -214,6 +225,8 @@ class MassageAppointmentService {
       }
     );
 
+    calendarSyncService.queueAppointment(appointment.id);
+
     return toDto(appointment);
   }
 
@@ -249,6 +262,13 @@ class MassageAppointmentService {
         data
       );
 
+    if (
+      data.status === "CANCELLED" &&
+      appointment.status !== "CANCELLED"
+    ) {
+      calendarSyncService.queueAppointment(appointmentId);
+    }
+
     return toDto(updated);
   }
 
@@ -265,6 +285,11 @@ class MassageAppointmentService {
     const business = await this.#getBusiness(businessId);
 
     const startTime = new Date(startTimeInput);
+
+    await calendarSyncService.checkDayLive(
+      business,
+      localDateOf(startTime, business.timezone)
+    );
 
     const updated = await runTransaction(async (tx) => {
       const appointment =
@@ -338,6 +363,8 @@ class MassageAppointmentService {
         tx
       );
     });
+
+    calendarSyncService.queueAppointment(updated.id);
 
     return toDto(updated);
   }

@@ -232,3 +232,57 @@ export function buildBusyIntervals(
 
   return busy;
 }
+
+/**
+ * Adds busy time from external calendars (iCloud, a
+ * Setmore feed) to the therapists' busy intervals.
+ *
+ * blocks: [{ startMs, endMs, therapistId, travelMinutes }]
+ *   therapistId null: blocks every therapist (a one-person
+ *   practice). travelMinutes: time to get to and from the
+ *   other location, before and after the block.
+ * therapistIds: the therapists of the day.
+ *
+ * Like an appointment, a block is followed by the buffer;
+ * a new appointment already keeps its own buffer before
+ * the block. External blocks never occupy a room and do
+ * not count as appointments.
+ *
+ * Returns a new busy object; the given one is unchanged,
+ * so appointment counts can still be taken from it.
+ */
+export function addExternalBusy(
+  busy,
+  blocks,
+  therapistIds,
+  bufferMinutes
+) {
+  const therapist = new Map(
+    [...busy.therapist].map(([id, list]) => [id, [...list]])
+  );
+
+  for (const block of blocks) {
+    const travelMs = (block.travelMinutes ?? 0) * MINUTE_MS;
+
+    const interval = {
+      startMs: block.startMs - travelMs,
+      endMs:
+        block.endMs +
+        travelMs +
+        bufferMinutes * MINUTE_MS,
+    };
+
+    const ids = block.therapistId
+      ? [block.therapistId]
+      : therapistIds;
+
+    for (const id of ids) {
+      const list = therapist.get(id) ?? [];
+
+      list.push(interval);
+      therapist.set(id, list);
+    }
+  }
+
+  return { therapist, room: busy.room };
+}

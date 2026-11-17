@@ -84,6 +84,22 @@ const env = {
   einvoiceApiKey:
     process.env.EINVOICE_API_KEY,
 
+  // Calendar sync (iCloud CalDAV, ICS feeds).
+  // The key encrypts app passwords and ICS links in the
+  // database. The iCloud account is only the default for
+  // the setup script; each business stores its own.
+  calendarEncryptionKey:
+    process.env.CALENDAR_ENCRYPTION_KEY,
+
+  icloudUsername:
+    process.env.ICLOUD_USERNAME,
+
+  icloudAppPassword:
+    process.env.ICLOUD_APP_PASSWORD,
+
+  calendarSyncIntervalMinutes:
+    Number(process.env.CALENDAR_SYNC_INTERVAL_MINUTES || 5),
+
   // Public address of this backend, for the pages Stripe
   // sends customers and owners back to.
   publicBaseUrl:

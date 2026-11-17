@@ -26,6 +26,9 @@ importers:
       fastify:
         specifier: ^5.10.0
         version: 5.10.0
+      ical.js:
+        specifier: ^2.2.1
+        version: 2.2.1
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
@@ -41,6 +44,9 @@ importers:
       stripe:
         specifier: ^23.1.0
         version: 23.1.0
+      tsdav:
+        specifier: ^2.5.1
+        version: 2.5.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -568,6 +574,9 @@ packages:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
 
+  ical.js@2.2.1:
+    resolution: {integrity: sha512-yK/UlPbEs316igb/tjRgbFA8ZV75rCsBJp/hWOatpyaPNlgw0dGDmU+FoicOcwX4xXkeXOkYiOmCqNPFpNPkQg==}
+
   ignore-by-default@1.0.1:
     resolution: {integrity: sha512-Ius2VYcGNk7T90CppJqcIkS5ooHUZyIQK+ClZfMfMNFEF9VSE73Fq+906u/CWu92x4gzZMWOwfFYckPObzdEbA==}
 
@@ -863,6 +872,10 @@ packages:
     resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
     engines: {node: '>=10'}
 
+  sax@1.6.1:
+    resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
+    engines: {node: '>=11.0.0'}
+
   secure-json-parse@4.1.0:
     resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
 
@@ -929,6 +942,10 @@ packages:
     resolution: {integrity: sha512-r0eojU4bI8MnHr8c5bNo7lJDdI2qXlWWJk6a9EAFG7vbhTjElYhBVS3/miuE0uOuoLdb8Mc/rVfsmm6eo5o9GA==}
     hasBin: true
 
+  tsdav@2.5.1:
+    resolution: {integrity: sha512-ws8muUngH0u2KtASOzMAh/4sWEMwS0u8Yd87E26A/XK0Kax1QNm3pTY4B7KqNLhD66Z5Q/Ffbw+jxvOaYmBX7w==}
+    engines: {node: '>=18'}
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -953,6 +970,10 @@ packages:
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
+
+  xml-js@1.6.11:
+    resolution: {integrity: sha512-7rVi2KMfwfWFl+GpPg6m80IVMWXLRjO+PxTq7V2CDhoGak0wzYzFgUY2m4XJ47OGdXd8eLE8EmwfAmdjw7lC1g==}
+    hasBin: true
 
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
@@ -1517,6 +1538,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  ical.js@2.2.1: {}
+
   ignore-by-default@1.0.1: {}
 
   ignore@5.3.2: {}
@@ -1788,6 +1811,8 @@ snapshots:
 
   safe-stable-stringify@2.5.0: {}
 
+  sax@1.6.1: {}
+
   secure-json-parse@4.1.0: {}
 
   semver@7.8.5: {}
@@ -1832,6 +1857,13 @@ snapshots:
 
   touch@3.1.1: {}
 
+  tsdav@2.5.1:
+    dependencies:
+      debug: 4.4.3(supports-color@5.5.0)
+      xml-js: 1.6.11
+    transitivePeerDependencies:
+      - supports-color
+
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
@@ -1857,6 +1889,10 @@ snapshots:
       isexe: 2.0.0
 
   word-wrap@1.2.5: {}
+
+  xml-js@1.6.11:
+    dependencies:
+      sax: 1.6.1
 
   yocto-queue@0.1.0: {}
 

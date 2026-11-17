@@ -2,7 +2,10 @@ import massageAppointmentRepository from "./massage-appointment.repository.js";
 import massageServiceRepository from "../massage-service/massage-service.repository.js";
 import businessRepository from "../business/business.repository.js";
 import openingScheduleService from "../business/opening-schedule/opening-schedule.service.js";
+import calendarSyncRepository from "../calendar-sync/calendar-sync.repository.js";
+import calendarSyncService from "../calendar-sync/calendar-sync.service.js";
 import {
+  addExternalBusy,
   buildBusyIntervals,
   buildCandidateMinutes,
   findAvailableSlots,
@@ -47,6 +50,9 @@ class MassageAvailabilityService {
       businessId,
       serviceId
     );
+
+    // Catch up external calendars if the server slept.
+    await calendarSyncService.refreshIfStale(businessId);
 
     const slots = await this.computeSlots({
       business,
@@ -146,6 +152,16 @@ class MassageAvailabilityService {
         db
       );
 
+    // External busy time that can reach into this day,
+    // travel time and buffer included (at most a day).
+    const externalBlocks =
+      await calendarSyncRepository.findBlocksOverlapping(
+        business.id,
+        new Date(dayRange.start.getTime() - 24 * 60 * 60_000),
+        new Date(dayRange.end.getTime() + 24 * 60 * 60_000),
+        db
+      );
+
     const appointments = existing
       .filter(
         (appointment) =>
@@ -158,8 +174,20 @@ class MassageAvailabilityService {
       endMs: appointment.endTime.getTime(),
     }));
 
-    const busy = buildBusyIntervals(
+    const appointmentBusy = buildBusyIntervals(
       appointments,
+      bufferMinutes
+    );
+
+    const busy = addExternalBusy(
+      appointmentBusy,
+      externalBlocks.map((block) => ({
+        startMs: block.startTime.getTime(),
+        endMs: block.endTime.getTime(),
+        therapistId: block.calendar.therapistId,
+        travelMinutes: block.calendar.travelMinutes,
+      })),
+      therapists.map((therapist) => therapist.id),
       bufferMinutes
     );
 
@@ -200,7 +228,7 @@ class MassageAvailabilityService {
           })
         ),
         appointmentCount: countFor(
-          busy.therapist,
+          appointmentBusy.therapist,
           therapist.id
         ),
       })),

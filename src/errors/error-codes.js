@@ -2,6 +2,9 @@
 // NOT renamed together with the keys: the Vapi assistant and
 // other clients may react to codes such as "RESTAURANT_CLOSED".
 export const ErrorCodes = {
+  // Calendar sync
+  CALENDAR_UNAVAILABLE: "CALENDAR_UNAVAILABLE",
+
   // Reservation Eligibility
   BUSINESS_CLOSED: "RESTAURANT_CLOSED",
   OUTSIDE_OPENING_HOURS: "OUTSIDE_OPENING_HOURS",

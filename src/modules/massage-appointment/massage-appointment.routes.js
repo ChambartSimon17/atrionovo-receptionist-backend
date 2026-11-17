@@ -41,6 +41,14 @@ export default async function massageAppointmentRoutes(
   );
 
   fastify.get(
+    "/:businessId/external-busy",
+    { preHandler },
+    massageAppointmentController.listExternalBusy.bind(
+      massageAppointmentController
+    )
+  );
+
+  fastify.get(
     "/:businessId/appointments/month",
     { preHandler },
     massageAppointmentController.countsForMonth.bind(

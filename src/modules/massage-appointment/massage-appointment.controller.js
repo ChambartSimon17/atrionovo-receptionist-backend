@@ -1,5 +1,6 @@
 import massageAppointmentService from "./massage-appointment.service.js";
 import massageAvailabilityService from "./massage-availability.service.js";
+import calendarSyncService from "../calendar-sync/calendar-sync.service.js";
 import {
   availabilityQuerySchema,
   createAppointmentSchema,
@@ -47,6 +48,28 @@ class MassageAppointmentController {
     return reply.send({
       success: true,
       data: appointments,
+    });
+  }
+
+  /**
+   * GET /businesses/:businessId/external-busy?date=2026-11-02
+   *
+   * Busy time from the business's own calendars (iCloud,
+   * Setmore), shown grey and read-only in the agenda.
+   */
+  async listExternalBusy(request, reply) {
+    const query = listAppointmentsQuerySchema.parse(
+      request.query
+    );
+
+    const blocks = await calendarSyncService.listBusyForDay(
+      request.params.businessId,
+      query.date
+    );
+
+    return reply.send({
+      success: true,
+      data: blocks,
     });
   }
 
