@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 
 import prisma from "../../db/prisma.js";
 import businessRepository from "../business/business.repository.js";
+import calendarSyncRepository from "../calendar-sync/calendar-sync.repository.js";
 import {
   absenceCoversDate,
   addDays,
@@ -563,6 +564,14 @@ class TeamScheduleService {
       select: { therapistId: true, startTime: true, endTime: true },
     });
 
+    // Wide enough for travel time on either side.
+    const externalBlocks = await calendarSyncRepository.findBlocksOverlapping(
+      business.id,
+      new Date(startMs - 6 * 60 * MINUTE_MS),
+      new Date(endMs + 6 * 60 * MINUTE_MS),
+      db
+    );
+
     return therapists
       .filter((therapist) => {
         const windows = therapistDay(therapist, date).periods.map(
@@ -583,7 +592,24 @@ class TeamScheduleService {
             startMs < other.endTime.getTime() + bufferMs
         );
 
-        return works && !occupied;
+        // Busy in the business's own calendars (iCloud,
+        // Setmore): a block of the whole business, or of
+        // this therapist. Travel time around it, buffer after.
+        const blocked = externalBlocks.some((block) => {
+          const forTherapist =
+            !block.calendar.therapistId ||
+            block.calendar.therapistId === therapist.id;
+
+          const travelMs = (block.calendar.travelMinutes ?? 0) * MINUTE_MS;
+
+          return (
+            forTherapist &&
+            block.startTime.getTime() - travelMs < endMs + bufferMs &&
+            startMs < block.endTime.getTime() + travelMs + bufferMs
+          );
+        });
+
+        return works && !occupied && !blocked;
       })
       .map((therapist) => ({ id: therapist.id, name: therapist.name }));
   }

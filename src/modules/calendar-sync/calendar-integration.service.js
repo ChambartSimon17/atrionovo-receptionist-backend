@@ -109,6 +109,9 @@ function publicCalendar(calendar, blockCounts) {
     isActive: calendar.isActive,
     isWriteTarget: calendar.isWriteTarget,
     travelMinutes: calendar.travelMinutes,
+    // Empty: busy for the whole business. Set: only for
+    // that therapist.
+    therapistId: calendar.therapistId ?? null,
     lastSyncAt: calendar.lastSyncAt,
     lastError: calendar.lastError,
     blockCount: blockCounts.get(calendar.id) ?? 0,
@@ -129,6 +132,28 @@ class CalendarIntegrationService {
     }
 
     return connection;
+  }
+
+  /**
+   * The therapists must belong to this business.
+   */
+  async #checkTherapists(businessId, ids) {
+    const wanted = [...new Set(ids.filter(Boolean))];
+
+    if (wanted.length === 0) {
+      return;
+    }
+
+    const found = await prisma.therapist.count({
+      where: { businessId, id: { in: wanted } },
+    });
+
+    if (found !== wanted.length) {
+      throw new NotFoundError(
+        "Therapist not found.",
+        ErrorCodes.THERAPIST_NOT_FOUND
+      );
+    }
   }
 
   #credentials(connection, password) {
@@ -271,6 +296,7 @@ class CalendarIntegrationService {
         read: Boolean(current?.isActive),
         write: Boolean(current?.isActive && current?.isWriteTarget),
         travelMinutes: current?.travelMinutes ?? 0,
+        therapistId: current?.therapistId ?? null,
       };
     });
   }
@@ -280,11 +306,16 @@ class CalendarIntegrationService {
    * busy time and which one gets new appointments, then
    * syncs them.
    *
-   * calendars: [{ remoteUrl, read, travelMinutes }]
+   * calendars: [{ remoteUrl, read, travelMinutes, therapistId }]
    * writeUrl:  remote URL of the write calendar, or null.
    */
   async saveIcloudCalendars(businessId, connectionId, { calendars, writeUrl }) {
     const connection = await this.#findConnection(businessId, connectionId);
+
+    await this.#checkTherapists(
+      businessId,
+      calendars.map((calendar) => calendar.therapistId)
+    );
 
     const remote = await this.#listRemote(connection);
 
@@ -323,6 +354,10 @@ class CalendarIntegrationService {
 
     const travel = new Map(
       chosen.map((calendar) => [calendar.remoteUrl, calendar.travelMinutes ?? 0])
+    );
+
+    const owners = new Map(
+      chosen.map((calendar) => [calendar.remoteUrl, calendar.therapistId ?? null])
     );
 
     await prisma.$transaction(async (tx) => {
@@ -365,6 +400,7 @@ class CalendarIntegrationService {
           isActive: true,
           isWriteTarget: url === write,
           travelMinutes: travel.get(url) ?? 0,
+          therapistId: owners.get(url) ?? null,
         };
 
         await tx.externalCalendar.upsert({
@@ -387,8 +423,10 @@ class CalendarIntegrationService {
    * Adds an ICS link (Setmore and others) as busy time,
    * after checking that it really is a calendar.
    */
-  async connectIcs(businessId, { name, url, travelMinutes }) {
+  async connectIcs(businessId, { name, url, travelMinutes, therapistId }) {
     const link = checkIcsLink(url);
+
+    await this.#checkTherapists(businessId, [therapistId]);
 
     try {
       await fetchIcsFeed(link, { timeoutMs: SETUP_TIMEOUT_MS });
@@ -412,6 +450,7 @@ class CalendarIntegrationService {
           remoteUrl: `ics:${connection.id}`,
           displayName: name,
           travelMinutes: travelMinutes ?? 0,
+          therapistId: therapistId ?? null,
         },
       });
     });
@@ -420,8 +459,8 @@ class CalendarIntegrationService {
   }
 
   /**
-   * Name (ICS only), travel time, or on/off of one
-   * calendar.
+   * Name (ICS only), travel time, therapist, or on/off
+   * of one calendar.
    */
   async updateCalendar(businessId, calendarId, changes) {
     const calendar = await prisma.externalCalendar.findFirst({
@@ -440,6 +479,11 @@ class CalendarIntegrationService {
 
     if (changes.travelMinutes !== undefined) {
       data.travelMinutes = changes.travelMinutes;
+    }
+
+    if (changes.therapistId !== undefined) {
+      await this.#checkTherapists(businessId, [changes.therapistId]);
+      data.therapistId = changes.therapistId;
     }
 
     if (

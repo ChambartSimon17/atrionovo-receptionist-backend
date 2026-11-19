@@ -361,10 +361,11 @@ class CalendarSyncService {
         } catch (error) {
           await this.#recordError(calendar, error);
 
-          return (
+          // Never synced counts as not recent.
+          return Boolean(
             calendar.lastSyncAt &&
-            Date.now() - calendar.lastSyncAt.getTime() <
-              LIVE_CHECK_TRUST_MS
+              Date.now() - calendar.lastSyncAt.getTime() <
+                LIVE_CHECK_TRUST_MS
           );
         }
       })
