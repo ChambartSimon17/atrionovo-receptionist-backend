@@ -14,13 +14,24 @@ import { DateTime } from "luxon";
 export const KINDS = ["restaurant", "salon", "other"];
 export const LANGUAGES = ["nl", "fr", "en"];
 
-// warm: the voice of the real AtrioNovo assistant. eleven_v3
-// reads each sentence in its own language, so Dutch names
-// sound Dutch.
+// Each voice can have its own ElevenLabs voice per language, so the
+// assistant sounds native: Flemish for nl, French for fr. A language
+// without its own entry falls back to "default".
+// warm (female): nl = "Petra Vlaams" (Flemish, same voice as the real
+//   AtrioNovo assistant), fr = "Lucie" (French, support-agent voice).
+// eleven_v3 reads each sentence in its own language.
 export const VOICES = {
-  warm: { label: "Vrouw", voiceId: "IPgYtHTNLjC7Bq7IPHrm" },
-  calm: { label: "Man", voiceId: "JBFqnCBsd6RMkjVDRZzb" },
+  warm: {
+    label: "Vrouw",
+    voiceIds: { default: "ANHrhmaFeVN0QJaa0PhL", nl: "ANHrhmaFeVN0QJaa0PhL", fr: "YxrwjAKoUKULGd0g8K9Y" },
+  },
+  calm: { label: "Man", voiceIds: { default: "JBFqnCBsd6RMkjVDRZzb" } },
 };
+
+export function voiceIdFor(voice, language) {
+  const ids = VOICES[voice].voiceIds;
+  return ids[language] ?? ids.default;
+}
 
 const LANGUAGE_NAMES = { nl: "Belgian Dutch (Flemish)", fr: "Belgian French", en: "English" };
 
@@ -155,7 +166,7 @@ export function buildAssistant(session, { serverUrl, model }) {
     voice: {
       provider: "11labs",
       model: "eleven_v3",
-      voiceId: VOICES[settings.voice].voiceId,
+      voiceId: voiceIdFor(settings.voice, settings.language),
     },
     transcriber: transcriber(settings.language),
     server: { url: serverUrl },
