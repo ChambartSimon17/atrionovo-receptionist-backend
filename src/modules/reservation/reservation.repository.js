@@ -3,6 +3,25 @@ import {
   getUtcRangeForLocalDay,
 } from "../../utils/time.utils.js";
 
+// The latest paid payment of a reservation, so the app
+// can show that a table has settled.
+const PAID_PAYMENT = {
+  where: { status: "PAID" },
+  select: {
+    id: true,
+    method: true,
+    amountCents: true,
+    tipCents: true,
+    paidAt: true,
+    documents: {
+      select: { id: true, kind: true, number: true },
+      orderBy: { createdAt: "desc" },
+    },
+  },
+  orderBy: { paidAt: "desc" },
+  take: 1,
+};
+
 class ReservationRepository {
   async findBusinessById(
     businessId,
@@ -43,6 +62,9 @@ class ReservationRepository {
       where: {
         id,
         businessId,
+      },
+      include: {
+        payments: PAID_PAYMENT,
       },
     });
   }
@@ -274,6 +296,7 @@ class ReservationRepository {
             table: true,
           },
         },
+        payments: PAID_PAYMENT,
       },
     });
   }

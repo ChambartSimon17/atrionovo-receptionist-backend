@@ -206,6 +206,7 @@ class InvoicingService {
       where: { id: paymentId, businessId },
       include: {
         appointment: { select: { customerId: true, startTime: true } },
+        reservation: { select: { customerId: true, startTime: true } },
         documents: { where: { kind: { in: ["RECEIPT", "INVOICE"] } } },
       },
     });
@@ -246,7 +247,8 @@ class InvoicingService {
       throw new ValidationError("An invoice needs the customer's name and address.", ErrorCodes.VALIDATION_ERROR);
     }
 
-    const customerId = payment.appointment?.customerId ?? null;
+    const customerId =
+      payment.appointment?.customerId ?? payment.reservation?.customerId ?? null;
 
     if (data.kind === "INVOICE" && data.saveToCustomer && customerId) {
       await prisma.customer.update({
@@ -280,7 +282,11 @@ class InvoicingService {
       })),
       tipCents: payment.tipCents,
       paymentMethod: payment.method,
-      serviceDate: payment.appointment?.startTime ?? payment.paidAt ?? new Date(),
+      serviceDate:
+        payment.appointment?.startTime ??
+        payment.reservation?.startTime ??
+        payment.paidAt ??
+        new Date(),
       relatedDocumentId: data.kind === "INVOICE" ? receipt?.id ?? null : null,
     });
 

@@ -865,19 +865,14 @@ class ReservationService {
    * Finds a reservation by ID for a specific business.
    */
   async findByIdForBusiness(id, businessId) {
+    // Includes the paid payment, if the table settled.
     const reservation =
-      await reservationRepository.findById(id);
+      await reservationRepository.findByIdForBusiness(
+        id,
+        businessId
+      );
 
     if (!reservation) {
-      throw new NotFoundError(
-        "Reservation not found.",
-        ErrorCodes.RESERVATION_NOT_FOUND
-      );
-    }
-
-    if (
-      reservation.businessId !== businessId
-    ) {
       throw new NotFoundError(
         "Reservation not found.",
         ErrorCodes.RESERVATION_NOT_FOUND

@@ -727,6 +727,8 @@ model Reservation {
   // Database Indexes
   // -------------------------
 
+  payments Payment[]
+
   @@index([businessId], map: "idx_reservation_restaurant")
   @@index([customerId], map: "idx_reservation_customer")
   @@index([startTime], map: "idx_reservation_start_time")
@@ -1426,6 +1428,11 @@ model Payment {
 
   appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
+  // Restaurants settle a reservation instead of an
+  // appointment.
+  reservationId String?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
   method PaymentMethod
   status PaymentStatus @default(PENDING)
 
@@ -1450,6 +1457,7 @@ model Payment {
 
   @@index([businessId, createdAt])
   @@index([appointmentId])
+  @@index([reservationId])
 }
 
 // ======================================================

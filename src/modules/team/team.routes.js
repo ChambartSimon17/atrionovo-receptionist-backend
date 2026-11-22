@@ -8,7 +8,7 @@ import teamScheduleService from "./team-schedule.service.js";
 import teamClockService from "./team-clock.service.js";
 
 // ======================================================
-// Team routes (MASSAGE businesses)
+// Team routes (massage and restaurant businesses)
 // ======================================================
 //
 // prefix /businesses/:businessId/team
@@ -97,7 +97,9 @@ const rangeSchema = z.object({ from: date, to: date });
 const preHandler = [
   authenticate,
   requireBusinessOwnership,
-  requireBusinessType("MASSAGE"),
+  // Restaurants use the same rows for their staff
+  // (without massages).
+  requireBusinessType("MASSAGE", "RESTAURANT"),
 ];
 
 const ok = (data) => ({ success: true, data });

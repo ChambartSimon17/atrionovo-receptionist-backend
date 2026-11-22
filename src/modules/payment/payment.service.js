@@ -48,6 +48,7 @@ export function paymentDto(payment) {
   return {
     id: payment.id,
     appointmentId: payment.appointmentId,
+    reservationId: payment.reservationId ?? null,
     method: payment.method,
     status: payment.status,
     items: payment.items,
@@ -170,7 +171,7 @@ class PaymentService {
 
   /**
    * POST /payments
-   * { appointmentId?, items, tipCents, method }
+   * { appointmentId? | reservationId?, items, tipCents, method }
    */
   async create(businessId, data) {
     const business = await this.#business(businessId);
@@ -184,6 +185,19 @@ class PaymentService {
         throw new NotFoundError(
           "Appointment not found.",
           ErrorCodes.APPOINTMENT_NOT_FOUND
+        );
+      }
+    }
+
+    if (data.reservationId) {
+      const reservation = await prisma.reservation.findFirst({
+        where: { id: data.reservationId, businessId },
+      });
+
+      if (!reservation) {
+        throw new NotFoundError(
+          "Reservation not found.",
+          ErrorCodes.RESERVATION_NOT_FOUND
         );
       }
     }
@@ -213,9 +227,21 @@ class PaymentService {
       });
     }
 
+    if (data.reservationId) {
+      await prisma.payment.updateMany({
+        where: {
+          businessId,
+          reservationId: data.reservationId,
+          status: "PENDING",
+        },
+        data: { status: "CANCELLED" },
+      });
+    }
+
     const base = {
       businessId,
       appointmentId: data.appointmentId ?? null,
+      reservationId: data.reservationId ?? null,
       method: data.method,
       items: data.items,
       amountCents,
@@ -397,6 +423,17 @@ class PaymentService {
   }
 
   async #completeAppointment(payment) {
+    // A paid reservation means the guests have left.
+    if (payment.reservationId) {
+      await prisma.reservation.updateMany({
+        where: {
+          id: payment.reservationId,
+          status: { in: ["CONFIRMED", "SEATED"] },
+        },
+        data: { status: "COMPLETED" },
+      });
+    }
+
     if (!payment.appointmentId) {
       return;
     }

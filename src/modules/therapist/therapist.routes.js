@@ -18,7 +18,9 @@ import {
 const preHandler = [
   authenticate,
   requireBusinessOwnership,
-  requireBusinessType("MASSAGE"),
+  // Restaurants use the same rows for their staff
+  // (without massages).
+  requireBusinessType("MASSAGE", "RESTAURANT"),
 ];
 
 export default async function therapistRoutes(

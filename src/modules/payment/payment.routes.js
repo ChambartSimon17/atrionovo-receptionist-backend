@@ -24,6 +24,7 @@ import paymentService, { pages } from "./payment.service.js";
 
 const createSchema = z.object({
   appointmentId: z.string().min(1).nullable().optional(),
+  reservationId: z.string().min(1).nullable().optional(),
   method: z.enum(["CASH", "CARD_TERMINAL", "STRIPE_LINK"]),
   items: z
     .array(
