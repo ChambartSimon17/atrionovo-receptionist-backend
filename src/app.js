@@ -74,6 +74,10 @@ app.register(cors, {
     "http://localhost:8082",
     "http://localhost:4321",
   ],
+  // @fastify/cors allows only GET, HEAD and POST by
+  // default; the app in the browser also edits (PUT,
+  // PATCH) and deletes.
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"],
 });
 
 // Must be registered before the routes so every route
