@@ -12,6 +12,6 @@ Een demo-account voor een geïnteresseerde zaak, in vijf stappen. De volledige w
 | `remove-customer.mjs <config> "Naam"` | testklant met afspraken en gesprekken weg |
 
 Configs staan in `demos/` (niet in git). Voorbeeld: `demos/volckerick.json`.
-Prompttemplates: `docs/vapi/massage-prompt.template.nl.md`, `docs/vapi/restaurant-prompt.template.md`. Per zaak verandert alleen de naam, de openingsdagen en (massage) de soorten massages.
+Prompttemplates: `docs/vapi/massage-prompt.template.nl.md`, `docs/vapi/restaurant-prompt.template.nl.md`. Per zaak verandert alleen de naam, de openingsdagen en (massage) de soorten massages.
 
 Wachtwoorden komen in `demo-logins.local.txt` (niet in git).

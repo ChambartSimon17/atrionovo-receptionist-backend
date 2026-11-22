@@ -18,7 +18,7 @@ import { API, ROOT, loadConfig, loadEnv, openingDaysText } from "./lib.mjs";
 
 export const ASSISTANTS = {
   MASSAGE: { id: "b2edb84c-4382-4661-899b-b1a0ce31a22b", template: "docs/vapi/massage-prompt.template.nl.md", phone: "+32 460 25 28 25" },
-  RESTAURANT: { id: "1dd35e22-4c13-42c0-a928-f9bb176c8629", template: "docs/vapi/restaurant-prompt.template.md", phone: "+32 460 23 71 90" },
+  RESTAURANT: { id: "1dd35e22-4c13-42c0-a928-f9bb176c8629", template: "docs/vapi/restaurant-prompt.template.nl.md", phone: "+32 460 23 71 90" },
 };
 
 const config = loadConfig(process.argv[2]);
@@ -67,7 +67,11 @@ if (config.type === "MASSAGE") console.log("  massages:", values.MASSAGES);
 // ---------- current state + backup ----------
 const assistant = await vapi("GET", `/assistant/${target.id}`);
 const tools = await Promise.all((assistant.model?.toolIds ?? []).map((id) => vapi("GET", `/tool/${id}`)));
-const withHeader = tools.filter((t) => t.headers?.properties?.["x-business-id"]);
+// Older restaurant tools carry x-restaurant-id instead of
+// x-business-id (the backend maps it, see legacy-restaurant-compat).
+const HEADERS = ["x-business-id", "x-restaurant-id"];
+const headerOf = (t) => HEADERS.find((h) => t.headers?.properties?.[h]);
+const withHeader = tools.filter(headerOf);
 
 const backups = join(ROOT, "scripts/demo/backups");
 mkdirSync(backups, { recursive: true });
@@ -76,7 +80,7 @@ writeFileSync(backupFile, JSON.stringify({ assistant, tools }, null, 2));
 console.log("backup:", backupFile);
 
 const serverUrl = `${API}/assistant/call-events?businessId=${config.businessId}`;
-console.log(`tools met x-business-id: ${withHeader.length} (${withHeader.map((t) => t.function?.name ?? t.name).join(", ")})`);
+console.log(`tools met x-business-id/x-restaurant-id: ${withHeader.length} (${withHeader.map((t) => t.function?.name ?? t.name).join(", ")})`);
 
 if (dryRun) {
   console.log("dry run: niets aangepast in Vapi");
@@ -93,7 +97,7 @@ await vapi("PATCH", `/assistant/${target.id}`, {
 
 for (const tool of withHeader) {
   const headers = structuredClone(tool.headers);
-  headers.properties["x-business-id"].value = config.businessId;
+  headers.properties[headerOf(tool)].value = config.businessId;
   await vapi("PATCH", `/tool/${tool.id}`, { headers });
 }
 
@@ -103,7 +107,7 @@ const afterTools = await Promise.all(withHeader.map((t) => vapi("GET", `/tool/${
 const ok =
   after.model.messages[0].content === prompt &&
   after.server?.url === serverUrl &&
-  afterTools.every((t) => t.headers.properties["x-business-id"].value === config.businessId);
+  afterTools.every((t) => t.headers.properties[headerOf(t)].value === config.businessId);
 if (!ok) throw new Error("Controle na het aanpassen klopt niet; kijk in Vapi en de backup.");
 
 console.log(`klaar: "${after.name}" staat op ${spoken} (${config.businessId}). Bel ${target.phone} om te testen.`);
