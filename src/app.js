@@ -69,6 +69,9 @@ app.register(cors, {
     "https://booking.atrionovo.com",
     "https://atrionovo.com",
     "https://www.atrionovo.com",
+    // The app in the browser, for owners on a laptop.
+    "https://app.atrionovo.com",
+    "http://localhost:8082",
     "http://localhost:4321",
   ],
 });
