@@ -40,13 +40,26 @@ const location = z.preprocess(
   z.string().trim().min(1).max(100).optional()
 );
 
+// Vapi apiRequest tools send a property's default ("")
+// when the model leaves it out: treat that as left out.
+const emptyAsMissing = (schema) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === ""
+        ? undefined
+        : value,
+    schema
+  );
+
 export const massageCheckAvailabilitySchema = z.object({
   massageServiceId: z.string().min(1),
   date: calendarDate,
-  time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, "Time must be like 14:00.")
-    .optional(),
+  time: emptyAsMissing(
+    z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, "Time must be like 14:00.")
+      .optional()
+  ),
   location,
 });
 
@@ -56,7 +69,7 @@ export const massageCreateAppointmentSchema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   phoneNumber: z.string().trim().min(1).max(40),
-  notes: z.string().trim().max(1000).optional(),
+  notes: emptyAsMissing(z.string().trim().max(1000).optional()),
   location,
 });
 
