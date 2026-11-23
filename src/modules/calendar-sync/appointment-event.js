@@ -83,9 +83,34 @@ function fold(line) {
 }
 
 /**
+ * The location of an appointment when its room is one (a
+ * room with its own hours), otherwise null.
+ */
+function locationOf(appointment) {
+  return appointment.room?.hasOwnHours
+    ? appointment.room.name
+    : null;
+}
+
+/**
  * "Hot stone (60 min) – Anna P."
+ *
+ * At a location of the practice the location comes first,
+ * so the calendar shows at a glance where the massage is:
+ * "The Bridge: Anna Peeters: Hot stone"
  */
 export function appointmentTitle(appointment) {
+  const location = locationOf(appointment);
+
+  if (location) {
+    const name = [appointment.firstName, appointment.lastName]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    return `${location}: ${name}: ${appointment.serviceName}`;
+  }
+
   const initial = appointment.lastName?.trim()?.[0];
 
   const name = initial
@@ -97,6 +122,7 @@ export function appointmentTitle(appointment) {
 
 export function buildAppointmentIcs(appointment, { now = new Date() } = {}) {
   const description = [
+    `${appointment.serviceName} (${appointment.durationMinutes} min)`,
     `Tel: ${appointment.phoneNumber}`,
     `Geboekt via AtrioNovo (${SOURCE_LABELS[appointment.source] ?? "app"})`,
   ].join("\n");
@@ -112,6 +138,9 @@ export function buildAppointmentIcs(appointment, { now = new Date() } = {}) {
     `DTSTART:${icsDate(appointment.startTime)}`,
     `DTEND:${icsDate(appointment.endTime)}`,
     `SUMMARY:${escapeText(appointmentTitle(appointment))}`,
+    ...(locationOf(appointment)
+      ? [`LOCATION:${escapeText(locationOf(appointment))}`]
+      : []),
     `DESCRIPTION:${escapeText(description)}`,
     "TRANSP:OPAQUE",
     "STATUS:CONFIRMED",

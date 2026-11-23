@@ -14,9 +14,13 @@ const calendarDate = z
 
 const notes = z.string().trim().max(1000);
 
+// A location of the practice (a room with its own hours).
+const roomId = z.string().min(1).optional();
+
 export const availabilityQuerySchema = z.object({
   date: calendarDate,
   serviceId: z.string().min(1),
+  roomId,
 });
 
 export const listAppointmentsQuerySchema = z.object({
@@ -41,6 +45,10 @@ export const createAppointmentSchema = z.object({
   email: z.email().optional(),
 
   notes: notes.optional(),
+
+  // The location the customer chose. Without it any free
+  // room is taken.
+  roomId,
 });
 
 export const updateAppointmentSchema = z

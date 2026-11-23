@@ -9,6 +9,7 @@ import {
   buildBusyIntervals,
   buildCandidateMinutes,
   findAvailableSlots,
+  roomPeriodsForDay,
 } from "./massage-scheduling.js";
 import {
   localMinutesToMs,
@@ -42,8 +43,12 @@ class MassageAvailabilityService {
   /**
    * Bookable start times of a day for one massage, for
    * showing to the owner or a customer.
+   *
+   * roomId limits the slots to one room. Used for a
+   * location (a room with its own hours): the customer
+   * chooses where the massage takes place.
    */
-  async findSlots(businessId, { date, serviceId }) {
+  async findSlots(businessId, { date, serviceId, roomId }) {
     const business = await this.#getBusiness(businessId);
 
     const service = await this.getBookableService(
@@ -58,6 +63,7 @@ class MassageAvailabilityService {
       business,
       service,
       date,
+      roomId,
     });
 
     return {
@@ -67,6 +73,9 @@ class MassageAvailabilityService {
       slots: slots.map((slot) => ({
         time: minutesToTime(slot.minutes),
         startTime: new Date(slot.startMs).toISOString(),
+        location: slot.room.hasOwnHours
+          ? { id: slot.room.id, name: slot.room.name }
+          : null,
       })),
     };
   }
@@ -81,6 +90,12 @@ class MassageAvailabilityService {
    * excludeAppointmentId leaves one appointment out of the
    * calculation. Used when moving an appointment, so its
    * own old time does not block the new one.
+   *
+   * roomId limits the slots to one room (a location).
+   *
+   * A room with its own hours (a location) is only open
+   * within those hours; the other rooms follow the opening
+   * hours of the business.
    */
   async computeSlots({
     business,
@@ -88,6 +103,7 @@ class MassageAvailabilityService {
     date,
     db,
     excludeAppointmentId,
+    roomId,
     nowMs = Date.now(),
   }) {
     const timezone = business.timezone;
@@ -96,25 +112,10 @@ class MassageAvailabilityService {
       localMinutesToMs(date, 12 * 60, timezone)
     );
 
-    const openingPeriods =
-      await openingScheduleService.findOpeningPeriods(
-        business,
-        noon
-      );
-
-    const candidateMinutes = buildCandidateMinutes({
-      openingPeriods,
-      durationMinutes: service.durationMinutes,
-      intervalMinutes: business.arrivalIntervalMinutes,
-    });
-
-    if (candidateMinutes.length === 0) {
-      return [];
-    }
-
     const dayOfWeek = dateToDayOfWeek(noon, timezone);
 
-    const [therapists, rooms] = await Promise.all([
+    const [schedule, therapists, allRooms] = await Promise.all([
+      openingScheduleService.findDaySchedule(business, noon),
       massageAppointmentRepository.findTherapistsForService(
         business.id,
         service.id,
@@ -123,11 +124,33 @@ class MassageAvailabilityService {
       ),
       massageAppointmentRepository.findRoomsForService(
         business.id,
-        service.id
+        service.id,
+        dayOfWeek
       ),
     ]);
 
+    const rooms = (
+      roomId
+        ? allRooms.filter((room) => room.id === roomId)
+        : allRooms
+    ).map((room) => ({
+      ...room,
+      periods: roomPeriodsForDay(room, schedule),
+    }));
+
     if (therapists.length === 0 || rooms.length === 0) {
+      return [];
+    }
+
+    // Start times that fit in the hours of at least one
+    // room; each room checks its own hours below.
+    const candidateMinutes = buildCandidateMinutes({
+      openingPeriods: rooms.flatMap((room) => room.periods),
+      durationMinutes: service.durationMinutes,
+      intervalMinutes: business.arrivalIntervalMinutes,
+    });
+
+    if (candidateMinutes.length === 0) {
       return [];
     }
 
@@ -235,7 +258,22 @@ class MassageAvailabilityService {
       rooms: rooms.map((room) => ({
         id: room.id,
         name: room.name,
+        hasOwnHours: room.hasOwnHours,
         appointmentCount: countFor(busy.room, room.id),
+        windows: room.hasOwnHours
+          ? room.periods.map((period) => ({
+              startMs: localMinutesToMs(
+                date,
+                period.opensAtMinutes,
+                timezone
+              ),
+              endMs: localMinutesToMs(
+                date,
+                period.closesAtMinutes,
+                timezone
+              ),
+            }))
+          : undefined,
       })),
       busy,
     });

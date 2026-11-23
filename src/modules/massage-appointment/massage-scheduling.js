@@ -17,7 +17,8 @@
 // - A therapist is needed who can perform the massage and
 //   whose working hours cover the whole massage.
 // - A treatment room is needed in which the massage can
-//   take place.
+//   take place. A room with its own hours (a location of
+//   the practice) must be open for the whole massage.
 // - After every appointment the therapist and the room are
 //   blocked for an extra buffer (cleaning, rest). A new
 //   appointment may not overlap the occupied time of an
@@ -67,6 +68,63 @@ export function buildCandidateMinutes({
   return [...candidates].sort((a, b) => a - b);
 }
 
+/**
+ * The periods in which both lists are open.
+ *
+ * a, b: [{ opensAtMinutes, closesAtMinutes }]
+ */
+export function intersectPeriods(a, b) {
+  const result = [];
+
+  for (const first of a) {
+    for (const second of b) {
+      const opensAtMinutes = Math.max(
+        first.opensAtMinutes,
+        second.opensAtMinutes
+      );
+      const closesAtMinutes = Math.min(
+        first.closesAtMinutes,
+        second.closesAtMinutes
+      );
+
+      if (opensAtMinutes < closesAtMinutes) {
+        result.push({ opensAtMinutes, closesAtMinutes });
+      }
+    }
+  }
+
+  return result.sort(
+    (x, y) => x.opensAtMinutes - y.opensAtMinutes
+  );
+}
+
+/**
+ * Opening periods of one room on one day.
+ *
+ * - A room without its own hours follows the business.
+ * - A room with its own hours (a location) uses its hours
+ *   for that weekday instead of the weekly hours of the
+ *   business. On a special opening day of the business
+ *   (a holiday, a closure) only the overlap is open.
+ *
+ * room: { hasOwnHours, openingHours: [{ opensAtMinutes,
+ *         closesAtMinutes }] } (hours of that weekday)
+ * schedule: { isSpecialDay, periods } of the business.
+ */
+export function roomPeriodsForDay(room, schedule) {
+  if (!room.hasOwnHours) {
+    return schedule.periods;
+  }
+
+  const own = room.openingHours ?? [];
+
+  return schedule.isSpecialDay
+    ? intersectPeriods(own, schedule.periods)
+    : [...own].sort(
+        (a, b) => a.opensAtMinutes - b.opensAtMinutes
+      );
+}
+
 function overlaps(intervals, startMs, endMs) {
   return intervals.some(
     (interval) =>
@@ -90,7 +148,10 @@ function byLoadThenName(a, b) {
  *                appointmentCount }]
  *   windows = working periods of that day, already limited
  *   to therapists who can perform the massage.
- * rooms: [{ id, name, appointmentCount }]
+ * rooms: [{ id, name, appointmentCount, windows? }]
+ *   windows = opening periods of a room with its own hours
+ *   (a location). Without windows the room follows the
+ *   opening hours of the business.
  * busy: { therapist: Map<id, [{ startMs, endMs }]>,
  *         room: Map<id, [{ startMs, endMs }]> }
  *   Busy intervals already include the buffer.
@@ -132,6 +193,12 @@ export function findFreeResources({
   const freeRooms = rooms
     .filter(
       (room) =>
+        (!room.windows ||
+          room.windows.some(
+            (window) =>
+              window.startMs <= startMs &&
+              endMs <= window.endMs
+          )) &&
         !overlaps(
           busy.room.get(room.id) ?? [],
           startMs,

@@ -166,6 +166,10 @@ class CalendarSyncRepository {
   findAppointment(id) {
     return prisma.appointment.findUnique({
       where: { id },
+      include: {
+        // The location goes in front of the event title.
+        room: { select: { name: true, hasOwnHours: true } },
+      },
     });
   }
 

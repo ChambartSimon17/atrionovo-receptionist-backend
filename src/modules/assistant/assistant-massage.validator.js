@@ -28,6 +28,11 @@ export const massageCallerProfileSchema = z.object({
   phoneNumber: z.string().min(1),
 });
 
+// The location the caller chose, as the assistant heard
+// it ("The Bridge"). Only for a practice with several
+// locations.
+const location = z.string().trim().min(1).max(100).optional();
+
 export const massageCheckAvailabilitySchema = z.object({
   massageServiceId: z.string().min(1),
   date: calendarDate,
@@ -35,6 +40,7 @@ export const massageCheckAvailabilitySchema = z.object({
     .string()
     .regex(/^\d{2}:\d{2}$/, "Time must be like 14:00.")
     .optional(),
+  location,
 });
 
 export const massageCreateAppointmentSchema = z.object({
@@ -44,6 +50,7 @@ export const massageCreateAppointmentSchema = z.object({
   lastName: z.string().trim().min(1).max(100),
   phoneNumber: z.string().trim().min(1).max(40),
   notes: z.string().trim().max(1000).optional(),
+  location,
 });
 
 export const massageRescheduleAppointmentSchema = z.object({

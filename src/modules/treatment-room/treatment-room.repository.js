@@ -18,7 +18,23 @@ const INCLUDE = {
       massageServiceId: true,
     },
   },
+  openingHours: {
+    select: {
+      dayOfWeek: true,
+      opensAtMinutes: true,
+      closesAtMinutes: true,
+    },
+    orderBy: { opensAtMinutes: "asc" },
+  },
 };
+
+function toRows(openingHours) {
+  return openingHours.map((period) => ({
+    dayOfWeek: period.dayOfWeek,
+    opensAtMinutes: period.startMinutes,
+    closesAtMinutes: period.endMinutes,
+  }));
+}
 
 class TreatmentRoomRepository {
   async findAllForBusiness(
@@ -61,11 +77,18 @@ class TreatmentRoomRepository {
     });
   }
 
-  async create(businessId, { name, serviceIds }) {
+  async create(
+    businessId,
+    { name, serviceIds, hasOwnHours, openingHours }
+  ) {
     return prisma.treatmentRoom.create({
       data: {
         businessId,
         name,
+        hasOwnHours,
+        openingHours: {
+          create: toRows(openingHours),
+        },
         services: {
           create: serviceIds.map(
             (massageServiceId) => ({
@@ -82,7 +105,10 @@ class TreatmentRoomRepository {
    * Updates a room in one transaction. serviceIds, when
    * given, replaces the complete list.
    */
-  async update(id, { name, isActive, serviceIds }) {
+  async update(
+    id,
+    { name, isActive, serviceIds, hasOwnHours, openingHours }
+  ) {
     return prisma.$transaction(async (tx) => {
       const fields = {};
 
@@ -92,6 +118,23 @@ class TreatmentRoomRepository {
 
       if (isActive !== undefined) {
         fields.isActive = isActive;
+      }
+
+      if (hasOwnHours !== undefined) {
+        fields.hasOwnHours = hasOwnHours;
+      }
+
+      if (openingHours !== undefined) {
+        await tx.roomOpeningHour.deleteMany({
+          where: { roomId: id },
+        });
+
+        await tx.roomOpeningHour.createMany({
+          data: toRows(openingHours).map((row) => ({
+            ...row,
+            roomId: id,
+          })),
+        });
       }
 
       await tx.treatmentRoom.update({

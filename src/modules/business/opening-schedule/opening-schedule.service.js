@@ -24,6 +24,23 @@ class OpeningScheduleService {
     business,
     reservationDate
   ) {
+    const schedule = await this.findDaySchedule(
+      business,
+      reservationDate
+    );
+
+    return schedule.periods;
+  }
+
+  /**
+   * The opening periods of the day and whether they come
+   * from a special opening day. Locations with their own
+   * hours ignore the weekly hours of the business, but not
+   * a special day (a holiday, a closure).
+   *
+   * Returns { isSpecialDay, periods }.
+   */
+  async findDaySchedule(business, reservationDate) {
     const specialOpeningDay =
       await specialOpeningDayRepository.findByBusinessAndDate(
         business.id,
@@ -31,11 +48,12 @@ class OpeningScheduleService {
       );
 
     if (specialOpeningDay) {
-      if (specialOpeningDay.isClosed) {
-        return [];
-      }
-
-      return specialOpeningDay.openingPeriods;
+      return {
+        isSpecialDay: true,
+        periods: specialOpeningDay.isClosed
+          ? []
+          : specialOpeningDay.openingPeriods,
+      };
     }
 
     const dayOfWeek = dateToDayOfWeek(
@@ -43,10 +61,13 @@ class OpeningScheduleService {
       business.timezone
     );
 
-    return openingHourRepository.findByBusinessAndDay(
-      business.id,
-      dayOfWeek
-    );
+    return {
+      isSpecialDay: false,
+      periods: await openingHourRepository.findByBusinessAndDay(
+        business.id,
+        dayOfWeek
+      ),
+    };
   }
 
   /**

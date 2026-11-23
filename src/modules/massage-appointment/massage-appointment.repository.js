@@ -20,7 +20,7 @@ const LIST_INCLUDE = {
     select: { name: true },
   },
   room: {
-    select: { name: true },
+    select: { name: true, hasOwnHours: true },
   },
   customer: {
     select: {
@@ -114,7 +114,8 @@ class MassageAppointmentRepository {
    */
   async findRoomsForService(
     businessId,
-    massageServiceId
+    massageServiceId,
+    dayOfWeek
   ) {
     return prisma.treatmentRoom.findMany({
       where: {
@@ -123,6 +124,12 @@ class MassageAppointmentRepository {
         services: {
           some: { massageServiceId },
         },
+      },
+      include: {
+        // Own hours of a location on that weekday.
+        openingHours: dayOfWeek
+          ? { where: { dayOfWeek } }
+          : false,
       },
     });
   }

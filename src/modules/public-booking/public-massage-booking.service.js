@@ -61,7 +61,7 @@ class PublicMassageBookingService {
   /**
    * Free start times of a day for one massage.
    */
-  async getAvailability(slug, { date, serviceId }) {
+  async getAvailability(slug, { date, serviceId, roomId }) {
     const business = await this.#getMassageBusiness(slug);
 
     if (date > this.#lastBookableDate(business)) {
@@ -75,7 +75,7 @@ class PublicMassageBookingService {
     const availability =
       await massageAvailabilityService.findSlots(
         business.id,
-        { date, serviceId }
+        { date, serviceId, roomId }
       );
 
     return {
@@ -140,6 +140,7 @@ class PublicMassageBookingService {
       priceCents: appointment.priceCents,
       firstName: appointment.firstName,
       lastName: appointment.lastName,
+      locationName: appointment.locationName,
     };
   }
 

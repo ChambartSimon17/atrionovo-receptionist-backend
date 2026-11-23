@@ -1061,6 +1061,17 @@ model TreatmentRoom {
   name     String
   isActive Boolean @default(true)
 
+  // A room with its own opening hours is a location of the
+  // practice (for example a practice at home and one in a
+  // salon elsewhere). It is only bookable within its own
+  // hours, which replace the weekly opening hours of the
+  // business; a special opening day of the business (a
+  // holiday, a closure) still applies. The location name
+  // is shown in the agenda and the calendar copy, and the
+  // phone assistant asks the caller which location.
+  hasOwnHours  Boolean           @default(false)
+  openingHours RoomOpeningHour[]
+
   // Massages that can be performed in this room.
   services RoomMassageService[]
 
@@ -1073,6 +1084,31 @@ model TreatmentRoom {
   updatedAt DateTime @updatedAt
 
   @@unique([businessId, name])
+}
+
+// ------------------------------------------------------
+// RoomOpeningHour
+// ------------------------------------------------------
+// One opening period of a room with its own hours (a
+// location), like OpeningHour. Minutes after midnight.
+// ------------------------------------------------------
+
+model RoomOpeningHour {
+  id String @id @default(cuid())
+
+  roomId String
+
+  room TreatmentRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  dayOfWeek DayOfWeek
+
+  opensAtMinutes  Int
+  closesAtMinutes Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomId, dayOfWeek])
 }
 
 // Which massages can be performed in a room.

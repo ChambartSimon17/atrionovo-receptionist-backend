@@ -63,6 +63,11 @@ function toDto(appointment) {
     roomName: appointment.room.name,
     therapistId: appointment.therapistId,
     roomId: appointment.roomId,
+    // Set when the room is a location of the practice (it
+    // has its own opening hours), e.g. "The Bridge".
+    locationName: appointment.room.hasOwnHours
+      ? appointment.room.name
+      : null,
     payment: appointment.payments?.[0]
       ? {
           id: appointment.payments[0].id,
@@ -172,6 +177,8 @@ class MassageAppointmentService {
             service,
             date,
             db: tx,
+            // The location the customer chose, if any.
+            roomId: data.roomId,
           });
 
         const slot = slots.find(
@@ -279,7 +286,9 @@ class MassageAppointmentService {
    * be free for a therapist and a room. The appointment's
    * own old time does not block the new one. The massage,
    * duration and price stay as they were booked; the
-   * therapist and room are chosen again.
+   * therapist and room are chosen again, except at a
+   * location (a room with its own hours): the appointment
+   * stays at the location the customer chose.
    */
   async reschedule(businessId, appointmentId, startTimeInput) {
     const business = await this.#getBusiness(businessId);
@@ -335,6 +344,9 @@ class MassageAppointmentService {
           date,
           db: tx,
           excludeAppointmentId: appointment.id,
+          roomId: appointment.room.hasOwnHours
+            ? appointment.roomId
+            : undefined,
         });
 
       const slot = slots.find(

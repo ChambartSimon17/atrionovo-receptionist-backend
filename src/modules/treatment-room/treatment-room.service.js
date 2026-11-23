@@ -2,6 +2,7 @@ import treatmentRoomRepository from "./treatment-room.repository.js";
 import {
   assertMassageServicesBelongToBusiness,
 } from "../massage-service/massage-service-ids.js";
+import { validateWorkingHours } from "../therapist/working-hours.js";
 import ConflictError from "../../errors/ConflictError.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -29,6 +30,14 @@ function toDto(room) {
     serviceIds: room.services.map(
       (link) => link.massageServiceId
     ),
+    // A location of the practice: bookable only within
+    // its own hours, shown in the agenda.
+    hasOwnHours: room.hasOwnHours,
+    openingHours: room.openingHours.map((period) => ({
+      dayOfWeek: period.dayOfWeek,
+      startMinutes: period.opensAtMinutes,
+      endMinutes: period.closesAtMinutes,
+    })),
   };
 }
 
@@ -55,12 +64,16 @@ class TreatmentRoomService {
         data.serviceIds
       );
 
+    validateWorkingHours(data.openingHours);
+
     const room =
       await treatmentRoomRepository.create(
         businessId,
         {
           name: data.name,
           serviceIds,
+          hasOwnHours: data.hasOwnHours,
+          openingHours: data.openingHours,
         }
       );
 
@@ -84,6 +97,10 @@ class TreatmentRoomService {
     }
 
     const changes = { ...data };
+
+    if (data.openingHours !== undefined) {
+      validateWorkingHours(data.openingHours);
+    }
 
     if (data.serviceIds !== undefined) {
       changes.serviceIds =
