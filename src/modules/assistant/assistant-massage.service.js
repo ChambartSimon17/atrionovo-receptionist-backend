@@ -225,6 +225,28 @@ class AssistantMassageService {
       ? this.#resolveLocation(locations, location)
       : null;
 
+    // The massage is not given at the chosen location: say
+    // so, instead of "nothing free" (which sounds booked).
+    if (chosen && !chosen.serviceIds.includes(massageServiceId)) {
+      const offeredAt = locations
+        .filter((candidate) =>
+          candidate.serviceIds.includes(massageServiceId)
+        )
+        .map((candidate) => candidate.name);
+
+      return {
+        date,
+        location: chosen.name,
+        massageOfferedAtLocation: false,
+        offeredAt,
+        anyAvailability: false,
+        availableTimes: [],
+        instruction: offeredAt.length > 0
+          ? `Deze massage wordt niet gegeven bij ${chosen.name}, alleen bij ${offeredAt.join(" en ")}. Zeg dat en vraag of de klant daar wil komen of een andere massage kiest.`
+          : `Deze massage wordt niet gegeven bij ${chosen.name}.`,
+      };
+    }
+
     const availability =
       await massageAvailabilityService.findSlots(businessId, {
         date,
