@@ -247,17 +247,24 @@ class AssistantMassageService {
     // Several locations and the caller did not choose yet:
     // the free times per location, so the assistant can
     // ask where the caller wants to come.
+    // Each location is asked on its own: in the combined
+    // list a time that is free at two locations only names
+    // one of them.
     if (!chosen && locations.length > 0) {
+      const perLocation = await Promise.all(
+        locations.map((candidate) =>
+          massageAvailabilityService.findSlots(businessId, {
+            date,
+            serviceId: massageServiceId,
+            roomId: candidate.id,
+          })
+        )
+      );
+
       result.availableTimesByLocation = Object.fromEntries(
-        locations.map((candidate) => [
+        locations.map((candidate, index) => [
           candidate.name,
-          [
-            ...new Set(
-              availability.slots
-                .filter((slot) => slot.location?.id === candidate.id)
-                .map((slot) => slot.time)
-            ),
-          ],
+          perLocation[index].slots.map((slot) => slot.time),
         ])
       );
       result.locationInstruction =
