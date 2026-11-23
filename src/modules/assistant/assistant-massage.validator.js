@@ -30,8 +30,15 @@ export const massageCallerProfileSchema = z.object({
 
 // The location the caller chose, as the assistant heard
 // it ("The Bridge"). Only for a practice with several
-// locations.
-const location = z.string().trim().min(1).max(100).optional();
+// locations. An empty value (a tool default) counts as no
+// location.
+const location = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === ""
+      ? undefined
+      : value,
+  z.string().trim().min(1).max(100).optional()
+);
 
 export const massageCheckAvailabilitySchema = z.object({
   massageServiceId: z.string().min(1),
