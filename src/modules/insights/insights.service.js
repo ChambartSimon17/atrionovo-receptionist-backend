@@ -1,4 +1,5 @@
 import prisma from "../../db/prisma.js";
+import { resolveBusinessFromCall } from "../vapi/resolve-business.js";
 
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -184,7 +185,15 @@ class InsightsService {
 
     const call = message.call ?? {};
 
+    // Multi-tenant template assistants: the called Vapi
+    // number decides (see vapi/resolve-business.js). Older
+    // per-demo assistants pass the id in the server URL.
+    const fromCall = await resolveBusinessFromCall(message).catch(() => ({
+      business: null,
+    }));
+
     const businessId = firstDefined(
+      fromCall.business?.id,
       call.metadata?.businessId,
       call.assistantOverrides?.metadata?.businessId,
       call.assistantOverrides?.variableValues?.businessId,

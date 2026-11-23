@@ -1,4 +1,5 @@
 import { authenticate } from "../../middleware/auth.middleware.js";
+import { isAuthorizedVapiRequest } from "../vapi/vapi-auth.js";
 import { requireBusinessOwnership } from "../../middleware/business-ownership.middleware.js";
 
 import insightsService from "./insights.service.js";
@@ -110,9 +111,20 @@ export async function callEventRoutes(fastify) {
   // server URL in this header. Without VAPI_WEBHOOK_SECRET
   // set, the endpoint is open (local development).
   fastify.post("/call-events", async (request, reply) => {
-    const secret = process.env.VAPI_WEBHOOK_SECRET;
+    // VAPI_WEBHOOK_SECRET (old per-demo assistants) or
+    // VAPI_SERVER_SECRET (template assistants, set by
+    // `npm run vapi:sync`).
+    const secrets = [
+      process.env.VAPI_WEBHOOK_SECRET,
+      process.env.VAPI_SERVER_SECRET,
+    ].filter(Boolean);
 
-    if (secret && request.headers["x-vapi-secret"] !== secret) {
+    if (
+      secrets.length &&
+      !secrets.some((secret) =>
+        isAuthorizedVapiRequest(request.headers, { secret })
+      )
+    ) {
       return reply.code(401).send({ success: false });
     }
 

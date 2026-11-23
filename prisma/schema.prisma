@@ -278,6 +278,28 @@ model Business {
   stripeChargesEnabled Boolean @default(false)
 
   // -------------------------
+  // Vapi (phone assistant)
+  // -------------------------
+  //
+  // One Belgian Vapi number per business. Vapi sends the id
+  // of the called number with every assistant-request and
+  // tool call; the backend finds the business by it (see
+  // src/modules/vapi/resolve-business.js). Unique, so the
+  // lookup is one index hit.
+
+  vapiPhoneNumberId String? @unique
+
+  // Where Vapi transfers the call when our assistant-request
+  // fails or is too slow (E.164, e.g. +3211223344). Put on
+  // the Vapi number by `npm run vapi:sync`.
+  fallbackPhoneNumber String?
+
+  // Words the transcriber must recognise for this business
+  // (names of the business, the staff, treatments, the
+  // town). One entry per word or name.
+  transcriberKeyterms String[] @default([])
+
+  // -------------------------
   // Metadata
   // -------------------------
 

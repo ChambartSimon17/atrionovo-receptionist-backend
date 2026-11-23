@@ -1,0 +1,89 @@
+{
+  "_comment": "Shared Vapi settings for the template assistants. Read by the backend (transcriber override per business) and by `npm run vapi:sync`. Taken from the massage assistant 'Massage Business v.0.1.0' (2026-11-22), without the business-specific keyterms: those live per business in Business.transcriberKeyterms.",
+  "backendUrl": "https://atrionovo-receptionist-backend.onrender.com",
+  "timeouts": {
+    "toolSeconds": 15,
+    "callEventsSeconds": 20,
+    "assistantRequestSeconds": 5
+  },
+  "assistantDefaults": {
+    "voice": {
+      "provider": "11labs",
+      "model": "eleven_v3_conversational",
+      "voiceId": "ANHrhmaFeVN0QJaa0PhL",
+      "speed": 1.2
+    },
+    "model": {
+      "provider": "openai",
+      "model": "gpt-4.1"
+    },
+    "transcriber": {
+      "provider": "deepgram",
+      "model": "nova-3",
+      "language": "nl-BE",
+      "numerals": true,
+      "confidenceThreshold": 0.4,
+      "fallbackPlan": {
+        "transcribers": [
+          {
+            "provider": "deepgram",
+            "model": "flux-general-en",
+            "language": "en"
+          }
+        ]
+      }
+    },
+    "firstMessage": "",
+    "firstMessageMode": "assistant-speaks-first-with-model-generated-message",
+    "firstMessageInterruptionsEnabled": false,
+    "voicemailMessage": "Gelieve later terug te bellen.",
+    "endCallMessage": "Tot ziens.",
+    "backgroundDenoisingEnabled": true,
+    "startSpeakingPlan": {
+      "smartEndpointingPlan": {
+        "provider": "vapi"
+      }
+    },
+    "analysisPlan": {
+      "summaryPlan": { "enabled": false },
+      "successEvaluationPlan": { "enabled": false }
+    },
+    "serverMessages": ["end-of-call-report"]
+  },
+  "assistants": {
+    "RESTAURANT": {
+      "name": "AtrioNovo Restaurant (sjabloon)",
+      "prompt": "vapi/prompts/restaurant.nl.md",
+      "envVar": "VAPI_ASSISTANT_RESTAURANT",
+      "tools": [
+        "getCallerProfile",
+        "checkAvailability",
+        "createReservation",
+        "updateReservation",
+        "cancelReservation"
+      ],
+      "existingToolIds": {
+        "_comment": "Vapi built-in tools reused as they are (end call, SMS).",
+        "end_call_tool": "13020185-9321-4a27-8be5-39ea5a1d2232",
+        "send_text_tool": "86e65269-361f-470b-b49a-19e71d0345dd"
+      }
+    },
+    "MASSAGE": {
+      "name": "AtrioNovo Massage (sjabloon)",
+      "prompt": "vapi/prompts/massage.nl.md",
+      "envVar": "VAPI_ASSISTANT_MASSAGE",
+      "tools": [
+        "Massage_getCallerProfile",
+        "Massage_getServices",
+        "Massage_checkAvailability",
+        "Massage_createAppointment",
+        "Massage_rescheduleAppointment",
+        "Massage_cancelAppointment"
+      ],
+      "existingToolIds": {
+        "end_call_tool": "13020185-9321-4a27-8be5-39ea5a1d2232",
+        "send_text_tool": "86e65269-361f-470b-b49a-19e71d0345dd"
+      }
+    }
+  }
+}

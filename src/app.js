@@ -29,6 +29,8 @@ import publicBookingRoutes
 
 import assistantRoutes from "./modules/assistant/assistant.routes.js";
 
+import vapiRoutes from "./modules/vapi/vapi.routes.js";
+
 import authRoutes from "./modules/auth/auth.routes.js";
 
 import floorOperationsRoutes from "./modules/floor-operations/floor-operations.routes.js";
@@ -220,6 +222,12 @@ app.register(assistantRoutes, {
 
 app.register(callEventRoutes, {
   prefix: "/assistant",
+});
+
+// Multi-tenant Vapi: one set of tools and one template
+// assistant per business type. See src/modules/vapi/.
+app.register(vapiRoutes, {
+  prefix: "/vapi",
 });
 
 // ======================================================
