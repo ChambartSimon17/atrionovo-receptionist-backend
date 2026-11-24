@@ -277,6 +277,11 @@ model Business {
   stripeAccountId      String?
   stripeChargesEnabled Boolean @default(false)
 
+  // Number (E.164) the confirmation SMS is sent from after a
+  // phone call, through Twilio. Without it no SMS is sent by
+  // the backend (the assistant may still send one itself).
+  smsSenderNumber String?
+
   // -------------------------
   // Metadata
   // -------------------------
@@ -1391,6 +1396,10 @@ model CallLog {
   // practitioner only plans after a personal talk): what
   // the caller wants. Such a call stays NEEDS_CALLBACK.
   callbackReason String?
+
+  // When the confirmation SMS for this call was sent, so a
+  // repeated call report never sends it twice.
+  smsSentAt DateTime?
 
   summary      String?
   transcript   String?

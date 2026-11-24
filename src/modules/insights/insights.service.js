@@ -4,6 +4,7 @@ import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 
 import pushService from "./push.service.js";
+import { buildCallSms, sendSms, twilioConfigured } from "./call-sms.js";
 
 // ======================================================
 // Insights
@@ -401,7 +402,66 @@ class InsightsService {
       );
     }
 
+    await this.#sendCallSms({ business, call: saved, callerNumber, window, log });
+
     return { stored: true, id: saved.id, outcome };
+  }
+
+  /**
+   * One confirmation SMS to the caller with what was
+   * booked, moved or cancelled during the call. Only for a
+   * business with an SMS sender number, only once per call.
+   * A failure is logged and never fails the call report.
+   */
+  async #sendCallSms({ business, call, callerNumber, window, log }) {
+    if (
+      !business.smsSenderNumber ||
+      !callerNumber ||
+      call.smsSentAt ||
+      !twilioConfigured()
+    ) {
+      return;
+    }
+
+    try {
+      const appointments = await prisma.appointment.findMany({
+        where: {
+          businessId: business.id,
+          phoneNumber: callerNumber,
+          OR: [{ createdAt: window }, { updatedAt: window }],
+        },
+        include: { room: { select: { name: true, hasOwnHours: true } } },
+      });
+
+      const body = buildCallSms({
+        appointments,
+        business,
+        callStartedAt: window.gte,
+      });
+
+      if (!body) {
+        return;
+      }
+
+      // Claim the call first, so a repeated report cannot
+      // send a second SMS.
+      const claimed = await prisma.callLog.updateMany({
+        where: { id: call.id, smsSentAt: null },
+        data: { smsSentAt: new Date() },
+      });
+
+      if (claimed.count === 0) {
+        return;
+      }
+
+      await sendSms({
+        from: business.smsSenderNumber,
+        to: callerNumber,
+        body,
+      });
+    } catch (error) {
+      log?.warn?.({ callId: call.id, error: error.message }, "Confirmation SMS failed");
+    }
   }
 }
 
