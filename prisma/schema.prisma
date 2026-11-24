@@ -1386,6 +1386,12 @@ model CallLog {
 
   outcome CallOutcome @default(INFORMATION)
 
+  // Set when the assistant took a callback request during
+  // the call (e.g. a Body Dearmouring session, which the
+  // practitioner only plans after a personal talk): what
+  // the caller wants. Such a call stays NEEDS_CALLBACK.
+  callbackReason String?
+
   summary      String?
   transcript   String?
   recordingUrl String?

@@ -4,6 +4,7 @@ import {
   massageCheckAvailabilitySchema,
   massageCreateAppointmentSchema,
   massageFindAvailabilitySchema,
+  massageRequestCallbackSchema,
   massageRescheduleAppointmentSchema,
   massageCancelAppointmentSchema,
 } from "./assistant-massage.validator.js";
@@ -65,6 +66,19 @@ class AssistantMassageController {
     );
 
     const data = await assistantMassageService.findAvailability({
+      businessId: businessIdOf(request),
+      ...body,
+    });
+
+    return reply.send({ success: true, data });
+  }
+
+  async requestCallback(request, reply) {
+    const body = massageRequestCallbackSchema.parse(
+      request.body
+    );
+
+    const data = await assistantMassageService.requestCallback({
       businessId: businessIdOf(request),
       ...body,
     });

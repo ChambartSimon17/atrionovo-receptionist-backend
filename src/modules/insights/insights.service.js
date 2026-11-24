@@ -52,7 +52,68 @@ function isFailed(analysis) {
   );
 }
 
+// externalId of a callback request taken before the call
+// report arrived, when the Vapi call id was not known.
+const CALLBACK_PREFIX = "callback-";
+
 class InsightsService {
+  /**
+   * Stores a callback request the assistant took during a
+   * call, so it shows at once in the app as "Terugbellen",
+   * and tells the business by push. The end-of-call report
+   * later fills in the summary, transcript and recording.
+   *
+   * callId: the Vapi call id (may be missing).
+   */
+  async recordCallbackRequest({
+    businessId,
+    callId,
+    callerNumber,
+    callerName,
+    reason,
+    log,
+  }) {
+    const usableCallId =
+      typeof callId === "string" && /^[\w-]{8,}$/.test(callId)
+        ? callId
+        : null;
+
+    const data = {
+      businessId,
+      callerNumber: callerNumber ?? null,
+      callerName: callerName ?? null,
+      outcome: "NEEDS_CALLBACK",
+      callbackReason: reason,
+      handledAt: null,
+    };
+
+    const saved = usableCallId
+      ? await prisma.callLog.upsert({
+          where: { externalId: usableCallId },
+          create: { ...data, externalId: usableCallId, startedAt: new Date() },
+          update: data,
+        })
+      : await prisma.callLog.create({
+          data: {
+            ...data,
+            externalId: `${CALLBACK_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+            startedAt: new Date(),
+          },
+        });
+
+    await pushService.notifyBusiness(
+      businessId,
+      {
+        title: "Bel terug",
+        body: `${callerName || callerNumber || "Een beller"}: ${reason}`,
+        data: { type: "call", callId: saved.id },
+      },
+      log
+    );
+
+    return saved;
+  }
+
   async getGuestHistory(businessId) {
     const [customers, otherReservations] = await Promise.all([
       prisma.customer.findMany({
@@ -247,12 +308,31 @@ class InsightsService {
         : [0, 0],
     ]);
 
+    // A callback request the assistant took during this
+    // call (see recordCallbackRequest). Stored under the call
+    // id, or, when Vapi did not fill that in, under a
+    // temporary id with the caller's number.
+    const request =
+      (await prisma.callLog.findFirst({
+        where: { businessId, externalId: call.id, callbackReason: { not: null } },
+      })) ??
+      (callerNumber
+        ? await prisma.callLog.findFirst({
+            where: {
+              businessId,
+              callerNumber,
+              externalId: { startsWith: CALLBACK_PREFIX },
+              createdAt: window,
+            },
+          })
+        : null);
+
     const outcome =
       created[0] + created[1] > 0
         ? "BOOKED"
         : changed[0] + changed[1] > 0
           ? "CHANGED"
-          : isFailed(message.analysis)
+          : request || isFailed(message.analysis)
             ? "NEEDS_CALLBACK"
             : "INFORMATION";
 
@@ -292,13 +372,24 @@ class InsightsService {
       endedReason: message.endedReason ?? null,
     };
 
-    const saved = await prisma.callLog.upsert({
-      where: { externalId: call.id },
-      create: { ...data, externalId: call.id },
-      update: data,
-    });
+    if (request && !data.callerName) {
+      data.callerName = request.callerName;
+    }
 
-    if (outcome === "NEEDS_CALLBACK") {
+    const saved = request
+      ? await prisma.callLog.update({
+          where: { id: request.id },
+          data: { ...data, externalId: call.id },
+        })
+      : await prisma.callLog.upsert({
+          where: { externalId: call.id },
+          create: { ...data, externalId: call.id },
+          update: data,
+        });
+
+    // A callback request was already announced when it was
+    // taken; do not notify twice.
+    if (outcome === "NEEDS_CALLBACK" && !request) {
       await pushService.notifyBusiness(
         businessId,
         {

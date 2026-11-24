@@ -52,6 +52,11 @@ export default async function assistantRoutes(fastify) {
   );
 
   fastify.post(
+    "/massage/request-callback",
+    assistantMassageController.requestCallback
+  );
+
+  fastify.post(
     "/massage/create-appointment",
     assistantMassageController.createAppointment
   );

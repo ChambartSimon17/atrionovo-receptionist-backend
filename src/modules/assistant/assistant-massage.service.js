@@ -6,6 +6,7 @@ import massageAppointmentService from "../massage-appointment/massage-appointmen
 import massageAvailabilityService from "../massage-appointment/massage-availability.service.js";
 import treatmentRoomRepository from "../treatment-room/treatment-room.repository.js";
 import calendarSyncService from "../calendar-sync/calendar-sync.service.js";
+import insightsService from "../insights/insights.service.js";
 import {
   DEFAULT_SEARCH_DAYS,
   MAX_SEARCH_DAYS,
@@ -432,6 +433,71 @@ class AssistantMassageService {
         results.length > 0
           ? "Stel de klant de eerste één of twee mogelijkheden voor, met dag en uur. Lees niet de hele lijst voor."
           : "In deze periode is er geen plaats. Stel voor om verder in de tijd te zoeken of een ander uur of dagdeel te kiezen.",
+    };
+  }
+
+  /**
+   * Takes a callback request: for a treatment the
+   * practitioner plans herself after a personal talk (Body
+   * Dearmouring), or anything else the assistant cannot
+   * settle. The call shows at once as "Terugbellen" in the
+   * app with the reason, the business gets a push, and the
+   * caller is added to the customers when the name is known.
+   */
+  async requestCallback({
+    businessId,
+    callId,
+    phoneNumber,
+    firstName,
+    lastName,
+    treatment,
+    location,
+    message,
+  }) {
+    await this.#getBusiness(businessId);
+
+    let callerNumber = null;
+
+    try {
+      callerNumber = normalizePhoneNumber(phoneNumber);
+    } catch {
+      callerNumber = null;
+    }
+
+    const name = [firstName, lastName]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    if (callerNumber && firstName && lastName) {
+      await customerService.syncCustomer({
+        businessId,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phoneNumber: callerNumber,
+      });
+    }
+
+    const reason = [
+      treatment ? `Wil een ${treatment}` : "Wil teruggebeld worden",
+      location ? `(${location})` : null,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .concat(message ? `. ${message.trim()}` : "");
+
+    await insightsService.recordCallbackRequest({
+      businessId,
+      callId,
+      callerNumber,
+      callerName: name || null,
+      reason,
+    });
+
+    return {
+      message: "Callback request saved. The practitioner has been notified and will call back.",
+      callbackRequested: true,
+      callerNumberKnown: Boolean(callerNumber),
     };
   }
 

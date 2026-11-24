@@ -82,6 +82,21 @@ export const massageFindAvailabilitySchema = z.object({
   weekday: emptyAsMissing(z.string().trim().max(20).optional()),
 });
 
+export const massageRequestCallbackSchema = z.object({
+  // Filled by the tool from the call ({{call.id}},
+  // {{customer.number}}), not by the model.
+  callId: emptyAsMissing(z.string().trim().max(200).optional()),
+  phoneNumber: emptyAsMissing(z.string().trim().max(40).optional()),
+  firstName: emptyAsMissing(z.string().trim().max(100).optional()),
+  lastName: emptyAsMissing(z.string().trim().max(100).optional()),
+  // What the caller wants, e.g. "Body Dearmouring sessie".
+  treatment: emptyAsMissing(z.string().trim().max(100).optional()),
+  location,
+  // Anything useful for the callback: questions, when the
+  // caller prefers to be called.
+  message: emptyAsMissing(z.string().trim().max(1000).optional()),
+});
+
 export const massageCreateAppointmentSchema = z.object({
   massageServiceId: z.string().min(1),
   startTime: localDateTime,
