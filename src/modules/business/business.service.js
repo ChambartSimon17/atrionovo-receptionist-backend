@@ -61,8 +61,14 @@ class BusinessService {
     return this.findById(businessId);
   }
 
-  async setVapiVoiceAgentEnabled(enabled) {
-    if (!env.vapiApiKey || !env.vapiPhoneNumberId) {
+  /**
+   * Turns the phone assistant on or off on one Vapi number:
+   * the business's own number (vapiPhoneNumberId), or the
+   * shared number from VAPI_PHONE_NUMBER_ID for a business
+   * that has no number of its own yet (the demos).
+   */
+  async setVapiVoiceAgentEnabled(enabled, phoneNumberId) {
+    if (!env.vapiApiKey || !phoneNumberId) {
       throw new Error(
         "Vapi API key or phone number ID is not configured."
       );
@@ -83,7 +89,7 @@ class BusinessService {
         ];
 
     const response = await fetch(
-      `https://api.vapi.ai/phone-number/${env.vapiPhoneNumberId}`,
+      `https://api.vapi.ai/phone-number/${phoneNumberId}`,
       {
         method: "PATCH",
         headers: {
@@ -110,13 +116,14 @@ class BusinessService {
   }
 
   async updateForUser(businessId, businessData) {
-    await this.findById(businessId);
+    const business = await this.findById(businessId);
 
     if (
       Object.hasOwn(businessData, "voiceAgentEnabled")
     ) {
       await this.setVapiVoiceAgentEnabled(
-        businessData.voiceAgentEnabled
+        businessData.voiceAgentEnabled,
+        business.vapiPhoneNumberId ?? env.vapiPhoneNumberId
       );
     }
 
