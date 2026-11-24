@@ -5,6 +5,19 @@ import massageAppointmentRepository from "../massage-appointment/massage-appoint
 import massageAppointmentService from "../massage-appointment/massage-appointment.service.js";
 import massageAvailabilityService from "../massage-appointment/massage-availability.service.js";
 import treatmentRoomRepository from "../treatment-room/treatment-room.repository.js";
+import calendarSyncService from "../calendar-sync/calendar-sync.service.js";
+import {
+  DEFAULT_SEARCH_DAYS,
+  MAX_SEARCH_DAYS,
+  inPartOfDay,
+  nearestTimes,
+  nextDate,
+  parseWeekday,
+  searchDates,
+  spreadTimes,
+  todayIn,
+  weekdayOf,
+} from "./massage-search.js";
 import pushService from "../insights/push.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import ValidationError from "../../errors/ValidationError.js";
@@ -12,6 +25,7 @@ import { ErrorCodes } from "../../errors/error-codes.js";
 import { normalizePhoneNumber } from "../../utils/phone.utils.js";
 import {
   localDateTimeStringToUTC,
+  minutesToTime,
   utcToLocalDateTimeString,
 } from "../../utils/time.utils.js";
 
@@ -41,6 +55,14 @@ import {
 // gives the free times per location, and createAppointment
 // needs the chosen location. An appointment keeps its
 // location when it is moved.
+//
+// Searching
+// When the requested time or day does not work, the
+// assistant must help actively: checkAvailability adds the
+// nearest free times that day, the same time on the next
+// days, or the next days with room. findAvailability
+// searches several days at once ("is there another day at
+// 17:00?", "an evening next week", "as soon as possible").
 //
 // Security
 // - The business comes from the x-business-id header of
@@ -110,12 +132,6 @@ function formatPrice(priceCents) {
   return cents === 0
     ? String(euros)
     : `${euros},${String(cents).padStart(2, "0")}`;
-}
-
-function toMinutes(time) {
-  const [hours, minutes] = time.split(":").map(Number);
-
-  return hours * 60 + minutes;
 }
 
 class AssistantMassageService {
@@ -207,8 +223,10 @@ class AssistantMassageService {
 
   /**
    * Free times of a day for one massage. When the caller
-   * asked for a specific time, says whether it is free and
-   * suggests the nearest free times.
+   * asked for a specific time that is not free, suggests
+   * the nearest free times that day and the same time on
+   * the next days; when the day is full, the next days with
+   * room.
    */
   async checkAvailability({
     businessId,
@@ -217,7 +235,7 @@ class AssistantMassageService {
     time,
     location,
   }) {
-    await this.#getBusiness(businessId);
+    const business = await this.#getBusiness(businessId);
 
     const locations = await this.#findLocations(businessId);
 
@@ -225,98 +243,195 @@ class AssistantMassageService {
       ? this.#resolveLocation(locations, location)
       : null;
 
-    // The massage is not given at the chosen location: say
-    // so, instead of "nothing free" (which sounds booked).
     if (chosen && !chosen.serviceIds.includes(massageServiceId)) {
-      const offeredAt = locations
-        .filter((candidate) =>
-          candidate.serviceIds.includes(massageServiceId)
-        )
-        .map((candidate) => candidate.name);
-
       return {
         date,
-        location: chosen.name,
-        massageOfferedAtLocation: false,
-        offeredAt,
-        anyAvailability: false,
-        availableTimes: [],
-        instruction: offeredAt.length > 0
-          ? `Deze massage wordt niet gegeven bij ${chosen.name}, alleen bij ${offeredAt.join(" en ")}. Zeg dat en vraag of de klant daar wil komen of een andere massage kiest.`
-          : `Deze massage wordt niet gegeven bij ${chosen.name}.`,
+        weekday: weekdayOf(date),
+        ...this.#notOfferedAt(chosen, locations, massageServiceId),
       };
     }
 
-    const availability =
-      await massageAvailabilityService.findSlots(businessId, {
-        date,
-        serviceId: massageServiceId,
-        roomId: chosen?.id,
-      });
+    const service =
+      await massageAvailabilityService.getBookableService(
+        businessId,
+        massageServiceId
+      );
 
-    const availableTimes = [
-      ...new Set(availability.slots.map((slot) => slot.time)),
-    ];
+    // Catch up external calendars if the server slept.
+    await calendarSyncService.refreshIfStale(businessId);
+
+    const targets = this.#targetsFor(
+      locations,
+      chosen,
+      massageServiceId
+    );
+
+    const perTarget = await Promise.all(
+      targets.map((target) =>
+        this.#timesOn(business, service, date, target)
+      )
+    );
+
+    const availableTimes = [...new Set(perTarget.flat())].sort();
 
     const result = {
       date,
+      weekday: weekdayOf(date),
       ...(chosen ? { location: chosen.name } : {}),
-      durationMinutes: availability.durationMinutes,
+      durationMinutes: service.durationMinutes,
       anyAvailability: availableTimes.length > 0,
       availableTimes,
     };
 
     // Several locations and the caller did not choose yet:
     // the free times per location, so the assistant can
-    // ask where the caller wants to come.
-    // Each location is asked on its own: in the combined
-    // list a time that is free at two locations only names
-    // one of them.
+    // ask where the caller wants to come. Each location is
+    // asked on its own: in a combined list a time that is
+    // free at two locations would only name one.
     if (!chosen && locations.length > 0) {
-      const perLocation = await Promise.all(
-        locations.map((candidate) =>
-          massageAvailabilityService.findSlots(businessId, {
-            date,
-            serviceId: massageServiceId,
-            roomId: candidate.id,
-          })
-        )
-      );
-
       result.availableTimesByLocation = Object.fromEntries(
-        locations.map((candidate, index) => [
-          candidate.name,
-          perLocation[index].slots.map((slot) => slot.time),
+        targets.map((target, index) => [
+          target.name,
+          perTarget[index],
         ])
       );
       result.locationInstruction =
         "Vraag de klant op welke locatie hij wil komen voordat je een afspraak maakt.";
     }
 
+    const searchFrom = nextDate(date);
+
+    // The day is full: the next days with room.
+    if (!result.anyAvailability) {
+      result.nextDaysWithAvailability = await this.#searchDays({
+        business,
+        service,
+        targets,
+        dates: searchDates(searchFrom, DEFAULT_SEARCH_DAYS),
+        pick: (times) => spreadTimes(times, 3),
+        limit: 3,
+      });
+      result.instruction =
+        result.nextDaysWithAvailability.length > 0
+          ? "Op die dag lukt het niet. Is de locatie die dag gesloten (zie de openingsuren), zeg dat; anders zeg je dat er die dag geen plaats meer is. Stel meteen de eerstvolgende dag uit nextDaysWithAvailability voor, met één of twee uren."
+          : "Op die dag en de volgende twee weken lukt het niet.";
+    }
+
     if (time === undefined) {
       return result;
     }
 
-    const requestedAvailable = availableTimes.includes(time);
+    result.requestedTime = time;
+    result.requestedTimeAvailable = availableTimes.includes(time);
+    result.alternativeTimes = nearestTimes(
+      availableTimes,
+      time,
+      MAX_ALTERNATIVE_TIMES
+    );
 
-    const requestedMinutes = toMinutes(time);
+    // The requested time does not work: the same time on
+    // the next days, for "is there another day at 17:00?".
+    if (!result.requestedTimeAvailable) {
+      result.sameTimeOnOtherDays = await this.#searchDays({
+        business,
+        service,
+        targets,
+        dates: searchDates(searchFrom, DEFAULT_SEARCH_DAYS),
+        pick: (times) => (times.includes(time) ? [time] : []),
+        limit: 3,
+      });
 
-    const alternativeTimes = availableTimes
-      .filter((candidate) => candidate !== time)
-      .sort(
-        (a, b) =>
-          Math.abs(toMinutes(a) - requestedMinutes) -
-            Math.abs(toMinutes(b) - requestedMinutes) ||
-          toMinutes(a) - toMinutes(b)
-      )
-      .slice(0, MAX_ALTERNATIVE_TIMES)
-      .sort((a, b) => toMinutes(a) - toMinutes(b));
+      if (result.anyAvailability) {
+        result.instruction =
+          "Het gevraagde uur lukt niet. Stel eerst het dichtstbijzijnde uur uit alternativeTimes voor op dezelfde dag. Wil de klant liever hetzelfde uur, stel dan een dag uit sameTimeOnOtherDays voor.";
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Searches free times over several days for one massage:
+   * the same time on other days, a part of the day or a
+   * weekday, or simply the first free moments.
+   *
+   * time: "HH:mm", only days where that time is free.
+   * partOfDay: "ochtend", "middag" or "avond".
+   * weekday: only that weekday ("woensdag").
+   */
+  async findAvailability({
+    businessId,
+    massageServiceId,
+    location,
+    fromDate,
+    days,
+    time,
+    partOfDay,
+    weekday,
+  }) {
+    const business = await this.#getBusiness(businessId);
+
+    const locations = await this.#findLocations(businessId);
+
+    const chosen = location
+      ? this.#resolveLocation(locations, location)
+      : null;
+
+    const today = todayIn(business.timezone);
+
+    const from = fromDate && fromDate > today ? fromDate : today;
+
+    if (chosen && !chosen.serviceIds.includes(massageServiceId)) {
+      return {
+        searchedFrom: from,
+        ...this.#notOfferedAt(chosen, locations, massageServiceId),
+      };
+    }
+
+    const service =
+      await massageAvailabilityService.getBookableService(
+        businessId,
+        massageServiceId
+      );
+
+    await calendarSyncService.refreshIfStale(businessId);
+
+    const count = Math.min(
+      Math.max(days ?? DEFAULT_SEARCH_DAYS, 1),
+      MAX_SEARCH_DAYS
+    );
+
+    const dates = searchDates(from, count, parseWeekday(weekday));
+
+    const results = await this.#searchDays({
+      business,
+      service,
+      targets: this.#targetsFor(locations, chosen, massageServiceId),
+      dates,
+      pick: (times) =>
+        time
+          ? times.includes(time)
+            ? [time]
+            : []
+          : spreadTimes(inPartOfDay(times, partOfDay), 4),
+      limit: 4,
+    });
 
     return {
-      ...result,
-      requestedTime: time,
-      requestedTimeAvailable: requestedAvailable,
-      alternativeTimes,
+      massage: service.name,
+      durationMinutes: service.durationMinutes,
+      ...(chosen ? { location: chosen.name } : {}),
+      searchedFrom: from,
+      searchedUntil: dates.at(-1) ?? from,
+      ...(time ? { requestedTime: time } : {}),
+      ...(partOfDay ? { partOfDay } : {}),
+      ...(weekday ? { weekday } : {}),
+      anyAvailability: results.length > 0,
+      results,
+      instruction:
+        results.length > 0
+          ? "Stel de klant de eerste één of twee mogelijkheden voor, met dag en uur. Lees niet de hele lijst voor."
+          : "In deze periode is er geen plaats. Stel voor om verder in de tijd te zoeken of een ander uur of dagdeel te kiezen.",
     };
   }
 
@@ -466,6 +581,112 @@ class AssistantMassageService {
           (link) => link.massageServiceId
         ),
       }));
+  }
+
+  /**
+   * What to search: the chosen location, every location
+   * that gives the massage, or the whole practice (null)
+   * when it works at one place.
+   */
+  #targetsFor(locations, chosen, massageServiceId) {
+    if (chosen) {
+      return [chosen];
+    }
+
+    if (locations.length === 0) {
+      return [null];
+    }
+
+    return locations.filter((candidate) =>
+      candidate.serviceIds.includes(massageServiceId)
+    );
+  }
+
+  /**
+   * The free start times ("HH:mm") of one day at one target.
+   */
+  async #timesOn(business, service, date, target) {
+    const slots = await massageAvailabilityService.computeSlots({
+      business,
+      service,
+      date,
+      roomId: target?.id,
+    });
+
+    return [
+      ...new Set(slots.map((slot) => minutesToTime(slot.minutes))),
+    ];
+  }
+
+  /**
+   * Walks the dates in order and keeps, per target, the
+   * days where pick(times) gives something, until limit
+   * days per target. Returns [{ date, weekday, location?,
+   * times }] in date order.
+   */
+  async #searchDays({ business, service, targets, dates, pick, limit }) {
+    const found = targets.map(() => []);
+
+    for (const date of dates) {
+      if (found.every((days) => days.length >= limit)) {
+        break;
+      }
+
+      const perTarget = await Promise.all(
+        targets.map((target, index) =>
+          found[index].length >= limit
+            ? []
+            : this.#timesOn(business, service, date, target)
+        )
+      );
+
+      perTarget.forEach((times, index) => {
+        const picked = times.length > 0 ? pick(times) : [];
+
+        if (picked.length > 0 && found[index].length < limit) {
+          found[index].push({
+            date,
+            weekday: weekdayOf(date),
+            ...(targets[index]
+              ? { location: targets[index].name }
+              : {}),
+            times: picked,
+          });
+        }
+      });
+    }
+
+    return found
+      .flat()
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date) ||
+          (a.location ?? "").localeCompare(b.location ?? "")
+      );
+  }
+
+  /**
+   * The massage is not given at the chosen location: say
+   * so, instead of "nothing free" (which sounds booked).
+   */
+  #notOfferedAt(chosen, locations, massageServiceId) {
+    const offeredAt = locations
+      .filter((candidate) =>
+        candidate.serviceIds.includes(massageServiceId)
+      )
+      .map((candidate) => candidate.name);
+
+    return {
+      location: chosen.name,
+      massageOfferedAtLocation: false,
+      offeredAt,
+      anyAvailability: false,
+      availableTimes: [],
+      instruction:
+        offeredAt.length > 0
+          ? `Deze massage wordt niet gegeven bij ${chosen.name}, alleen bij ${offeredAt.join(" en ")}. Zeg dat en vraag of de klant daar wil komen of een andere massage kiest.`
+          : `Deze massage wordt niet gegeven bij ${chosen.name}.`,
+    };
   }
 
   #resolveLocation(locations, spoken) {

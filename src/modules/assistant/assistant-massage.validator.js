@@ -63,6 +63,25 @@ export const massageCheckAvailabilitySchema = z.object({
   location,
 });
 
+export const massageFindAvailabilitySchema = z.object({
+  massageServiceId: z.string().min(1),
+  location,
+  // First day to search; today when left out.
+  fromDate: emptyAsMissing(calendarDate.optional()),
+  // How many days to search (at most 21).
+  days: emptyAsMissing(z.coerce.number().int().min(1).max(21).optional()),
+  time: emptyAsMissing(
+    z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, "Time must be like 14:00.")
+      .optional()
+  ),
+  partOfDay: emptyAsMissing(
+    z.enum(["ochtend", "middag", "avond"]).optional()
+  ),
+  weekday: emptyAsMissing(z.string().trim().max(20).optional()),
+});
+
 export const massageCreateAppointmentSchema = z.object({
   massageServiceId: z.string().min(1),
   startTime: localDateTime,

@@ -3,6 +3,7 @@ import {
   massageCallerProfileSchema,
   massageCheckAvailabilitySchema,
   massageCreateAppointmentSchema,
+  massageFindAvailabilitySchema,
   massageRescheduleAppointmentSchema,
   massageCancelAppointmentSchema,
 } from "./assistant-massage.validator.js";
@@ -51,6 +52,19 @@ class AssistantMassageController {
     );
 
     const data = await assistantMassageService.checkAvailability({
+      businessId: businessIdOf(request),
+      ...body,
+    });
+
+    return reply.send({ success: true, data });
+  }
+
+  async findAvailability(request, reply) {
+    const body = massageFindAvailabilitySchema.parse(
+      request.body
+    );
+
+    const data = await assistantMassageService.findAvailability({
       businessId: businessIdOf(request),
       ...body,
     });
