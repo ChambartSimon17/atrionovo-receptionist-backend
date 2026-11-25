@@ -1,5 +1,5 @@
 {
-  "_comment": "Shared Vapi settings for the template assistants. Read by the backend (transcriber override per business) and by `npm run vapi:sync`. Taken from the massage assistant 'Massage Business v.0.1.0' (2026-11-22), without the business-specific keyterms: those live per business in Business.transcriberKeyterms.",
+  "_comment": "Shared Vapi settings for the template assistants. Read by the backend (transcriber override per business) and by `npm run vapi:sync`. Taken from the massage assistant 'Massage Business v.0.1.0' (2026-11-22), without the business-specific keyterms: those live per business in Business.transcriberKeyterms. Endpointing, transcriber threshold, denoising and idle messages as on the In A Sense assistant (2026-11-25): it answers faster and asks again after silence.",
   "backendUrl": "https://atrionovo-receptionist-backend.onrender.com",
   "timeouts": {
     "toolSeconds": 15,
@@ -59,7 +59,6 @@
     "serverMessages": [
       "end-of-call-report"
     ],
-    "_comment_timing": "Endpointing, transcriber threshold, denoising and idle messages as on the In A Sense assistant (2026-11-25): it answers faster and asks again after silence.",
     "messagePlan": {
       "idleMessages": [
         "Sorry, ik heb u niet goed verstaan. Kunt u dat even herhalen?"
