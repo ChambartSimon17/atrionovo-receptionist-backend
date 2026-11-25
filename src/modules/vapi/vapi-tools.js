@@ -8,6 +8,8 @@ import {
 } from "../assistant/assistant.validator.js";
 import {
   massageCheckAvailabilitySchema,
+  massageFindAvailabilitySchema,
+  massageRequestCallbackSchema,
   massageCreateAppointmentSchema,
   massageRescheduleAppointmentSchema,
   massageCancelAppointmentSchema,
@@ -95,6 +97,21 @@ const HANDLERS = {
     assistantMassageService.checkAvailability({
       businessId: business.id,
       ...massageCheckAvailabilitySchema.parse(args),
+    }),
+
+  Massage_findAvailability: ({ business, args }) =>
+    assistantMassageService.findAvailability({
+      businessId: business.id,
+      ...massageFindAvailabilitySchema.parse(args),
+    }),
+
+  Massage_requestCallback: ({ business, args, callerNumber }) =>
+    assistantMassageService.requestCallback({
+      businessId: business.id,
+      ...massageRequestCallbackSchema.parse({
+        ...args,
+        phoneNumber: callerNumber ?? undefined,
+      }),
     }),
 
   Massage_createAppointment: ({ business, args, callerNumber }) =>

@@ -20,6 +20,11 @@ const LOCAL_DATETIME = `Lokale tijd van de zaak, exact in het formaat YYYY-MM-DD
 Zonder Z, zonder tijdzone, zonder milliseconden. Reken nooit om naar UTC: de backend doet dat.
 Zegt de klant 18 uur, stuur dan 18:00:00.`;
 
+const LOCATION = {
+  type: "string",
+  description: `Alleen als Massage_getServices locaties teruggeeft: de locatie die de klant koos, exact zoals in die lijst (bijvoorbeeld "The Bridge"). Laat anders weg.`,
+};
+
 const NO_ARGUMENTS = {
   type: "object",
   properties: {},
@@ -123,7 +128,7 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
 
   Massage_getServices: {
     businessType: "MASSAGE",
-    description: `Geeft het aanbod van de praktijk: elke massage met id, naam, duur en prijs.`,
+    description: `Geeft het aanbod van de praktijk: elke massage met id, naam, duur en prijs. Werkt de praktijk op meerdere locaties, dan staan die in locations: vraag de klant dan op welke locatie hij wil komen.`,
     parameters: NO_ARGUMENTS,
   },
 
@@ -145,8 +150,58 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
           type: "string",
           description: "De gewenste tijd in 24 uur, HH:mm. Laat weg als de klant nog geen tijd koos.",
         },
+        location: LOCATION,
       },
       required: ["massageServiceId", "date"],
+    },
+  },
+
+  Massage_findAvailability: {
+    businessType: "MASSAGE",
+    description: `Zoekt vrije momenten voor een massage over meerdere dagen. Gebruik dit als de klant een andere dag wil ("is er een andere dag om 17 uur?", "een avond volgende week", "zo snel mogelijk").`,
+    parameters: {
+      type: "object",
+      properties: {
+        massageServiceId: {
+          type: "string",
+          description: "Het id van de gekozen massage, uit het resultaat van Massage_getServices.",
+        },
+        location: LOCATION,
+        fromDate: {
+          type: "string",
+          description: "Eerste dag om te zoeken, YYYY-MM-DD. Laat weg om vanaf vandaag te zoeken.",
+        },
+        time: {
+          type: "string",
+          description: "Alleen dagen waarop dit uur vrij is, HH:mm in 24 uur. Laat weg als het uur niet uitmaakt.",
+        },
+        partOfDay: {
+          type: "string",
+          enum: ["ochtend", "middag", "avond"],
+          description: "Alleen een dagdeel. Laat weg als het niet uitmaakt.",
+        },
+        weekday: {
+          type: "string",
+          description: "Alleen deze weekdag, bijvoorbeeld woensdag. Laat weg als het niet uitmaakt.",
+        },
+      },
+      required: ["massageServiceId"],
+    },
+  },
+
+  Massage_requestCallback: {
+    businessType: "MASSAGE",
+    description: `Vraagt de masseur om de beller terug te bellen, in plaats van te boeken. Gebruik dit voor behandelingen die de praktijk alleen na een persoonlijk gesprek inplant (bijvoorbeeld Body Dearmouring). Het telefoonnummer komt automatisch van de oproep.`,
+    parameters: {
+      type: "object",
+      properties: {
+        firstName: { type: "string", description: "Voornaam van de beller." },
+        lastName: { type: "string", description: "Achternaam van de beller." },
+        treatment: { type: "string", description: "Waarvoor de beller teruggebeld wil worden, bijvoorbeeld Body Dearmouring sessie." },
+        location: LOCATION,
+        message: { type: "string", description: "Wat nuttig is voor het terugbellen: vragen van de beller, wanneer hij liefst gebeld wordt." },
+      },
+      required: ["firstName", "treatment"],
     },
   },
 
@@ -167,6 +222,7 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
           type: "string",
           description: "Optionele opmerking van de klant voor de masseur.",
         },
+        location: LOCATION,
       },
       required: ["massageServiceId", "startTime", "firstName", "lastName"],
     },
