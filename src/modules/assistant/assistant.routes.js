@@ -13,6 +13,11 @@ export default async function assistantRoutes(fastify) {
   );
 
   fastify.post(
+    "/find-availability",
+    assistantController.findAvailability
+  );
+
+  fastify.post(
     "/create-reservation",
     assistantController.createReservation
   );

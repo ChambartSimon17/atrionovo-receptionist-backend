@@ -24,6 +24,43 @@ export const checkAvailabilitySchema =
   });
 
 // ======================================================
+// Find Availability (several days)
+// ======================================================
+
+// Vapi sends "" for an argument the model left empty.
+const emptyAsMissing = (schema) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === ""
+        ? undefined
+        : value,
+    schema
+  );
+
+export const findAvailabilitySchema = z.object({
+  guestCount: z.coerce.number().int().positive(),
+  // First day to search; today when left out.
+  fromDate: emptyAsMissing(
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be like 2026-11-28.")
+      .optional()
+  ),
+  // How many days to search (at most 21).
+  days: emptyAsMissing(z.coerce.number().int().min(1).max(21).optional()),
+  time: emptyAsMissing(
+    z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, "Time must be like 19:30.")
+      .optional()
+  ),
+  partOfDay: emptyAsMissing(
+    z.enum(["ochtend", "middag", "avond"]).optional()
+  ),
+  weekday: emptyAsMissing(z.string().trim().max(20).optional()),
+});
+
+// ======================================================
 // Create Reservation
 // ======================================================
 

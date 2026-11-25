@@ -2,6 +2,7 @@ import assistantService from "../assistant/assistant.service.js";
 import assistantMassageService from "../assistant/assistant-massage.service.js";
 import {
   checkAvailabilitySchema,
+  findAvailabilitySchema,
   createReservationSchema,
   updateReservationSchema,
   cancelReservationSchema,
@@ -56,6 +57,12 @@ const HANDLERS = {
     assistantService.checkAvailability({
       businessId: business.id,
       ...checkAvailabilitySchema.parse(args),
+    }),
+
+  findAvailability: ({ business, args }) =>
+    assistantService.findAvailability({
+      businessId: business.id,
+      ...findAvailabilitySchema.parse(args),
     }),
 
   createReservation: ({ business, args, callerNumber }) =>

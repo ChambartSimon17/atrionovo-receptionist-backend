@@ -45,10 +45,16 @@
       }
     },
     "analysisPlan": {
-      "summaryPlan": { "enabled": false },
-      "successEvaluationPlan": { "enabled": false }
+      "summaryPlan": {
+        "enabled": false
+      },
+      "successEvaluationPlan": {
+        "enabled": false
+      }
     },
-    "serverMessages": ["end-of-call-report"]
+    "serverMessages": [
+      "end-of-call-report"
+    ]
   },
   "assistants": {
     "RESTAURANT": {
@@ -58,6 +64,7 @@
       "tools": [
         "getCallerProfile",
         "checkAvailability",
+        "findAvailability",
         "createReservation",
         "updateReservation",
         "cancelReservation"
@@ -76,6 +83,8 @@
         "Massage_getCallerProfile",
         "Massage_getServices",
         "Massage_checkAvailability",
+        "Massage_findAvailability",
+        "Massage_requestCallback",
         "Massage_createAppointment",
         "Massage_rescheduleAppointment",
         "Massage_cancelAppointment"

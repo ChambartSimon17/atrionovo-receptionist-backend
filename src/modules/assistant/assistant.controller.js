@@ -2,6 +2,7 @@ import assistantService from "./assistant.service.js";
 import {
   callerProfileSchema,
   checkAvailabilitySchema,
+  findAvailabilitySchema,
   createReservationSchema,
   updateReservationSchema,
   cancelReservationSchema,
@@ -49,6 +50,20 @@ class AssistantController {
       success: true,
       data: profile,
     });
+  }
+
+  /**
+   * Finds free times over several days.
+   */
+  async findAvailability(request, reply) {
+    const body = findAvailabilitySchema.parse(request.body);
+
+    const data = await assistantService.findAvailability({
+      businessId: request.headers["x-business-id"],
+      ...body,
+    });
+
+    return reply.send({ success: true, data });
   }
 
   /**

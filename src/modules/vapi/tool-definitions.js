@@ -46,7 +46,7 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
 
   checkAvailability: {
     businessType: "RESTAURANT",
-    description: `Kijkt of een reservatie voor dit aantal personen op dit moment mogelijk is.`,
+    description: `Kijkt of een reservatie voor dit aantal personen op dit moment mogelijk is. Lukt het niet, dan geeft het ook de dichtstbijzijnde vrije uren die dag (alternativeSlots), hetzelfde uur op de volgende dagen (sameTimeOnOtherDays) en, als die middag of avond vol is, de volgende dagen met plaats rond dat uur (nextDaysWithAvailability).`,
     parameters: {
       type: "object",
       properties: {
@@ -60,6 +60,38 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
         },
       },
       required: ["guestCount", "startTime"],
+    },
+  },
+
+  findAvailability: {
+    businessType: "RESTAURANT",
+    description: `Zoekt vrije uren over meerdere dagen, tot drie weken vooruit. Gebruik dit als de klant een andere dag wil ("kan het zaterdag?", "een avond volgende week", "wanneer kan het wel met acht?").`,
+    parameters: {
+      type: "object",
+      properties: {
+        guestCount: {
+          type: "number",
+          description: "Aantal personen.",
+        },
+        fromDate: {
+          type: "string",
+          description: "Eerste dag om te zoeken, YYYY-MM-DD. Laat weg om vanaf vandaag te zoeken.",
+        },
+        time: {
+          type: "string",
+          description: "Alleen dagen waarop dit uur vrij is, HH:mm in 24 uur. Laat weg als het uur niet uitmaakt.",
+        },
+        partOfDay: {
+          type: "string",
+          enum: ["ochtend", "middag", "avond"],
+          description: "Alleen een dagdeel. Laat weg als het niet uitmaakt.",
+        },
+        weekday: {
+          type: "string",
+          description: "Alleen deze weekdag, bijvoorbeeld zaterdag. Laat weg als het niet uitmaakt.",
+        },
+      },
+      required: ["guestCount"],
     },
   },
 
