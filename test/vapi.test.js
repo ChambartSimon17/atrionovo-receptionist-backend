@@ -140,6 +140,17 @@ test("openingDaysText groups days like the demo scripts", () => {
   );
 });
 
+test("openingDaysText: no closed days for a business open every day", () => {
+  const allWeek = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"].map(
+    (dayOfWeek) => ({ dayOfWeek, opensAtMinutes: 540, closesAtMinutes: 1320 })
+  );
+
+  assert.equal(
+    openingDaysText(allWeek),
+    "maandag tot en met zondag, van 9 uur tot 22 uur."
+  );
+});
+
 test("massageTypesText drops durations and duplicates", () => {
   assert.equal(
     massageTypesText(BAAN_SABAI.massageServiceNames),

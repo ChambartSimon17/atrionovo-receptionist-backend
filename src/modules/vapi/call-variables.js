@@ -79,6 +79,8 @@ export function openingDaysText(openingHours) {
     return "Er zijn geen vaste openingsuren bekend.";
   }
 
+  const openDays = groups.reduce((sum, group) => sum + group.days.length, 0);
+
   return (
     groups
       .map(({ key, days }) => {
@@ -94,7 +96,10 @@ export function openingDaysText(openingHours) {
 
         return `${spokenDays}, ${key}`;
       })
-      .join("; ") + ". Op de andere dagen is de zaak gesloten."
+      .join("; ") +
+    (openDays === DAYS.length
+      ? "."
+      : ". Op de andere dagen is de zaak gesloten.")
   );
 }
 

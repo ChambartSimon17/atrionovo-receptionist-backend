@@ -18,12 +18,16 @@
 //   npm run vapi:sync -- --numbers --only=<vapi phone number id>
 // so the number in Vapi points to /vapi/assistant-request.
 //
+// Live customers (vapi/customers.json) are refused, unless named on
+// purpose with --customer=<businessId>.
+//
 // Option --db-env=<file> (default .env.render = production database).
 // The backend caches a business for VAPI_BUSINESS_CACHE_SECONDS (2 min).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { REPO_ROOT as ROOT, cleanKeyterms } from "../../src/modules/vapi/vapi-config.js";
+import { refuseCustomer } from "./customers.mjs";
 
 const args = process.argv.slice(2);
 const slug = args[0];
@@ -57,8 +61,16 @@ try {
 
   const data = {};
 
+  // Live customers (vapi/customers.json): never by accident.
+  const allowed = option("customer") ?? null;
+  const changing = ["number", "fallback", "keyterms-file"].some(option) || ["no-number", "no-fallback", "no-keyterms", "keyterms", "add-keyterms"].some(flag);
+  if (changing) refuseCustomer(business.id, `${business.name}`, allowed);
+
   const number = option("number");
-  if (number) data.vapiPhoneNumberId = number;
+  if (number) {
+    refuseCustomer(number, `Nummer ${number}`, allowed);
+    data.vapiPhoneNumberId = number;
+  }
   if (flag("no-number")) data.vapiPhoneNumberId = null;
 
   const fallback = option("fallback");

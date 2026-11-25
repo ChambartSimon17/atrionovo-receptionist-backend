@@ -1,176 +1,124 @@
-// Points the Vapi demo assistant (massage or restaurant) to a
-// demo account:
-//   1. fills the prompt template (only name, opening days and,
-//      for massage, the types of massage) and puts it on the
-//      assistant
-//   2. sets x-business-id on every tool of that assistant
-//   3. sets the server URL, so the calls show up in the app
-//   3b. points the shared demo number to that assistant (massage
-//      and restaurant demos share one number)
-//   4. multi-tenant setup (src/modules/vapi): gives the demo number
-//      to this business in the database (Business.vapiPhoneNumberId)
-//      and stores "keyterms" from the config. Once the number points
-//      to /vapi/assistant-request (npm run vapi:sync -- --numbers),
-//      only this step matters.
-// Everything that was there before is saved in
-// scripts/demo/backups/ first.
+// Puts the shared demo number on a demo account (multi-tenant, see
+// vapi/README.md). Nothing in the assistants or tools changes: one
+// template assistant per type takes every call, and the backend fills
+// in the business of the called number.
+//
+//   1. refuses live customers (vapi/customers.json)
+//   2. database: the demo number goes to this business (taken away
+//      from the previous demo), keyterms from the config, phone
+//      assistant on
+//   3. checks that the demo number in Vapi asks our backend
+//      (/vapi/assistant-request) and has no fixed assistant
+//   4. asks the backend which business it now answers with, and shows
+//      what the assistant will say (name, opening days, massages)
 //
 // Usage: node scripts/demo/vapi-switch.mjs scripts/demo/demos/<slug>.json [--dry-run]
 //
-// Note: massage and restaurant demos share ONE demo number, so only
-// the last switched demo (of either type) is live.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { API, ROOT, loadConfig, loadEnv, openingDaysText, prisma as openProductionDb } from "./lib.mjs";
+// Massage and restaurant demos share ONE number: only the last switched
+// demo is live. The backend remembers a number for up to 2 minutes
+// (VAPI_BUSINESS_CACHE_SECONDS), so the switch can take that long.
+import { API, loadConfig, loadEnv, prisma as openProductionDb } from "./lib.mjs";
 import { cleanKeyterms } from "../../src/modules/vapi/vapi-config.js";
+import { callVariables } from "../../src/modules/vapi/call-variables.js";
+import { refuseCustomer } from "../vapi/customers.mjs";
 
-export const ASSISTANTS = {
-  // +32 460 25 28 25 is since 2026-11-23 the number of In A Sense (Cindy),
-  // with its own assistant 6274f041-… . Massage demos need another number.
-  MASSAGE: { id: "b2edb84c-4382-4661-899b-b1a0ce31a22b", template: "docs/vapi/massage-prompt.template.nl.md", phone: "+32 460 23 71 90" },
-  RESTAURANT: { id: "1dd35e22-4c13-42c0-a928-f9bb176c8629", template: "docs/vapi/restaurant-prompt.template.nl.md", phone: "+32 460 23 71 90" },
-};
-
-// Live customers: never switch these to a demo.
-const CUSTOMER_ASSISTANTS = ["6274f041-d1dc-41e5-b6af-d54c4713e932"]; // In A Sense (Cindy)
-const CUSTOMER_NUMBERS = ["+32460252825"]; // In A Sense (Cindy)
-for (const a of Object.values(ASSISTANTS)) {
-  if (CUSTOMER_ASSISTANTS.includes(a.id) || CUSTOMER_NUMBERS.includes(a.phone?.replace(/\s/g, ""))) {
-    throw new Error(`vapi-switch mag nooit de assistant of het nummer van een klant aanpassen (${a.id} / ${a.phone})`);
-  }
-}
+export const DEMO_NUMBER = "+32460237190";
 
 const config = loadConfig(process.argv[2]);
 const dryRun = process.argv.includes("--dry-run");
 if (!config.businessId) throw new Error("Maak eerst het account aan (create-account.mjs).");
 
+// ---------- 1. never a customer ----------
+refuseCustomer(config.businessId, `Zaak ${config.name}`);
+refuseCustomer(DEMO_NUMBER, `Demonummer ${DEMO_NUMBER}`);
+
 await loadEnv(".env");
 const KEY = process.env.VAPI_API_KEY;
+const SECRET = process.env.VAPI_SERVER_SECRET;
 if (!KEY) throw new Error("VAPI_API_KEY ontbreekt in .env");
 
-async function vapi(method, path, body) {
-  const res = await fetch(`https://api.vapi.ai${path}`, {
-    method,
-    headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+async function vapi(method, path) {
+  const res = await fetch(`https://api.vapi.ai${path}`, { method, headers: { Authorization: `Bearer ${KEY}` } });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Vapi ${method} ${path} -> ${res.status} ${JSON.stringify(json)}`);
   return json;
 }
 
-// ---------- prompt ----------
-const target = ASSISTANTS[config.type];
-const spoken = config.spokenName ?? config.name;
-const values = {
-  PRAKTIJK: spoken,
-  ZAAK: spoken,
-  OPENINGSDAGEN: openingDaysText(config),
-  MASSAGES: (config.services ?? []).map((s) => s.type).join(", "),
-};
-let prompt = readFileSync(join(ROOT, target.template), "utf8").replace(/^<!--[\s\S]*?-->\n/, "");
-prompt = prompt.replace(/\[\[([A-Z]+)\]\]/g, (_, key) => {
-  if (!values[key]) throw new Error(`Geen waarde voor [[${key}]]`);
-  return values[key];
-});
-// "VOL." at the end of a sentence: no double full stop.
-if (spoken.endsWith(".")) prompt = prompt.replaceAll(`${spoken}.`, spoken);
+const number = (await vapi("GET", "/phone-number")).find((n) => n.number === DEMO_NUMBER);
+if (!number) throw new Error(`Demonummer ${DEMO_NUMBER} niet gevonden in Vapi`);
+refuseCustomer(number.id, `Demonummer ${DEMO_NUMBER}`);
 
-const promptFile = config.__path.replace(/\.json$/, ".prompt.md");
-writeFileSync(promptFile, prompt);
-console.log("prompt:", promptFile);
-console.log("  zaak:", spoken);
-console.log("  openingsdagen:", values.OPENINGSDAGEN);
-if (config.type === "MASSAGE") console.log("  massages:", values.MASSAGES);
-
-// ---------- current state + backup ----------
-const assistant = await vapi("GET", `/assistant/${target.id}`);
-const tools = await Promise.all((assistant.model?.toolIds ?? []).map((id) => vapi("GET", `/tool/${id}`)));
-// Older restaurant tools carry x-restaurant-id instead of
-// x-business-id (the backend maps it, see legacy-restaurant-compat).
-const HEADERS = ["x-business-id", "x-restaurant-id"];
-const headerOf = (t) => HEADERS.find((h) => t.headers?.properties?.[h]);
-const withHeader = tools.filter(headerOf);
-
-const backups = join(ROOT, "scripts/demo/backups");
-mkdirSync(backups, { recursive: true });
-const backupFile = join(backups, `${new Date().toISOString().replace(/[:.]/g, "-")}-${config.type.toLowerCase()}.json`);
-writeFileSync(backupFile, JSON.stringify({ assistant, tools }, null, 2));
-console.log("backup:", backupFile);
-
-const serverUrl = `${API}/assistant/call-events?businessId=${config.businessId}`;
-console.log(`tools met x-business-id/x-restaurant-id: ${withHeader.length} (${withHeader.map((t) => t.function?.name ?? t.name).join(", ")})`);
-
-console.log(`demonummer: ${target.phone} gaat naar de ${config.type.toLowerCase()}-assistant (gedeeld nummer, de vorige demo is daarna niet meer bereikbaar)`);
-
-if (dryRun) {
-  console.log("dry run: niets aangepast in Vapi");
-  process.exit(0);
-}
-
-// ---------- apply ----------
-const [system, ...rest] = assistant.model.messages ?? [];
-await vapi("PATCH", `/assistant/${target.id}`, {
-  model: { ...assistant.model, messages: [{ ...(system ?? { role: "system" }), content: prompt }, ...rest] },
-  server: { ...(assistant.server ?? {}), url: serverUrl },
-  serverMessages: [...new Set([...(assistant.serverMessages ?? []), "end-of-call-report"])],
-});
-
-for (const tool of withHeader) {
-  const headers = structuredClone(tool.headers);
-  headers.properties[headerOf(tool)].value = config.businessId;
-  await vapi("PATCH", `/tool/${tool.id}`, { headers });
-}
-
-// ---------- shared demo number -> this assistant ----------
-const demoPhone = target.phone.replace(/\s/g, "");
-const allNumbers = await vapi("GET", "/phone-number");
-const demoNumberInVapi = allNumbers.find((n) => n.number === demoPhone);
-if (!demoNumberInVapi) throw new Error(`Demonummer ${demoPhone} niet gevonden in Vapi`);
-if (demoNumberInVapi.assistantId !== target.id) {
-  await vapi("PATCH", `/phone-number/${demoNumberInVapi.id}`, { provider: demoNumberInVapi.provider, assistantId: target.id });
-  console.log(`demonummer ${target.phone} -> ${config.type.toLowerCase()}-assistant`);
-}
-
-// ---------- multi-tenant: number + keyterms in the database ----------
-// Separate from the Vapi changes above: if the migration is not
-// deployed yet, this only warns.
+// ---------- 2. database ----------
+const db = await openProductionDb();
+let business;
 try {
-  const numbers = await vapi("GET", "/phone-number");
-  const wantedNumber = target.phone?.replace(/\s/g, "");
-  const demoNumber = wantedNumber && !CUSTOMER_NUMBERS.includes(wantedNumber) ? numbers.find((n) => n.number === wantedNumber) : null;
-  const db = await openProductionDb();
-  try {
-    const keyterms = cleanKeyterms(config.keyterms ?? []);
+  const keyterms = cleanKeyterms(config.keyterms ?? []);
+  const holder = await db.business.findUnique({ where: { vapiPhoneNumberId: number.id }, select: { id: true, name: true } });
+  if (holder) refuseCustomer(holder.id, `Het demonummer staat nu bij ${holder.name}, en die`);
+
+  console.log(`demonummer ${DEMO_NUMBER}: ${holder ? holder.name : "(niemand)"} -> ${config.name}`);
+  console.log(`keyterms (${keyterms.length}): ${keyterms.join(" | ") || "-"}`);
+
+  if (!dryRun) {
     await db.$transaction(async (tx) => {
-      if (demoNumber) {
-        await tx.business.updateMany({
-          where: { vapiPhoneNumberId: demoNumber.id, NOT: { id: config.businessId } },
-          data: { vapiPhoneNumberId: null },
-        });
-      }
+      await tx.business.updateMany({
+        where: { vapiPhoneNumberId: number.id, NOT: { id: config.businessId } },
+        data: { vapiPhoneNumberId: null },
+      });
       await tx.business.update({
         where: { id: config.businessId },
-        data: { transcriberKeyterms: keyterms, ...(demoNumber && { vapiPhoneNumberId: demoNumber.id }) },
+        data: { vapiPhoneNumberId: number.id, transcriberKeyterms: keyterms, voiceAgentEnabled: true },
       });
     });
-    console.log(`database: nummer ${demoNumber ? demoNumber.id : "(niet gevonden in Vapi)"}, ${keyterms.length} keyterms`);
-  } finally {
-    await db.$disconnect();
   }
-} catch (error) {
-  console.warn(`database niet bijgewerkt (multi-tenant migratie nog niet uitgerold?): ${error.message.split("\n").at(-1)}`);
+
+  business = await db.business.findUnique({
+    where: { id: config.businessId },
+    select: {
+      id: true, name: true, businessType: true, timezone: true,
+      openingHours: { select: { dayOfWeek: true, opensAtMinutes: true, closesAtMinutes: true } },
+      massageServices: { where: { isActive: true }, select: { name: true }, orderBy: { name: "asc" } },
+    },
+  });
+} finally {
+  await db.$disconnect();
 }
 
-// ---------- check ----------
-const after = await vapi("GET", `/assistant/${target.id}`);
-const afterTools = await Promise.all(withHeader.map((t) => vapi("GET", `/tool/${t.id}`)));
-const numberAfter = await vapi("GET", `/phone-number/${demoNumberInVapi.id}`);
-const ok =
-  numberAfter.assistantId === target.id &&
-  after.model.messages[0].content === prompt &&
-  after.server?.url === serverUrl &&
-  afterTools.every((t) => t.headers.properties[headerOf(t)].value === config.businessId);
-if (!ok) throw new Error("Controle na het aanpassen klopt niet; kijk in Vapi en de backup.");
+// What the template prompt gets for this business.
+const variables = callVariables({ ...business, massageServiceNames: business.massageServices.map((s) => s.name) });
+console.log(`\nwat de assistant krijgt (${business.businessType.toLowerCase()}):`);
+console.log(`  zaak: ${variables.zaak_naam}`);
+console.log(`  openingsdagen: ${variables.openingsuren}`);
+if (variables.massages) console.log(`  massages: ${variables.massages}`);
 
-console.log(`klaar: "${after.name}" staat op ${spoken} (${config.businessId}). Bel ${target.phone} om te testen.`);
+// ---------- 3. number in Vapi ----------
+const routedToBackend = !number.assistantId && !number.squadId && number.server?.url === `${API}/vapi/assistant-request`;
+if (!routedToBackend) {
+  console.log(`\n! Het demonummer gaat nog niet via de backend (vaste assistant ${number.assistantId ?? "-"}).`);
+  console.log(`  Eenmalig: npm run vapi:sync -- --numbers --only=${number.id}`);
+  process.exitCode = 1;
+}
+
+if (dryRun) {
+  console.log("\ndry run: niets aangepast");
+  process.exit();
+}
+
+// ---------- 4. what the backend answers ----------
+if (routedToBackend && SECRET) {
+  const res = await fetch(`${API}/vapi/assistant-request`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-vapi-secret": SECRET },
+    body: JSON.stringify({ message: { type: "assistant-request", call: { phoneNumberId: number.id } } }),
+  });
+  const answer = await res.json().catch(() => ({}));
+  const answeredFor = answer.assistantOverrides?.metadata?.businessId;
+  if (answeredFor === config.businessId) {
+    console.log(`\nklaar: ${DEMO_NUMBER} neemt nu op als ${variables.zaak_naam}. Bel om te testen.`);
+  } else {
+    console.log(`\nbijna klaar: de backend antwoordt nog met de vorige zaak (${answeredFor ?? JSON.stringify(answer).slice(0, 120)}).`);
+    console.log("  Dat is de cache: binnen 2 minuten neemt het nummer op als " + variables.zaak_naam + ".");
+  }
+} else if (routedToBackend) {
+  console.log(`\nklaar in de database. (VAPI_SERVER_SECRET ontbreekt in .env, dus de backend is niet nagevraagd.)`);
+}

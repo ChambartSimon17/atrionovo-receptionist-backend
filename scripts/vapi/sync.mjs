@@ -13,6 +13,9 @@
 //   npm run vapi:sync -- --numbers                 + every number in the DB
 //   npm run vapi:sync -- --numbers --only=<id>     + one Vapi number
 //
+// --numbers skips live customers (vapi/customers.json). To move a
+// customer's number on purpose: --numbers --customer=<businessId>.
+//
 // Options:
 //   --backend=<url>    backend URL (default vapi/config.json backendUrl)
 //   --db-env=<file>    env file with the DATABASE_URL to read the numbers
@@ -26,6 +29,7 @@ import { join } from "node:path";
 
 import { REPO_ROOT as ROOT } from "../../src/modules/vapi/vapi-config.js";
 import { TOOL_DEFINITIONS, TOOL_DELAYED_MESSAGE } from "../../src/modules/vapi/tool-definitions.js";
+import { customerFor } from "./customers.mjs";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
@@ -34,6 +38,7 @@ const option = (name, fallback) => args.find((a) => a.startsWith(`--${name}=`))?
 const dryRun = flag("dry-run");
 const withNumbers = flag("numbers");
 const onlyNumber = option("only");
+const allowedCustomer = option("customer");
 
 const dotenv = await import("dotenv");
 dotenv.config({ path: join(ROOT, ".env"), quiet: true });
@@ -190,6 +195,12 @@ if (withNumbers) {
   }
 
   for (const business of businesses) {
+    const customer = customerFor(business.id) ?? customerFor(business.vapiPhoneNumberId);
+    if (customer && allowedCustomer !== customer.businessId) {
+      console.log(`  - ${business.name}: overgeslagen, klant ${customer.name} (vapi/customers.json). Bewust: --customer=${customer.businessId}`);
+      continue;
+    }
+
     const current = await vapi("GET", `/phone-number/${business.vapiPhoneNumberId}`);
     const wanted = {
       // No fixed assistant: Vapi asks /vapi/assistant-request.

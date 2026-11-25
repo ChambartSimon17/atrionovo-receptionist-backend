@@ -1,0 +1,13 @@
+{
+  "_comment": "Live customers with their own Vapi setup. No demo script touches these: vapi-switch refuses them, vapi:sync --numbers skips their numbers and vapi:business will not move their number, unless you name the customer on purpose (--customer=<businessId>). Add every new customer here the day they go live.",
+  "customers": [
+    {
+      "name": "In A Sense (Cindy)",
+      "since": "2026-11-23",
+      "businessId": "cmwjajnzu0002pg24yrw36bqd",
+      "phoneNumber": "+32460252825",
+      "vapiPhoneNumberId": "e301f96b-d73a-4723-b4bc-a8ac54c79f21",
+      "assistantId": "6274f041-d1dc-41e5-b6af-d54c4713e932"
+    }
+  ]
+}

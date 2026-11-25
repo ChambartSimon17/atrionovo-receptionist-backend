@@ -8,11 +8,13 @@ Een demo-account voor een geïnteresseerde zaak, in vijf stappen. De volledige w
 | `floor-plan.mjs <config>` | alleen de plattegrond opnieuw tekenen |
 | `render-plan.mjs <config> <map>` | plattegrond als SVG, om te controleren |
 | `seed.mjs <config>` | agenda met historiek, klanten, betalingen, AI-gesprekken (opnieuw uitvoerbaar) |
-| `vapi-switch.mjs <config> [--dry-run]` | Vapi-assistant op deze zaak: prompt, `x-business-id` op de tools, server-URL, en het gedeelde demonummer +32 460 23 71 90 naar die assistant |
+| `vapi-switch.mjs <config> [--dry-run]` | het gedeelde demonummer +32 460 23 71 90 naar deze zaak (database), keyterms, en controle bij de backend. Aan de assistants verandert niets |
 | `remove-customer.mjs <config> "Naam"` | testklant met afspraken en gesprekken weg |
 
 Configs staan in `demos/` (niet in git). Voorbeeld: `demos/volckerick.json`.
-Prompttemplates: `docs/vapi/massage-prompt.template.nl.md`, `docs/vapi/restaurant-prompt.template.nl.md`. Per zaak verandert alleen de naam, de openingsdagen en (massage) de soorten massages.
+Vapi werkt multi-tenant (zie `vapi/README.md`): één sjabloon-assistant per type (`vapi/prompts/`), de backend vult bij elke oproep de naam, de openingsdagen en (massage) de soorten massages in van de zaak die bij het gebelde nummer hoort. Een demo omzetten is dus alleen het nummer in de database verplaatsen; dat duurt tot 2 minuten (cache).
+
+Klanten (`vapi/customers.json`) weigert elk script.
 
 Wachtwoorden komen in `demo-logins.local.txt` (niet in git).
 

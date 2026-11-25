@@ -25,6 +25,14 @@ einde   ──end-of-call-report──▶ /assistant/call-events
 | `scripts/vapi/sync.mjs` | `npm run vapi:sync`: git → Vapi |
 | `scripts/vapi/business.mjs` | `npm run vapi:business`: nummer, fallback en keyterms van een zaak |
 
+## Klanten blijven af
+
+`vapi/customers.json` is de lijst van live klanten met hun eigen opzet (nu: In A Sense, Cindy).
+`vapi-switch` weigert die zaken en nummers, `vapi:sync --numbers` slaat ze over en
+`vapi:business` verplaatst hun nummer niet. Bewust toch (bv. een klant later naar deze opzet
+overzetten): `--customer=<businessId>`. Zet elke nieuwe klant in die lijst op de dag dat hij
+live gaat.
+
 ## Variabelen die de prompt kan gebruiken
 
 `business_id`, `zaak_naam`, `zaak_type`, `openingsuren`, `massages` (alleen massage),
@@ -78,10 +86,11 @@ eindigt met `assistant-request-returned-error`. Test 4 hieronder beslist dat.
 
 ## Testen met het demonummer
 
-Gebruik eerst één demonummer (bv. massage +32 460 25 28 25).
+Het gedeelde demonummer is +32 460 23 71 90 (Vapi-id `7df5d118-7a1b-42c0-bc78-076b17133ffe`).
++32 460 25 28 25 is sinds 2026-11-23 van In A Sense (Cindy), een klant: nooit gebruiken om te testen.
 
-1. `npm run vapi:business -- <demo-slug> --number=<id van +32 460 25 28 25> --fallback=<je eigen gsm> --keyterms "..."`
-   en daarna `npm run vapi:sync -- --numbers --only=<id>`.
+1. `node scripts/demo/vapi-switch.mjs scripts/demo/demos/<slug>.json` (zet het nummer en de
+   keyterms op de demozaak), eenmalig gevolgd door `npm run vapi:sync -- --numbers --only=7df5d118-7a1b-42c0-bc78-076b17133ffe`.
 2. **Gewone oproep.** Bel het nummer. Verwacht: de begroeting met de naam van de zaak. In de
    Render-logs staat `Vapi assistant-request assistant in N ms` (doel < 500 ms). In Vapi →
    Logs → Calls → Variables staan de ingevulde waarden.
