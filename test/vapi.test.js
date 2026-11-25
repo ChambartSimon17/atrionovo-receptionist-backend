@@ -125,8 +125,8 @@ test("isAuthorizedVapiRequest", () => {
   assert.equal(isAuthorizedVapiRequest({ authorization: "Bearer s3cret" }, opts), true);
   assert.equal(isAuthorizedVapiRequest({ "x-vapi-secret": "wrong" }, opts), false);
   assert.equal(isAuthorizedVapiRequest({}, opts), false);
-  assert.equal(isAuthorizedVapiRequest({}, { secret: undefined, nodeEnv: "production" }), false);
-  assert.equal(isAuthorizedVapiRequest({}, { secret: undefined, nodeEnv: "development" }), true);
+  assert.equal(isAuthorizedVapiRequest({}, { secret: null, nodeEnv: "production" }), false);
+  assert.equal(isAuthorizedVapiRequest({}, { secret: null, nodeEnv: "development" }), true);
 });
 
 // ------------------------------------------------------
