@@ -29,6 +29,45 @@ const env = {
   vapiPhoneNumberId:
     process.env.VAPI_PHONE_NUMBER_ID,
 
+  // Shared secret Vapi sends with every assistant-request
+  // and tool call (header x-vapi-secret). Set it on the
+  // tools and numbers with `npm run vapi:sync`.
+  vapiServerSecret:
+    process.env.VAPI_SERVER_SECRET,
+
+  // Template assistant per business type. The incoming call
+  // gets one of these, filled with the business's values
+  // (see src/modules/vapi/assistant-request.js).
+  vapiAssistantRestaurant:
+    process.env.VAPI_ASSISTANT_RESTAURANT,
+
+  vapiAssistantMassage:
+    process.env.VAPI_ASSISTANT_MASSAGE,
+
+  // Optional: a generic assistant for calls we cannot place
+  // (unknown number, database down) and that have no
+  // fallback number.
+  vapiAssistantFallback:
+    process.env.VAPI_ASSISTANT_FALLBACK,
+
+  // Our own deadline for assistant-request. Vapi waits at
+  // most 7.5 s (fixed), so we answer with the fallback well
+  // before that.
+  vapiAssistantRequestDeadlineMs:
+    Number(process.env.VAPI_ASSISTANT_REQUEST_DEADLINE_MS || 5000),
+
+  // How long a business found by phone number stays in
+  // memory (assistant-request and tool calls).
+  vapiBusinessCacheSeconds:
+    Number(process.env.VAPI_BUSINESS_CACHE_SECONDS || 120),
+
+  // TEST ONLY: make assistant-request fail on purpose to
+  // test the fallback on the Vapi number.
+  //   "error" -> answer with HTTP 500
+  //   "hang"  -> never answer (Vapi gives up after 7.5 s)
+  vapiSimulateAssistantRequestFailure:
+    process.env.VAPI_SIMULATE_ASSISTANT_REQUEST_FAILURE,
+
   // Google
   googleClientId:
     process.env.GOOGLE_CLIENT_ID,

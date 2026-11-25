@@ -127,9 +127,11 @@ class AssistantController {
         );
 
     const result =
-        await assistantService.cancelReservation(
-            body
-        );
+        await assistantService.cancelReservation({
+            businessId:
+              request.headers["x-business-id"],
+            ...body,
+        });
 
     return reply.send({
         success: true,

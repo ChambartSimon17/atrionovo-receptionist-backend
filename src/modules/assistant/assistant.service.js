@@ -1,5 +1,6 @@
 import customerService from "../customer/customer.service.js";
 import reservationService from "../reservation/reservation.service.js";
+import reservationRepository from "../reservation/reservation.repository.js";
 import businessRepository from "../business/business.repository.js";
 import pushService from "../insights/push.service.js";
 import NotFoundError from "../../errors/NotFoundError.js";
@@ -249,9 +250,12 @@ class AssistantService {
       );
     }
 
+    // Only reservations of this business: a caller cannot
+    // change another business's reservation by its id.
     const existingReservation =
-      await reservationService.findById(
-        reservationId
+      await this.#getOwnReservation(
+        reservationId,
+        businessId
       );
 
     const startTimeUTC =
@@ -319,8 +323,14 @@ class AssistantService {
    * Cancels an existing reservation.
    */
   async cancelReservation({
+    businessId,
     reservationId,
   }) {
+    await this.#getOwnReservation(
+      reservationId,
+      businessId
+    );
+
     const reservation =
       await reservationService.cancelReservation(
         reservationId
@@ -337,6 +347,24 @@ class AssistantService {
           reservation.status,
       },
     };
+  }
+
+  async #getOwnReservation(reservationId, businessId) {
+    const reservation = businessId
+      ? await reservationRepository.findByIdForBusiness(
+          reservationId,
+          businessId
+        )
+      : null;
+
+    if (!reservation) {
+      throw new NotFoundError(
+        "Reservation not found.",
+        ErrorCodes.RESERVATION_NOT_FOUND
+      );
+    }
+
+    return reservation;
   }
 }
 
