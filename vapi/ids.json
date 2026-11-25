@@ -1,0 +1,22 @@
+{
+  "tools": {
+    "getCallerProfile": "078f7475-38df-42b7-94f9-35b9ae55c445",
+    "checkAvailability": "95db73dc-632c-4f5b-85bb-bf5da5e5cd64",
+    "findAvailability": "9e001581-7231-4d38-9c65-0b45e7bd1ae0",
+    "createReservation": "a5e8be92-1239-4f3f-81d1-c357fa74a4f1",
+    "updateReservation": "f4aac9ab-b128-4bb8-b1af-7f7775d9b388",
+    "cancelReservation": "0802ea52-a297-4cc9-a364-2a480a451c04",
+    "Massage_getCallerProfile": "45910e7a-4a29-46ae-9fda-c35ea5ff2d30",
+    "Massage_getServices": "1c7f691a-cd8e-4446-9395-7dbcb2c30202",
+    "Massage_checkAvailability": "0eebf3fd-8210-4070-a25e-601c6338202b",
+    "Massage_findAvailability": "c6987013-f938-459d-a5ea-7c1a5443e942",
+    "Massage_requestCallback": "05edad5f-5d57-4829-87f2-4004b80d43ae",
+    "Massage_createAppointment": "26056586-6872-4b2d-ad91-003cc974ab5e",
+    "Massage_rescheduleAppointment": "d2ddfeb6-4700-4c2a-a81f-86ccc2ca97b7",
+    "Massage_cancelAppointment": "6239f9ea-a201-4956-82b0-e9a1f6a488b9"
+  },
+  "assistants": {
+    "RESTAURANT": "39c71115-f9a1-41cd-9a17-920720d8ac32",
+    "MASSAGE": "1e08f2dc-9bc1-4e70-bf14-9868d30e821b"
+  }
+}
