@@ -111,16 +111,20 @@ export async function callEventRoutes(fastify) {
   // server URL in this header. Without VAPI_WEBHOOK_SECRET
   // set, the endpoint is open (local development).
   fastify.post("/call-events", async (request, reply) => {
-    // VAPI_WEBHOOK_SECRET (old per-demo assistants) or
-    // VAPI_SERVER_SECRET (template assistants, set by
-    // `npm run vapi:sync`).
+    // Only VAPI_WEBHOOK_SECRET switches the check on, as
+    // before. Customer assistants with their own setup (In A
+    // Sense) send no secret, so VAPI_SERVER_SECRET alone must
+    // never lock them out. When the check is on, the template
+    // assistants' VAPI_SERVER_SECRET is accepted as well.
+    const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+
     const secrets = [
-      process.env.VAPI_WEBHOOK_SECRET,
+      webhookSecret,
       process.env.VAPI_SERVER_SECRET,
     ].filter(Boolean);
 
     if (
-      secrets.length &&
+      webhookSecret &&
       !secrets.some((secret) =>
         isAuthorizedVapiRequest(request.headers, { secret })
       )
