@@ -5,7 +5,12 @@ import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 
 import pushService from "./push.service.js";
-import { buildCallSms, sendSms, twilioConfigured } from "./call-sms.js";
+import {
+  buildCallSms,
+  buildReservationSms,
+  sendSms,
+  twilioConfigured,
+} from "./call-sms.js";
 
 // ======================================================
 // Insights
@@ -433,20 +438,31 @@ class InsightsService {
     }
 
     try {
-      const appointments = await prisma.appointment.findMany({
-        where: {
-          businessId: business.id,
-          phoneNumber: callerNumber,
-          OR: [{ createdAt: window }, { updatedAt: window }],
-        },
-        include: { room: { select: { name: true, hasOwnHours: true } } },
-      });
+      const touched = {
+        businessId: business.id,
+        phoneNumber: callerNumber,
+        OR: [{ createdAt: window }, { updatedAt: window }],
+      };
 
-      const body = buildCallSms({
-        appointments,
-        business,
-        callStartedAt: window.gte,
-      });
+      const body =
+        business.businessType === "RESTAURANT"
+          ? buildReservationSms({
+              reservations: await prisma.reservation.findMany({
+                where: touched,
+              }),
+              business,
+              callStartedAt: window.gte,
+            })
+          : buildCallSms({
+              appointments: await prisma.appointment.findMany({
+                where: touched,
+                include: {
+                  room: { select: { name: true, hasOwnHours: true } },
+                },
+              }),
+              business,
+              callStartedAt: window.gte,
+            });
 
       if (!body) {
         return;

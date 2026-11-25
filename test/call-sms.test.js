@@ -81,3 +81,42 @@ test("booked and cancelled in the same call: no SMS", () => {
 test("nothing happened: no SMS", () => {
   assert.equal(buildCallSms({ business, callStartedAt, appointments: [] }), null);
 });
+
+test("restaurant: new, changed and cancelled reservations", async () => {
+  const { buildReservationSms } = await import("../src/modules/insights/call-sms.js");
+  const restaurant = { name: "Maison Mathis", timezone: "Europe/Brussels" };
+  const started = new Date("2026-11-25T14:00:00Z");
+
+  assert.equal(
+    buildReservationSms({
+      business: restaurant,
+      callStartedAt: started,
+      reservations: [
+        { status: "CONFIRMED", guestCount: 4, startTime: new Date("2026-11-28T18:30:00Z"), createdAt: new Date("2026-11-25T14:02:00Z") },
+      ],
+    }),
+    "Uw reservatie voor 4 personen bij Maison Mathis op zaterdag 28 november om 19:30 is bevestigd.\nTot dan!"
+  );
+
+  assert.equal(
+    buildReservationSms({
+      business: restaurant,
+      callStartedAt: started,
+      reservations: [
+        { status: "CONFIRMED", guestCount: 1, startTime: new Date("2026-11-28T19:00:00Z"), createdAt: new Date("2026-11-20T10:00:00Z") },
+      ],
+    }),
+    "Uw reservatie bij Maison Mathis is gewijzigd: 1 persoon op zaterdag 28 november om 20:00.\nTot dan!"
+  );
+
+  assert.equal(
+    buildReservationSms({
+      business: restaurant,
+      callStartedAt: started,
+      reservations: [
+        { status: "CANCELLED", guestCount: 2, startTime: new Date("2026-11-28T19:00:00Z"), createdAt: new Date("2026-11-20T10:00:00Z") },
+      ],
+    }),
+    "Uw reservatie bij Maison Mathis op zaterdag 28 november om 20:00 is geannuleerd.\nTot een volgende keer!"
+  );
+});

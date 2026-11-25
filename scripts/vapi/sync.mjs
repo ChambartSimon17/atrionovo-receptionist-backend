@@ -28,7 +28,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { REPO_ROOT as ROOT } from "../../src/modules/vapi/vapi-config.js";
-import { TOOL_DEFINITIONS, TOOL_DELAYED_MESSAGE } from "../../src/modules/vapi/tool-definitions.js";
+import { TOOL_DEFINITIONS, toolMessages } from "../../src/modules/vapi/tool-definitions.js";
 import { customerFor } from "./customers.mjs";
 
 const args = process.argv.slice(2);
@@ -122,7 +122,7 @@ for (const [name, definition] of Object.entries(TOOL_DEFINITIONS)) {
   const wanted = {
     function: { name, description: definition.description, parameters: definition.parameters },
     server: serverFor(toolsUrl, config.timeouts.toolSeconds),
-    messages: [TOOL_DELAYED_MESSAGE],
+    messages: toolMessages(name),
   };
 
   const current = ids.tools[name] ? await getOrNull(`/tool/${ids.tools[name]}`) : null;

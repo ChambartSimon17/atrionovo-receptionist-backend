@@ -295,8 +295,42 @@ VERPLICHTE EERSTE ACTIE: roep deze tool meteen aan het begin van ELKE oproep aan
 // The prompt already has the assistant say "een momentje,
 // ik kijk het even na" once. Vapi only adds this when a
 // tool is slow, so the caller never hears silence.
-export const TOOL_DELAYED_MESSAGE = {
-  type: "request-response-delayed",
-  content: "Nog heel even geduld, ik ben het aan het nakijken.",
-  timingMilliseconds: 4000,
+// What the assistant says when a tool starts, as on the In
+// A Sense assistant: a short wait phrase for the tools that
+// take a moment, nothing for the silent lookups at the start
+// of a call. The prompt tells the model not to say it again
+// itself.
+const SILENT = null;
+
+export const TOOL_START_MESSAGES = {
+  getCallerProfile: SILENT,
+  checkAvailability: "Een ogenblikje, ik kijk het even na.",
+  findAvailability: "Een ogenblikje, ik kijk het even na.",
+  createReservation: "Een ogenblikje, ik leg het even vast.",
+  updateReservation: "Een ogenblikje, ik pas het even aan.",
+  cancelReservation: "Een ogenblikje, ik annuleer het even.",
+
+  Massage_getCallerProfile: SILENT,
+  Massage_getServices: SILENT,
+  Massage_checkAvailability: "Een ogenblikje, ik kijk het even na.",
+  Massage_findAvailability: "Een ogenblikje, ik kijk het even na.",
+  Massage_requestCallback: "Een ogenblikje, ik geef het even door.",
+  Massage_createAppointment: "Een ogenblikje, ik leg het even vast.",
+  Massage_rescheduleAppointment: "Een ogenblikje, ik pas het even aan.",
+  Massage_cancelAppointment: "Een ogenblikje, ik annuleer het even.",
 };
+
+/**
+ * The Vapi "messages" of a shared tool.
+ */
+export function toolMessages(name) {
+  const content = TOOL_START_MESSAGES[name];
+
+  return [
+    {
+      type: "request-start",
+      blocking: false,
+      ...(content && { content }),
+    },
+  ];
+}

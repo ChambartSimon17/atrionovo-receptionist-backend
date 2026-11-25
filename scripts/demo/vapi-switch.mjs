@@ -6,7 +6,8 @@
 //   1. refuses live customers (vapi/customers.json)
 //   2. database: the demo number goes to this business (taken away
 //      from the previous demo), keyterms from the config, phone
-//      assistant on
+//      assistant on, and the demo number as SMS sender (the backend
+//      sends the confirmation SMS after the call from it)
 //   3. checks that the demo number in Vapi asks our backend
 //      (/vapi/assistant-request) and has no fixed assistant
 //   4. asks the backend which business it now answers with, and shows
@@ -58,6 +59,7 @@ try {
 
   console.log(`demonummer ${DEMO_NUMBER}: ${holder ? holder.name : "(niemand)"} -> ${config.name}`);
   console.log(`keyterms (${keyterms.length}): ${keyterms.join(" | ") || "-"}`);
+  console.log(`sms na het gesprek vanaf ${DEMO_NUMBER}`);
 
   if (!dryRun) {
     await db.$transaction(async (tx) => {
@@ -67,7 +69,7 @@ try {
       });
       await tx.business.update({
         where: { id: config.businessId },
-        data: { vapiPhoneNumberId: number.id, transcriberKeyterms: keyterms, voiceAgentEnabled: true },
+        data: { vapiPhoneNumberId: number.id, transcriberKeyterms: keyterms, voiceAgentEnabled: true, smsSenderNumber: DEMO_NUMBER },
       });
     });
   }

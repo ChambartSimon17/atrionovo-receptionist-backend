@@ -22,7 +22,7 @@
       "model": "nova-3",
       "language": "nl-BE",
       "numerals": true,
-      "confidenceThreshold": 0.4,
+      "confidenceThreshold": 0.1,
       "fallbackPlan": {
         "transcribers": [
           {
@@ -38,10 +38,14 @@
     "firstMessageInterruptionsEnabled": false,
     "voicemailMessage": "Gelieve later terug te bellen.",
     "endCallMessage": "Tot ziens.",
-    "backgroundDenoisingEnabled": true,
+    "backgroundDenoisingEnabled": false,
     "startSpeakingPlan": {
-      "smartEndpointingPlan": {
-        "provider": "vapi"
+      "waitSeconds": 0.4,
+      "smartEndpointingEnabled": false,
+      "transcriptionEndpointingPlan": {
+        "onPunctuationSeconds": 0.1,
+        "onNoPunctuationSeconds": 0.8,
+        "onNumberSeconds": 0.5
       }
     },
     "analysisPlan": {
@@ -54,7 +58,16 @@
     },
     "serverMessages": [
       "end-of-call-report"
-    ]
+    ],
+    "_comment_timing": "Endpointing, transcriber threshold, denoising and idle messages as on the In A Sense assistant (2026-11-25): it answers faster and asks again after silence.",
+    "messagePlan": {
+      "idleMessages": [
+        "Sorry, ik heb u niet goed verstaan. Kunt u dat even herhalen?"
+      ],
+      "idleTimeoutSeconds": 7,
+      "idleMessageMaxSpokenCount": 2,
+      "idleMessageResetCountOnUserSpeechEnabled": true
+    }
   },
   "assistants": {
     "RESTAURANT": {
@@ -70,9 +83,8 @@
         "cancelReservation"
       ],
       "existingToolIds": {
-        "_comment": "Vapi built-in tools reused as they are (end call, SMS).",
-        "end_call_tool": "13020185-9321-4a27-8be5-39ea5a1d2232",
-        "send_text_tool": "86e65269-361f-470b-b49a-19e71d0345dd"
+        "_comment": "Vapi built-in end call tool (says the goodbye). No SMS tool: the backend sends the confirmation SMS after the call.",
+        "end_call_tool": "13020185-9321-4a27-8be5-39ea5a1d2232"
       }
     },
     "MASSAGE": {
@@ -91,7 +103,7 @@
       ],
       "existingToolIds": {
         "end_call_tool": "13020185-9321-4a27-8be5-39ea5a1d2232",
-        "send_text_tool": "86e65269-361f-470b-b49a-19e71d0345dd"
+        "_comment": "Vapi built-in end call tool (says the goodbye). No SMS tool: the backend sends the confirmation SMS after the call."
       }
     }
   }

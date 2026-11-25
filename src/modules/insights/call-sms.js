@@ -70,6 +70,47 @@ export function buildCallSms({ appointments, business, callStartedAt }) {
   return [...lines, cancelledOnly ? "Tot een volgende keer!" : "Tot dan!"].join("\n");
 }
 
+function guests(count) {
+  return count === 1 ? "1 persoon" : `${count} personen`;
+}
+
+/**
+ * The SMS text for the restaurant reservations of one
+ * call, or null when nothing happened. Same rules as
+ * buildCallSms: created during the call is a new booking,
+ * older ones were changed or cancelled.
+ *
+ * reservations: [{ status, startTime, guestCount, createdAt }]
+ */
+export function buildReservationSms({ reservations, business, callStartedAt }) {
+  const lines = reservations
+    .slice()
+    .sort((a, b) => a.startTime - b.startTime)
+    .map((reservation) => {
+      const moment = when(reservation.startTime, business.timezone);
+      const isNew = reservation.createdAt >= callStartedAt;
+
+      if (reservation.status === "CANCELLED") {
+        return isNew
+          ? null
+          : `Uw reservatie bij ${business.name} op ${moment} is geannuleerd.`;
+      }
+
+      return isNew
+        ? `Uw reservatie voor ${guests(reservation.guestCount)} bij ${business.name} op ${moment} is bevestigd.`
+        : `Uw reservatie bij ${business.name} is gewijzigd: ${guests(reservation.guestCount)} op ${moment}.`;
+    })
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const cancelledOnly = lines.every((line) => line.endsWith("geannuleerd."));
+
+  return [...lines, cancelledOnly ? "Tot een volgende keer!" : "Tot dan!"].join("\n");
+}
+
 export function twilioConfigured() {
   return Boolean(
     process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
