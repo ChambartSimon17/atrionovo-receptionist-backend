@@ -7,6 +7,7 @@ import env from "../../config/env.js";
 import { sendMail } from "../invoicing/mailer.js";
 import { autocomplete, placeDetails, placesConfigured } from "./google-places.js";
 import { readWebsite } from "./website-reader.js";
+import usageService from "../billing/usage.service.js";
 import { buildAssistant, guessKind, knowledge, VOICES } from "./live-demo.assistant.js";
 
 // ======================================================
@@ -209,6 +210,13 @@ async function sendSms(to, body) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data?.message || `Twilio answered ${response.status}.`);
   }
+
+  const message = await response.json().catch(() => ({}));
+
+  return {
+    sid: message.sid ?? null,
+    segments: Math.max(1, Number(message.num_segments) || 1),
+  };
 }
 
 // ----------------------------------------------------
@@ -416,6 +424,23 @@ class LiveDemoService {
 
         void this.#reportToTeam(session, log);
 
+        // Metering: demo calls are our own cost.
+        void usageService
+          .recordCall({
+            businessId: null,
+            externalId: message.call?.id ?? `live-demo:${session.id}`,
+            source: "LIVE_DEMO",
+            seconds:
+              message.durationSeconds ??
+              (call.startedAt
+                ? (new Date(call.endedAt) - new Date(call.startedAt)) / 1000
+                : 0),
+            occurredAt: call.startedAt ? new Date(call.startedAt) : new Date(),
+            costUsd: message.cost ?? message.call?.cost,
+            breakdown: message.costBreakdown ?? message.call?.costBreakdown,
+          })
+          .catch((error) => log?.warn?.({ error: error.message }, "Demo call usage not recorded"));
+
         return { ok: true };
       }
 
@@ -485,8 +510,17 @@ class LiveDemoService {
 
     if (smsConfigured() && session.phone) {
       try {
-        await sendSms(session.phone, smsText(session, booking));
+        const sent = await sendSms(session.phone, smsText(session, booking));
         session.call.smsSent = true;
+
+        void usageService
+          .recordSms({
+            businessId: null,
+            externalId: sent.sid ?? `live-demo-sms:${session.id}`,
+            source: "LIVE_DEMO",
+            segments: sent.segments,
+          })
+          .catch((error) => log?.warn?.({ error: error.message }, "Demo SMS usage not recorded"));
       } catch (error) {
         log?.warn?.({ error: error.message }, "Live demo SMS not sent");
       }

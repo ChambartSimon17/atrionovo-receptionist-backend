@@ -5,6 +5,7 @@ import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
 
 import pushService from "./push.service.js";
+import usageService from "../billing/usage.service.js";
 import {
   buildCallSms,
   buildReservationSms,
@@ -416,6 +417,21 @@ class InsightsService {
       );
     }
 
+    // Metering: minutes and what the call cost us.
+    try {
+      await usageService.recordCall({
+        businessId,
+        externalId: call.id,
+        source: "RECEPTIONIST",
+        seconds: data.durationSeconds,
+        occurredAt: startedAt,
+        costUsd: firstDefined(message.cost, call.cost),
+        breakdown: firstDefined(message.costBreakdown, call.costBreakdown),
+      });
+    } catch (error) {
+      log?.warn?.({ callId: call.id, error: error.message }, "Call usage not recorded");
+    }
+
     await this.#sendCallSms({ business, call: saved, callerNumber, window, log });
 
     return { stored: true, id: saved.id, outcome };
@@ -479,11 +495,22 @@ class InsightsService {
         return;
       }
 
-      await sendSms({
+      const sent = await sendSms({
         from: business.smsSenderNumber,
         to: callerNumber,
         body,
       });
+
+      await usageService
+        .recordSms({
+          businessId: business.id,
+          externalId: sent.sid ?? `call-sms:${call.id}`,
+          source: "CALL_SMS",
+          segments: sent.segments,
+        })
+        .catch((error) =>
+          log?.warn?.({ callId: call.id, error: error.message }, "SMS usage not recorded")
+        );
     } catch (error) {
       log?.warn?.({ callId: call.id, error: error.message }, "Confirmation SMS failed");
     }

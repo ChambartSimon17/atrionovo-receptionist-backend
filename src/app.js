@@ -54,6 +54,13 @@ import websiteRoutes from "./modules/website/website.routes.js";
 
 import liveDemoRoutes from "./modules/live-demo/live-demo.routes.js";
 
+import {
+  billingBusinessRoutes,
+  billingWebhookRoutes,
+} from "./modules/billing/billing.routes.js";
+
+import adminRoutes from "./modules/admin/admin.routes.js";
+
 import errorHandler from "./middleware/error.middleware.js";
 
 import {
@@ -75,6 +82,13 @@ app.register(cors, {
     "https://app.atrionovo.com",
     "http://localhost:8082",
     "http://localhost:4321",
+    // Local development only: extra origins, comma
+    // separated (e.g. a second app dev server). Unset in
+    // production.
+    ...(process.env.CORS_DEV_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
   ],
   // @fastify/cors allows only GET, HEAD and POST by
   // default; the app in the browser also edits (PUT,
@@ -240,6 +254,23 @@ app.register(authRoutes, {
 
 app.register(pushTokenRoutes, {
   prefix: "/auth",
+});
+
+// ======================================================
+// Billing (what businesses pay AtrioNovo)
+// ======================================================
+
+app.register(billingBusinessRoutes, {
+  prefix: "/businesses",
+});
+
+app.register(billingWebhookRoutes, {
+  prefix: "/billing",
+});
+
+// Our own usage and cost report (ADMIN_PASSWORD).
+app.register(adminRoutes, {
+  prefix: "/admin",
 });
 
 // ======================================================

@@ -144,6 +144,42 @@ const env = {
   publicBaseUrl:
     process.env.PUBLIC_BASE_URL ||
     "https://atrionovo-receptionist-backend.onrender.com",
+
+  // ----------------------------------------------------
+  // AtrioNovo billing (src/modules/billing)
+  // ----------------------------------------------------
+
+  // Off by default: without "true" nothing is created or
+  // charged in Stripe (no subscriptions, no overage
+  // invoices). Usage is metered and reported either way.
+  // Uses STRIPE_SECRET_KEY, the same account as Connect.
+  stripeBillingEnabled:
+    process.env.STRIPE_BILLING_ENABLED === "true",
+
+  // Signing secret of the Stripe webhook to
+  // /billing/webhook (whsec_...).
+  stripeBillingWebhookSecret:
+    process.env.STRIPE_BILLING_WEBHOOK_SECRET,
+
+  // Where the Stripe customer portal sends the owner back.
+  billingReturnUrl:
+    process.env.BILLING_RETURN_URL || "https://app.atrionovo.com",
+
+  // Our own usage report at /admin. Without a password of
+  // at least 16 characters the admin pages do not exist.
+  adminPassword:
+    process.env.ADMIN_PASSWORD,
+
+  // Euro per US dollar, for Vapi and Twilio costs.
+  usdToEur:
+    Number(process.env.BILLING_USD_TO_EUR || 0.86),
+
+  // Estimates when a provider did not report a cost yet.
+  callCostEstimateEurPerMinute:
+    Number(process.env.CALL_COST_ESTIMATE_EUR_PER_MINUTE || 0.15),
+
+  smsCostEstimateEurPerSegment:
+    Number(process.env.SMS_COST_ESTIMATE_EUR_PER_SEGMENT || 0.08),
 };
 
 // Named export

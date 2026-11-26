@@ -305,6 +305,33 @@ model Business {
   transcriberKeyterms String[] @default([])
 
   // -------------------------
+  // AtrioNovo subscription
+  // -------------------------
+  //
+  // What the business pays AtrioNovo (see BILLING below).
+  // No plan: not billed (a demo, or a customer whose price
+  // is not decided yet). Usage is metered either way.
+  //
+  // subscriptionStatus is Stripe's own status (trialing,
+  // active, past_due, canceled, unpaid, incomplete),
+  // copied by the billing webhook.
+
+  billingPlan          BillingPlan?
+  billingInterval      BillingInterval @default(MONTH)
+  stripeCustomerId     String?         @unique
+  stripeSubscriptionId String?         @unique
+  subscriptionStatus   String?
+  trialEndsAt          DateTime?
+  cancelAtPeriodEnd    Boolean         @default(false)
+
+  // A demo account for prospects: counted apart in the
+  // usage report, never billed.
+  isDemo Boolean @default(false)
+
+  usageRecords    UsageRecord[]
+  billingInvoices BillingInvoice[]
+
+  // -------------------------
   // Metadata
   // -------------------------
 
@@ -1250,7 +1277,7 @@ model Appointment {
   // as last notified. A new or changed overlap sends one
   // push; null when there is none.
   externalConflictKey String?
-  externalSyncError  String?
+  externalSyncError   String?
 
   // -------------------------
   // Metadata
@@ -1755,4 +1782,140 @@ model ExternalBusyBlock {
 
   @@index([businessId, startTime])
   @@index([calendarId, startTime])
+}
+
+// ======================================================
+// BILLING
+// ======================================================
+//
+// What each business pays AtrioNovo, and what it costs us.
+//
+// Plans (src/modules/billing/plans.js) include call
+// minutes and SMS a calendar month (Europe/Brussels).
+// Above that: extra minutes and SMS, on an invoice of
+// their own early the next month.
+//
+// UsageRecord  one call or one SMS, with what it cost us
+//              (Vapi, Twilio). businessId null: our own
+//              use (the live demo on atrionovo.com).
+// BillingInvoice  a Stripe invoice to a business, copied
+//              by the billing webhook.
+// ======================================================
+
+enum BillingPlan {
+  START
+  PRO
+  GROEI
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+enum UsageKind {
+  CALL
+  SMS
+}
+
+enum UsageSource {
+  // A call the receptionist answered for a business.
+  RECEPTIONIST
+
+  // The confirmation SMS after a call.
+  CALL_SMS
+
+  // The "hear it for your own business" demo on the
+  // website: our own cost, never billed.
+  LIVE_DEMO
+}
+
+model UsageRecord {
+  id String @id @default(cuid())
+
+  businessId String?
+
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  kind   UsageKind
+  source UsageSource
+
+  // Vapi call id, Twilio message sid, or our own key when
+  // the provider gave none. Unique: a repeated report is
+  // counted once.
+  externalId String @unique
+
+  occurredAt DateTime
+
+  // CALL: seconds. SMS: segments (one SMS is one message
+  // for the plan, however many segments).
+  quantity Int @default(0)
+
+  // What the provider charged us, in its currency (Vapi:
+  // USD). Null when not known yet; the report then uses an
+  // estimate (see billing/costs.js).
+  costAmount   Decimal? @db.Decimal(12, 6)
+  costCurrency String?
+
+  // Vapi's split (transport, stt, llm, tts, vapi).
+  costBreakdown Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId, occurredAt])
+  @@index([occurredAt])
+}
+
+enum BillingInvoiceKind {
+  // The plan itself (monthly or yearly).
+  SUBSCRIPTION
+
+  // Extra minutes and SMS of one calendar month.
+  OVERAGE
+}
+
+model BillingInvoice {
+  id String @id @default(cuid())
+
+  businessId String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  kind BillingInvoiceKind
+
+  // Null for an overage invoice whose Stripe invoice is
+  // not created yet (the row claims the month first).
+  stripeInvoiceId String? @unique
+
+  // OVERAGE: the month it is for ("2026-11"). One per
+  // business and month.
+  usageMonth String?
+
+  number String?
+
+  // Stripe's status: draft, open, paid, void,
+  // uncollectible.
+  status String
+
+  // Cents, excluding VAT, VAT, and including VAT.
+  subtotalCents Int    @default(0)
+  taxCents      Int    @default(0)
+  totalCents    Int    @default(0)
+  currency      String @default("eur")
+
+  // OVERAGE: what is on it.
+  extraMinutes Int @default(0)
+  extraSms     Int @default(0)
+
+  hostedInvoiceUrl String?
+
+  issuedAt DateTime
+  paidAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, usageMonth])
+  @@index([businessId, issuedAt])
 }

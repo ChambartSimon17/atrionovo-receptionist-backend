@@ -120,6 +120,7 @@ export function twilioConfigured() {
 /**
  * Sends one SMS through Twilio. Throws with a short, safe
  * message (never the credentials) when Twilio refuses.
+ * Returns Twilio's message sid and the number of segments.
  */
 export async function sendSms({ from, to, body }) {
   const sid = process.env.TWILIO_ACCOUNT_SID;
@@ -148,5 +149,8 @@ export async function sendSms({ from, to, body }) {
 
   const message = await response.json();
 
-  return message.sid;
+  return {
+    sid: message.sid ?? null,
+    segments: Math.max(1, Number(message.num_segments) || 1),
+  };
 }
