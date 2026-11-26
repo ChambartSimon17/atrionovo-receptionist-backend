@@ -4,6 +4,8 @@ import calendarSyncService from "./calendar-sync.service.js";
 import {
   CalendarFetchError,
   fetchIcsFeed,
+  icsFeedUrl,
+  ICS_TIMEOUT_MS,
   forgetCaldavClient,
   listCaldavCalendars,
   safeError,
@@ -51,7 +53,7 @@ function connectError(error) {
   const message = safeError(error);
   const failure = new AppError(message, 422);
   failure.code = ErrorCodes.CALENDAR_CONNECT_FAILED;
-  failure.details = [{ reason: failureReason(message) }];
+  failure.details = [{ reason: error?.reason ?? failureReason(message) }];
   return failure;
 }
 
@@ -63,7 +65,8 @@ const normalizeUrl = (url) => url.replace(/\/?$/, "/");
  * the internal network.
  */
 function checkIcsLink(link) {
-  const trimmed = link.trim().replace(/^webcals?:\/\//i, "https://");
+  // Exactly the address fetchIcsFeed will use.
+  const trimmed = icsFeedUrl(link);
 
   let url;
 
@@ -429,7 +432,7 @@ class CalendarIntegrationService {
     await this.#checkTherapists(businessId, [therapistId]);
 
     try {
-      await fetchIcsFeed(link, { timeoutMs: SETUP_TIMEOUT_MS });
+      await fetchIcsFeed(link, { timeoutMs: ICS_TIMEOUT_MS });
     } catch (error) {
       throw connectError(error);
     }

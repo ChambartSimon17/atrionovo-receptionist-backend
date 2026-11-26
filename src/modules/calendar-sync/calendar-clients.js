@@ -28,9 +28,16 @@ const CLIENT_TTL_MS = 30 * 60_000;
 const clientCache = new Map();
 
 export class CalendarFetchError extends Error {
-  constructor(message) {
+  /**
+   * reason: a short code the app turns into its own text
+   * (LINK_REFUSED, FEED_GONE, NOT_A_CALENDAR, TIMEOUT,
+   * UNREACHABLE). The message itself is already Dutch, for
+   * app versions that do not know the code.
+   */
+  constructor(message, reason) {
     super(message);
     this.name = "CalendarFetchError";
+    this.reason = reason;
   }
 }
 
@@ -216,38 +223,125 @@ export async function deleteCaldavEvent(credentials, eventUrl) {
   }
 }
 
+// Some providers (Setmore) only answer calendar apps and
+// refuse other clients with 401. Present ourselves the way
+// Apple Calendar does.
+export const ICS_REQUEST_HEADERS = {
+  "User-Agent": "macOS/15.0 (24A335) CalendarAgent/1000",
+  Accept: "text/calendar, */*;q=0.8",
+};
+
+export const ICS_TIMEOUT_MS = 10_000;
+
+const ICS_MESSAGES = {
+  LINK_REFUSED:
+    "Deze link is verlopen of wordt geweigerd. Maak in Setmore een nieuwe link aan via Settings → My Profile → Calendar → Get link.",
+  FEED_GONE: "Deze agenda bestaat niet meer. Controleer de link.",
+  NOT_A_CALENDAR: "Dit lijkt geen agenda-link. Kopieer de link via 'Copy link'.",
+  TIMEOUT: "De agenda reageert niet. Probeer later opnieuw.",
+};
+
 /**
- * Downloads an ICS subscription link. webcal:// is the
- * same address over https.
+ * The address an ICS link is fetched from: webcal:// and
+ * webcals:// become https://, surrounding spaces go. The
+ * rest stays exactly as given: Setmore links end in base64
+ * padding ("==") that must not be trimmed or encoded.
+ */
+export function icsFeedUrl(link) {
+  return String(link).trim().replace(/^webcals?:\/\//i, "https://");
+}
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "invalid-url";
+  }
+}
+
+/**
+ * Logs a failed feed request: the status, the domain and the
+ * start of the answer. Never the full URL, which holds a
+ * secret token.
+ */
+function logFeedFailure(log, { url, status, body, error }) {
+  log?.warn?.(
+    {
+      domain: hostOf(url),
+      status: status ?? null,
+      body: body ? body.slice(0, 200) : undefined,
+      error: error ?? undefined,
+    },
+    "ICS feed request failed"
+  );
+}
+
+/**
+ * Downloads an ICS subscription link. The only place that
+ * fetches an ICS feed: the check when a link is added and
+ * the periodic sync both come here.
+ *
+ * Valid only with a 2xx status and a body that contains
+ * BEGIN:VCALENDAR. Redirects are followed.
  *
  * Returns { text, hash } (hash: to skip unchanged feeds).
+ * Throws CalendarFetchError with a Dutch message and a
+ * reason code.
  */
-export async function fetchIcsFeed(link, { timeoutMs }) {
-  const url = link.trim().replace(/^webcals?:\/\//i, "https://");
+export async function fetchIcsFeed(
+  link,
+  { timeoutMs = ICS_TIMEOUT_MS, log = console } = {}
+) {
+  const url = icsFeedUrl(link);
 
   let response;
 
   try {
     response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: ICS_REQUEST_HEADERS,
       signal: AbortSignal.timeout(timeoutMs),
-      headers: { Accept: "text/calendar" },
     });
   } catch (error) {
-    throw new CalendarFetchError(safeError(error));
+    logFeedFailure(log, { url, error: error?.name ?? "network error" });
+    throw new CalendarFetchError(ICS_MESSAGES.TIMEOUT, "TIMEOUT");
+  }
+
+  let text;
+
+  try {
+    text = await response.text();
+  } catch (error) {
+    logFeedFailure(log, { url, status: response.status, error: error?.name });
+    throw new CalendarFetchError(ICS_MESSAGES.TIMEOUT, "TIMEOUT");
   }
 
   if (!response.ok) {
-    throw new CalendarFetchError(`Calendar feed answered ${response.status}.`);
+    logFeedFailure(log, { url, status: response.status, body: text });
+
+    if (response.status === 401 || response.status === 403) {
+      throw new CalendarFetchError(ICS_MESSAGES.LINK_REFUSED, "LINK_REFUSED");
+    }
+
+    if (response.status === 404 || response.status === 410) {
+      throw new CalendarFetchError(ICS_MESSAGES.FEED_GONE, "FEED_GONE");
+    }
+
+    throw new CalendarFetchError(
+      `De agenda gaf een fout (status ${response.status}). Probeer later opnieuw.`,
+      "UNREACHABLE"
+    );
   }
 
-  const text = await response.text();
-
   if (text.length > MAX_ICS_BYTES) {
-    throw new CalendarFetchError("Calendar feed is too large.");
+    logFeedFailure(log, { url, status: response.status, error: "too large" });
+    throw new CalendarFetchError("Deze agenda is te groot om in te lezen.", "NOT_A_CALENDAR");
   }
 
   if (!text.includes("BEGIN:VCALENDAR")) {
-    throw new CalendarFetchError("The link is not a calendar feed.");
+    logFeedFailure(log, { url, status: response.status, body: text });
+    throw new CalendarFetchError(ICS_MESSAGES.NOT_A_CALENDAR, "NOT_A_CALENDAR");
   }
 
   return {
