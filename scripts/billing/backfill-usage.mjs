@@ -43,10 +43,13 @@ const counted = new Set(
   (await prisma.usageRecord.findMany({ select: { externalId: true } })).map((record) => record.externalId)
 );
 
-// Temporary callback ids are not Vapi calls.
+// Only real Vapi calls (a UUID). Not the temporary callback ids, and
+// not the made-up history scripts/demo/seed.mjs puts in demo agendas
+// (demo-vol-book-3 and the like).
+const VAPI_CALL_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const calls = (await prisma.callLog.findMany({
   select: { id: true, businessId: true, externalId: true, startedAt: true, durationSeconds: true, smsSentAt: true },
-})).filter((call) => !call.externalId.startsWith("callback-"));
+})).filter((call) => VAPI_CALL_ID.test(call.externalId));
 
 const newCalls = calls.filter((call) => !counted.has(call.externalId));
 const newSms = calls.filter((call) => call.smsSentAt && !counted.has(`call-sms:${call.id}`));
