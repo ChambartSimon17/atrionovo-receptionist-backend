@@ -28,6 +28,11 @@ import { costSettings } from "../billing/usage.service.js";
 // Groups: customers, demo accounts, and our own use (the
 // live demo on the website, businessId null).
 //
+// AI bookings count customers only: demo agendas are
+// filled with made-up bookings (scripts/demo/seed.mjs),
+// so for demo accounts the number is shown as "–" and
+// left out of every total.
+//
 // Buckets in JavaScript: fine for the number of calls of a
 // few dozen businesses. Move to SQL groupBy when it grows.
 // ======================================================
@@ -97,6 +102,8 @@ async function aiBookingsByBusiness(start, end, businessId) {
   const where = {
     source: "AI",
     createdAt: { gte: start, lt: end },
+    // Never the made-up bookings of demo accounts.
+    business: { isDemo: false },
     ...(businessId && { businessId }),
   };
 
@@ -140,7 +147,8 @@ function rowFor(business, records, bookings, invoices) {
     estimated: cost.estimated,
     revenueCents,
     invoicedCents: invoices.reduce((sum, invoice) => sum + invoice.subtotalCents, 0),
-    aiBookings: bookings.length,
+    // Unknown for demo accounts (made-up bookings).
+    aiBookings: business?.isDemo ? null : bookings.length,
   });
 }
 
@@ -233,7 +241,7 @@ export async function monthReport(month) {
     demos,
     internal,
     customerTotals,
-    demoTotals: finish(demos.reduce(addTo, emptyTotals())),
+    demoTotals: { ...finish(demos.reduce(addTo, emptyTotals())), aiBookings: null, costPerBookingCents: null },
     allTotals,
     counts: { paying: payingCount, trialing: trialCount, problems: problemCount },
     history: await history(month),
@@ -248,8 +256,11 @@ export async function monthReport(month) {
  * for everyone or one business. Revenue here is what was
  * invoiced (the plan revenue of past months depends on
  * statuses we do not keep history of).
+ *
+ * demo: the history of one demo account, whose AI
+ * bookings are unknown (null).
  */
-export async function history(month, businessId) {
+export async function history(month, businessId, { demo = false } = {}) {
   const first = shiftMonth(month, -11);
   const start = monthRange(first).start;
   const end = monthRange(month).end;
@@ -301,7 +312,7 @@ export async function history(month, businessId) {
       estimated: cost.estimated,
       invoicedCents: invoiced,
       marginCents: invoiced - euroCents(cost.totalEur),
-      aiBookings: (bookingsBy.get(key) ?? []).length,
+      aiBookings: demo ? null : (bookingsBy.get(key) ?? []).length,
       outcomes,
     });
   }
@@ -340,7 +351,7 @@ export async function businessReport(businessId, month) {
     month,
     account: accountInfo(business),
     row: rowFor(business, records, bookings, invoicesOfMonth),
-    history: await history(month, businessId),
+    history: await history(month, businessId, { demo: business.isDemo }),
     invoices,
   };
 }

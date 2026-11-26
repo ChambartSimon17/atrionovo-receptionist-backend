@@ -304,7 +304,7 @@ export function renderOverview(report, { flash, billingOn, rates }) {
       : `<div class="muted">Facturatie in Stripe staat uit (STRIPE_BILLING_ENABLED). Verbruik en kosten worden wel bijgehouden.</div>`}
   </div>
 
-  <p class="note">Kost = wat Vapi en Twilio aanrekenden, omgerekend aan ${esc(String(rates.USD).replace(".", ","))} € per $. “≈” betekent dat een deel nog geschat is (${esc(eur(Math.round(rates.callEstimate * 100)))} per minuut, ${esc(eur(Math.round(rates.smsEstimate * 100)))} per sms) tot de provider de echte kost doorgeeft. Omzet = plan (jaarplan per maand, niets tijdens de proef) + extra minuten en sms van deze maand. Gefactureerd = wat Stripe deze maand factureerde, excl. btw. Vaste kosten (telefoonnummers, Render, Stripe) zitten er niet in.${report.unassignedRecords ? ` ${num(report.unassignedRecords)} records horen bij een verwijderde zaak.` : ""}</p>
+  <p class="note">Kost = wat Vapi en Twilio aanrekenden, omgerekend aan ${esc(String(rates.USD).replace(".", ","))} € per $. “≈” betekent dat een deel nog geschat is (${esc(eur(Math.round(rates.callEstimate * 100)))} per minuut, ${esc(eur(Math.round(rates.smsEstimate * 100)))} per sms) tot de provider de echte kost doorgeeft. Omzet = plan (jaarplan per maand, niets tijdens de proef) + extra minuten en sms van deze maand. Gefactureerd = wat Stripe deze maand factureerde, excl. btw. AI-boekingen tellen alleen bij klanten: demo-agenda's zijn gevuld met voorbeeldboekingen. Vaste kosten (telefoonnummers, Render, Stripe) zitten er niet in.${report.unassignedRecords ? ` ${num(report.unassignedRecords)} records horen bij een verwijderde zaak.` : ""}</p>
   `;
 
   return layout("Verbruik", body);
