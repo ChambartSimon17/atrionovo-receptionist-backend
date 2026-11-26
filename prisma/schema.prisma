@@ -1244,6 +1244,12 @@ model Appointment {
   externalEventUrl   String?
   externalEventEtag  String?
   externalSyncStatus ExternalSyncStatus?
+
+  // The busy time from the business's own calendars this
+  // appointment overlaps (added there after the booking),
+  // as last notified. A new or changed overlap sends one
+  // push; null when there is none.
+  externalConflictKey String?
   externalSyncError  String?
 
   // -------------------------

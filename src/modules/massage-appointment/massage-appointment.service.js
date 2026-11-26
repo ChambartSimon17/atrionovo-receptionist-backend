@@ -113,7 +113,18 @@ class MassageAppointmentService {
         range.end
       );
 
-    return appointments.map(toDto);
+    // Busy time from the business's own calendars that was
+    // added there after these appointments were booked.
+    const conflicts =
+      await calendarSyncService.conflictsForAppointments(
+        businessId,
+        appointments
+      );
+
+    return appointments.map((appointment) => ({
+      ...toDto(appointment),
+      externalConflicts: conflicts.get(appointment.id) ?? [],
+    }));
   }
 
   /**

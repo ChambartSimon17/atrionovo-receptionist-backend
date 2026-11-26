@@ -17,6 +17,13 @@ import {
 import { decryptSecret } from "../../utils/secret-box.js";
 import { getUtcRangeForLocalDay } from "../../utils/time.utils.js";
 import businessRepository from "../business/business.repository.js";
+import pushService from "../insights/push.service.js";
+import {
+  CONFLICT_STATUSES,
+  conflictKey,
+  conflictMessage,
+  findConflicts,
+} from "./conflicts.js";
 import AppError from "../../errors/AppError.js";
 import NotFoundError from "../../errors/NotFoundError.js";
 import { ErrorCodes } from "../../errors/error-codes.js";
@@ -274,6 +281,10 @@ class CalendarSyncService {
 
     await this.pushPending();
 
+    await this.notifyConflicts().catch((error) =>
+      log(`conflicts: ${error.message}`)
+    );
+
     await calendarSyncRepository.deleteBlocksEndedBefore(
       new Date(Date.now() - 2 * DAY_MS)
     );
@@ -506,11 +517,21 @@ class CalendarSyncService {
 
     const day = getUtcRangeForLocalDay(date, business.timezone);
 
-    const blocks = await calendarSyncRepository.findBlocksOverlapping(
-      business.id,
-      day.start,
-      day.end
-    );
+    const [blocks, appointments] = await Promise.all([
+      calendarSyncRepository.findBlocksOverlapping(
+        business.id,
+        day.start,
+        day.end
+      ),
+      calendarSyncRepository.findAppointmentsOverlapping(
+        business.id,
+        day.start,
+        day.end,
+        CONFLICT_STATUSES
+      ),
+    ]);
+
+    const pairs = findConflicts(appointments, blocks.map(toConflictBlock));
 
     return blocks.map((block) => ({
       id: block.id,
@@ -519,8 +540,143 @@ class CalendarSyncService {
       allDay: block.allDay,
       calendarName: block.calendar.displayName,
       therapistId: block.calendar.therapistId,
+      // Appointments this busy time overlaps: added in the
+      // other calendar after they were booked.
+      conflicts: pairs
+        .filter((pair) => pair.block.id === block.id)
+        .map(({ appointment }) => ({
+          appointmentId: appointment.id,
+          name: [appointment.firstName, appointment.lastName]
+            .filter(Boolean)
+            .join(" "),
+          startTime: appointment.startTime.toISOString(),
+          endTime: appointment.endTime.toISOString(),
+        })),
     }));
   }
+
+  /**
+   * For a list of appointments: the busy time each one
+   * overlaps, as [{ calendarName, startTime, endTime }] per
+   * appointment id.
+   */
+  async conflictsForAppointments(businessId, appointments) {
+    if (appointments.length === 0) {
+      return new Map();
+    }
+
+    const from = new Date(
+      Math.min(...appointments.map((a) => a.startTime.getTime()))
+    );
+    const to = new Date(
+      Math.max(...appointments.map((a) => a.endTime.getTime()))
+    );
+
+    const blocks = await calendarSyncRepository.findBlocksOverlapping(
+      businessId,
+      from,
+      to
+    );
+
+    const result = new Map();
+
+    for (const { appointment, block } of findConflicts(
+      appointments,
+      blocks.map(toConflictBlock)
+    )) {
+      const list = result.get(appointment.id) ?? [];
+
+      list.push({
+        calendarName: block.calendarName,
+        startTime: block.startTime.toISOString(),
+        endTime: block.endTime.toISOString(),
+      });
+      result.set(appointment.id, list);
+    }
+
+    return result;
+  }
+
+  /**
+   * After a sync: one push per appointment whose overlap
+   * with busy time is new or changed, for every business
+   * that reads external calendars. Appointments that no
+   * longer clash are cleared, so a later clash notifies
+   * again.
+   */
+  async notifyConflicts() {
+    const now = new Date();
+    const until = new Date(now.getTime() + SYNC_FUTURE_MS);
+
+    for (const business of await calendarSyncRepository.findBusinessesWithCalendars()) {
+      const [appointments, blocks, flagged] = await Promise.all([
+        calendarSyncRepository.findAppointmentsOverlapping(
+          business.id,
+          now,
+          until,
+          ["CONFIRMED"]
+        ),
+        calendarSyncRepository.findBlocksOverlapping(business.id, now, until),
+        calendarSyncRepository.findAppointmentsWithConflictKey(business.id, now),
+      ]);
+
+      const perAppointment = new Map();
+
+      for (const { appointment, block } of findConflicts(
+        appointments,
+        blocks.map(toConflictBlock)
+      )) {
+        const list = perAppointment.get(appointment.id) ?? [];
+
+        list.push(block);
+        perAppointment.set(appointment.id, list);
+      }
+
+      const updates = [];
+
+      for (const appointment of appointments) {
+        const clashing = perAppointment.get(appointment.id) ?? [];
+        const key = conflictKey(clashing);
+
+        if (key === appointment.externalConflictKey) {
+          continue;
+        }
+
+        updates.push({ id: appointment.id, key });
+
+        if (key) {
+          await pushService.notifyBusiness(business.id, {
+            ...conflictMessage(appointment, clashing, business.timezone),
+            data: { type: "conflict", appointmentId: appointment.id },
+          });
+        }
+      }
+
+      // Cancelled or no longer clashing: clear the key.
+      const stillChecked = new Set(appointments.map((a) => a.id));
+
+      for (const { id } of flagged) {
+        if (!stillChecked.has(id)) {
+          updates.push({ id, key: null });
+        }
+      }
+
+      if (updates.length > 0) {
+        await calendarSyncRepository.setConflictKeys(updates);
+      }
+    }
+  }
+}
+
+function toConflictBlock(block) {
+  return {
+    id: block.id,
+    calendarId: block.calendar.id,
+    calendarName: block.calendar.displayName,
+    therapistId: block.calendar.therapistId,
+    startTime: block.startTime,
+    endTime: block.endTime,
+  };
 }
 
 export default new CalendarSyncService();

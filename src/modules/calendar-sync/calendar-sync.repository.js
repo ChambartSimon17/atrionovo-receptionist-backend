@@ -163,6 +163,71 @@ class CalendarSyncRepository {
     });
   }
 
+  /**
+   * Appointments that still count (confirmed or done) and
+   * overlap [from, to), for finding clashes with busy time.
+   */
+  findAppointmentsOverlapping(businessId, from, to, statuses) {
+    return prisma.appointment.findMany({
+      where: {
+        businessId,
+        status: { in: statuses },
+        startTime: { lt: to },
+        endTime: { gt: from },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        therapistId: true,
+        status: true,
+        startTime: true,
+        endTime: true,
+        externalConflictKey: true,
+      },
+      orderBy: { startTime: "asc" },
+    });
+  }
+
+  /**
+   * Businesses that read at least one external calendar.
+   */
+  async findBusinessesWithCalendars() {
+    const rows = await prisma.externalCalendar.findMany({
+      where: { isActive: true, connection: { isActive: true } },
+      distinct: ["businessId"],
+      select: { business: { select: { id: true, timezone: true } } },
+    });
+
+    return rows.map((row) => row.business);
+  }
+
+  setConflictKeys(updates) {
+    return prisma.$transaction(
+      updates.map(({ id, key }) =>
+        prisma.appointment.update({
+          where: { id },
+          data: { externalConflictKey: key },
+        })
+      )
+    );
+  }
+
+  /**
+   * Appointments whose last notified conflict has to be
+   * cleared: they had one, but no longer clash.
+   */
+  findAppointmentsWithConflictKey(businessId, from) {
+    return prisma.appointment.findMany({
+      where: {
+        businessId,
+        externalConflictKey: { not: null },
+        endTime: { gt: from },
+      },
+      select: { id: true },
+    });
+  }
+
   findAppointment(id) {
     return prisma.appointment.findUnique({
       where: { id },
