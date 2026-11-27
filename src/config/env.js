@@ -161,6 +161,14 @@ const env = {
   stripeBillingWebhookSecret:
     process.env.STRIPE_BILLING_WEBHOOK_SECRET,
 
+  // Small-business VAT exemption (vrijstellingsregeling
+  // kleine ondernemingen): no VAT on subscriptions and
+  // overage invoices, the plan price is what is paid. On by
+  // default; set "false" once registered for VAT, then 21%
+  // is added (the rate setup-stripe.mjs made).
+  billingVatExempt:
+    process.env.BILLING_VAT_EXEMPT !== "false",
+
   // Where the Stripe customer portal sends the owner back.
   billingReturnUrl:
     process.env.BILLING_RETURN_URL || "https://app.atrionovo.com",

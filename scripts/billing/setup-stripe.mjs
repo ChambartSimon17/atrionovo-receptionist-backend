@@ -10,7 +10,8 @@
 //     cancel at the end of the period (metadata atrionovo=portal)
 //   - with --webhook=<url>: the webhook endpoint for /billing/webhook.
 //     Prints its signing secret ONCE: put it in Render as
-//     STRIPE_BILLING_WEBHOOK_SECRET.
+//     STRIPE_BILLING_WEBHOOK_SECRET. With --secret-file=<path> it is
+//     written to that file (only you can read it) instead of printed.
 //
 // Usage:
 //   node scripts/billing/setup-stripe.mjs                    (key from .env)
@@ -19,7 +20,7 @@
 //   node scripts/billing/setup-stripe.mjs --dry-run
 //
 // A live key (sk_live_ / rk_live_) is refused unless you add --live.
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -184,7 +185,12 @@ if (webhookUrl) {
     stripe.webhookEndpoints.create({ url: webhookUrl, enabled_events: events, description: "AtrioNovo billing" })
   );
 
-  if (made?.secret) {
+  const secretFile = option("secret-file");
+
+  if (made?.secret && secretFile) {
+    writeFileSync(secretFile, `STRIPE_BILLING_WEBHOOK_SECRET=${made.secret}\n`, { mode: 0o600 });
+    console.log(`\n  Het webhook-geheim staat in ${secretFile} (wordt maar één keer gegeven: zet het in Render).`);
+  } else if (made?.secret) {
     console.log(`\n  STRIPE_BILLING_WEBHOOK_SECRET=${made.secret}\n  (wordt maar één keer getoond: zet het nu in Render)`);
   } else if (found) {
     console.log("  Bestond al: het geheim staat in het Stripe-dashboard bij deze webhook.");

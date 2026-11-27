@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 import { requireBusinessOwnership } from "../../middleware/business-ownership.middleware.js";
 import { requireRole } from "../../middleware/role.middleware.js";
 import NotFoundError from "../../errors/NotFoundError.js";
+import env from "../../config/env.js";
 
 import { planById, priceCents } from "./plans.js";
 import { monthOf, monthRange } from "./usage-math.js";
@@ -78,6 +79,8 @@ async function billingView(businessId) {
       extraCents: usage.extraCents,
     },
     canManage: billingEnabled() && Boolean(business.stripeCustomerId),
+    // Prices are what is paid: the app shows no VAT note.
+    vatExempt: env.billingVatExempt,
     invoices: invoices.map((invoice) => ({
       id: invoice.id,
       kind: invoice.kind,

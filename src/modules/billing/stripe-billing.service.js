@@ -253,7 +253,7 @@ export async function setPlan(businessId, { planId, interval, trial }) {
       {
         customer,
         items: [{ price }],
-        default_tax_rates: [vatRateId],
+        ...(!env.billingVatExempt && { default_tax_rates: [vatRateId] }),
         collection_method: "charge_automatically",
         payment_settings: { save_default_payment_method: "on_subscription" },
         // Without a card when the trial ends: an open invoice
@@ -409,7 +409,7 @@ async function overageFor(client, business, month) {
       collection_method: "charge_automatically",
       auto_advance: true,
       pending_invoice_items_behavior: "exclude",
-      default_tax_rates: [vatRateId],
+      ...(!env.billingVatExempt && { default_tax_rates: [vatRateId] }),
       description: `Extra verbruik ${monthLabel(month, business.language || "nl")}`,
       ...(subscription?.default_payment_method && {
         default_payment_method:

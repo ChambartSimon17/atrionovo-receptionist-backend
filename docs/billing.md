@@ -25,7 +25,8 @@ Rules:
 
 `src/modules/billing/plans.js`, the same as atrionovo.com/prijzen: Start €79 / 200 min / 100 SMS,
 Pro €149 / 450 / 200, Groei €249 / 900 / 300; extra €0.25 per minute and €0.12 per SMS; yearly =
-11 months. All excluding 21% VAT. Change the website and this file together.
+11 months. No VAT while `BILLING_VAT_EXEMPT` is on (small-business exemption); otherwise
+excluding 21% VAT. Change the website and this file together.
 
 ## Switching it on
 
@@ -39,7 +40,8 @@ Metering and the report work right away. Stripe stays off until step 4.
    `vapi/customers.json`).
 3. **Stripe test mode first.** With a test key (`sk_test_...`) in `.env`:
    `node scripts/billing/setup-stripe.mjs` creates the products, prices, VAT rate and customer portal.
-   Add `--webhook=<url>/billing/webhook` to create the webhook; it prints the signing secret once.
+   Add `--webhook=<url>/billing/webhook` to create the webhook; it prints the signing secret once
+   (or writes it to a file with `--secret-file=<path>`).
 4. **Live.** In Render: `STRIPE_BILLING_WEBHOOK_SECRET` (from step 3 in live mode) and
    `STRIPE_BILLING_ENABLED=true`. Run step 3 with the live key and `--live`.
 
@@ -54,6 +56,7 @@ beheren** in the app (Stripe's customer portal).
 | `STRIPE_BILLING_ENABLED` | off | `true`: subscriptions and overage invoices in Stripe |
 | `STRIPE_BILLING_WEBHOOK_SECRET` | – | signing secret of `/billing/webhook` |
 | `ADMIN_PASSWORD` | – | without it (or shorter than 16) `/admin` does not exist |
+| `BILLING_VAT_EXEMPT` | on | small-business exemption: no VAT on invoices; `false` adds 21% |
 | `BILLING_RETURN_URL` | `https://app.atrionovo.com` | where the Stripe portal sends the owner back |
 | `BILLING_USD_TO_EUR` | `0.86` | euro per dollar for Vapi and Twilio costs |
 | `CALL_COST_ESTIMATE_EUR_PER_MINUTE` | `0.15` | estimate until Vapi reports the cost |
